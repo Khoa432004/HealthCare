@@ -300,18 +300,35 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private UserResponse mapToUserResponse(User user) {
+		if (user == null) {
+			throw new IllegalArgumentException("User cannot be null");
+		}
+		
+		Account account = user.getAccount();
+		String username = null;
+		String email = null;
+		String roleName = null;
+		
+		if (account != null) {
+			username = account.getUsername();
+			email = account.getEmail();
+			if (account.getRole() != null) {
+				roleName = account.getRole().getName().name();
+			}
+		}
+		
 		return UserResponse.builder()
 				.id(user.getId())
-				.username(user.getAccount() != null ? user.getAccount().getUsername() : null)
+				.username(username)
 				.fullName(user.getFullName())
-				.email(user.getAccount() != null ? user.getAccount().getEmail() : null)
+				.email(email)
 				.phone(user.getPhone())
 				.identityCard(user.getIdentityCard())
 				.dateOfBirth(user.getDateOfBirth())
 				.gender(user.getGender())
 				.address(user.getAddress())
 				.department(user.getDepartment())
-				.roleName(user.getAccount() != null && user.getAccount().getRole() != null ? user.getAccount().getRole().getName().name() : null)
+				.roleName(roleName)
 				.isDeleted(user.isDeleted())
 				.isLocked(user.isLocked())
 				.createdAt(user.getCreatedAt())
@@ -321,10 +338,18 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Cacheable(value = "pendingDoctors")
+	@Transactional(readOnly = true)
 	public List<UserResponse> getPendingDoctorAccounts() {
-		List<User> pendingDoctors = userRepository.findPendingDoctorAccounts(RoleType.DOCTOR);
-		return pendingDoctors.stream()
-				.map(this::mapToUserResponse)
-				.collect(Collectors.toList());
+		log.info("Fetching pending doctor accounts");
+		try {
+			List<User> pendingDoctors = userRepository.findPendingDoctorAccounts(RoleType.DOCTOR);
+			log.info("Found {} pending doctor accounts", pendingDoctors.size());
+			return pendingDoctors.stream()
+					.map(this::mapToUserResponse)
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching pending doctor accounts: {}", e.getMessage(), e);
+			throw e;
+		}
 	}
 }

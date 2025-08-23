@@ -125,6 +125,7 @@ public class UserController {
 			List<UserResponse> pendingDoctors = userService.getPendingDoctorAccounts();
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Pending doctor accounts retrieved successfully!", pendingDoctors));
 		} catch (Exception ex) {
+			log.error("Error getting pending doctors: {}", ex.getMessage(), ex);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
 				"error", "failed_to_get_pending_doctors",
 				"message", ex.getMessage()

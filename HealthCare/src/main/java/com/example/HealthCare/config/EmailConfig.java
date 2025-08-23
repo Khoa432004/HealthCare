@@ -36,10 +36,19 @@ public class EmailConfig {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.starttls.required", "true");
-        props.put("mail.smtp.connectiontimeout", "5000");
-        props.put("mail.smtp.timeout", "5000");
-        props.put("mail.smtp.writetimeout", "5000");
-        props.put("mail.debug", "true"); // Enable debug for troubleshooting
+        
+        // Optimized timeouts for better performance
+        props.put("mail.smtp.connectiontimeout", "10000"); // 10 seconds
+        props.put("mail.smtp.timeout", "10000"); // 10 seconds  
+        props.put("mail.smtp.writetimeout", "10000"); // 10 seconds
+        
+        // Additional performance optimizations
+        props.put("mail.smtp.ssl.trust", host); // Trust the SMTP host
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2"); // Use specific TLS version
+        props.put("mail.smtp.socketFactory.fallback", "false");
+        
+        // Disable debug in production for better performance
+        props.put("mail.debug", "false");
 
         return mailSender;
     }

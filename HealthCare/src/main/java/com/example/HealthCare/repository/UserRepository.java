@@ -19,6 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	boolean existsByPhoneAndIsDeletedFalse(String phone);
 	boolean existsByIdentityCardAndIsDeletedFalse(String identityCard);
 	
-	@Query("SELECT u FROM User u WHERE u.isLocked = true AND u.isDeleted = false AND u.account IS NOT NULL AND u.account.role.name = :roleType")
+	@Query("SELECT u FROM User u JOIN FETCH u.account a JOIN FETCH a.role WHERE u.isLocked = true AND u.isDeleted = false AND u.account IS NOT NULL AND a.role.name = :roleType")
 	List<User> findPendingDoctorAccounts(RoleType roleType);
 }

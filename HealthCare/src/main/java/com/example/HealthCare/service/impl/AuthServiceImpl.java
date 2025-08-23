@@ -10,8 +10,6 @@ import java.util.Random;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,6 +34,7 @@ import com.example.HealthCare.repository.UserRepository;
 import com.example.HealthCare.security.JwtUtil;
 import com.example.HealthCare.security.TokenBlacklistService;
 import com.example.HealthCare.service.AuthService;
+import com.example.HealthCare.service.EmailService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,21 +48,22 @@ public class AuthServiceImpl implements AuthService {
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final JavaMailSender mailSender;
 	private final TokenBlacklistService tokenBlacklistService;
+	private final EmailService emailService;
 
 	public AuthServiceImpl(AuthenticationManager authenticationManager, JwtUtil jwtUtil, 
 						  AccountRepository accountRepository, UserRepository userRepository,
 						  RoleRepository roleRepository, PasswordEncoder passwordEncoder, 
-						  JavaMailSender mailSender, TokenBlacklistService tokenBlacklistService) {
+						  TokenBlacklistService tokenBlacklistService,
+						  EmailService emailService) {
 		this.authenticationManager = authenticationManager;
 		this.jwtUtil = jwtUtil;
 		this.accountRepository = accountRepository;
 		this.userRepository = userRepository;
 		this.roleRepository = roleRepository;
 		this.passwordEncoder = passwordEncoder;
-		this.mailSender = mailSender;
 		this.tokenBlacklistService = tokenBlacklistService;
+		this.emailService = emailService;
 	}
 
 	@Override
@@ -168,35 +168,11 @@ public class AuthServiceImpl implements AuthService {
 		accountRepository.save(account);
 		
 		log.info("Generated OTP for username: {}, OTP: {}", username, otp);
-
-		SimpleMailMessage message = new SimpleMailMessage();
-		message.setTo(account.getEmail());
-		message.setSubject("HealthCare - Password Reset OTP");
-		message.setText(String.format(
-			"""
-			Hello %s,
-
-			You have requested to reset your password for your HealthCare account.
-
-			Your OTP (One-Time Password) is: %s
-
-			This code will expire in 10 minutes.
-
-			If you did not request this password reset, please ignore this email.
-
-			Best regards,
-			HealthCare Team""",
-			account.getUsername(), otp
-		));
-		try {
-			mailSender.send(message);
-			log.info("Sent OTP to {}", account.getEmail());
-		} catch (Exception e) {
-			log.error("Failed to send email to {}: {}", account.getEmail(), e.getMessage());
-			throw new RuntimeException("Failed to send reset password email", e);
-		}
 		
-		log.info("Password reset process completed successfully for username: {}", username);
+		// Send email asynchronously to improve response time
+		emailService.sendResetPasswordEmailAsync(account.getEmail(), account.getUsername(), otp);
+		
+		log.info("Password reset process initiated successfully for username: {} - Email will be sent asynchronously", username);
 	}
 
 	@Override

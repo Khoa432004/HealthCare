@@ -3,9 +3,11 @@ package com.example.HealthCare.controller;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,39 +30,48 @@ public class CacheController {
     private final CacheService cacheService;
 
     @GetMapping("/names")
-    public ResponseEntity<ResponseSuccess> getAllCacheNames() {
-        Set<String> cacheNames = cacheService.getAllCacheNames();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache names retrieved successfully", cacheNames)
-        );
+    @Async("cacheTaskExecutor")
+    public CompletableFuture<ResponseEntity<ResponseSuccess>> getAllCacheNames() {
+        return CompletableFuture.supplyAsync(() -> {
+            Set<String> cacheNames = cacheService.getAllCacheNames();
+            return ResponseEntity.ok(
+                new ResponseSuccess(HttpStatus.OK, "Cache names retrieved successfully", cacheNames)
+            );
+        });
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<ResponseSuccess> getCacheStats() {
-        Map<String, Object> stats = new HashMap<>();
-        
-        Set<String> cacheNames = cacheService.getAllCacheNames();
-        stats.put("cacheNames", cacheNames);
-        stats.put("totalCaches", cacheNames.size());
-        
-        Map<String, Long> cacheSizes = new HashMap<>();
-        cacheNames.forEach(name -> {
-            cacheSizes.put(name, cacheService.getCacheSize(name));
+    @Async("cacheTaskExecutor")
+    public CompletableFuture<ResponseEntity<ResponseSuccess>> getCacheStats() {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<String, Object> stats = new HashMap<>();
+            
+            Set<String> cacheNames = cacheService.getAllCacheNames();
+            stats.put("cacheNames", cacheNames);
+            stats.put("totalCaches", cacheNames.size());
+            
+            Map<String, Long> cacheSizes = new HashMap<>();
+            cacheNames.forEach(name -> {
+                cacheSizes.put(name, cacheService.getCacheSize(name));
+            });
+            stats.put("cacheSizes", cacheSizes);
+            
+            return ResponseEntity.ok(
+                new ResponseSuccess(HttpStatus.OK, "Cache statistics retrieved successfully", stats)
+            );
         });
-        stats.put("cacheSizes", cacheSizes);
-        
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache statistics retrieved successfully", stats)
-        );
     }
 
     @DeleteMapping("/all")
-    public ResponseEntity<ResponseSuccess> clearAllCaches() {
-        log.info("Admin requested to clear all caches");
-        cacheService.evictAllCaches();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "All caches cleared successfully")
-        );
+    @Async("cacheTaskExecutor")
+    public CompletableFuture<ResponseEntity<ResponseSuccess>> clearAllCaches() {
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Admin requested to clear all caches");
+            cacheService.evictAllCaches();
+            return ResponseEntity.ok(
+                new ResponseSuccess(HttpStatus.OK, "All caches cleared successfully")
+            );
+        });
     }
 
     @DeleteMapping("/users")
@@ -91,12 +102,15 @@ public class CacheController {
     }
 
     @DeleteMapping("/{cacheName}")
-    public ResponseEntity<ResponseSuccess> clearSpecificCache(@PathVariable String cacheName) {
-        log.info("Admin requested to clear cache: {}", cacheName);
-        cacheService.clearSpecificCache(cacheName);
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache '" + cacheName + "' cleared successfully")
-        );
+    @Async("cacheTaskExecutor")
+    public CompletableFuture<ResponseEntity<ResponseSuccess>> clearSpecificCache(@PathVariable String cacheName) {
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Admin requested to clear cache: {}", cacheName);
+            cacheService.clearSpecificCache(cacheName);
+            return ResponseEntity.ok(
+                new ResponseSuccess(HttpStatus.OK, "Cache '" + cacheName + "' cleared successfully")
+            );
+        });
     }
 
     @DeleteMapping("/user/{userId}")
@@ -118,12 +132,15 @@ public class CacheController {
     }
 
     @PostMapping("/warmup")
-    public ResponseEntity<ResponseSuccess> warmUpCaches() {
-        log.info("Admin requested cache warm-up");
-        cacheService.warmUpCaches();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache warm-up completed successfully")
-        );
+    @Async("cacheTaskExecutor")
+    public CompletableFuture<ResponseEntity<ResponseSuccess>> warmUpCaches() {
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Admin requested cache warm-up");
+            cacheService.warmUpCaches();
+            return ResponseEntity.ok(
+                new ResponseSuccess(HttpStatus.OK, "Cache warm-up completed successfully")
+            );
+        });
     }
 
     @GetMapping("/size/{cacheName}")
