@@ -5,6 +5,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -43,6 +46,7 @@ public class UserServiceImpl implements UserService {
 	private final AccountRepository accountRepository;
 
 	@Override
+	@CacheEvict(value = {"users", "pendingDoctors"}, allEntries = true)
 	public void createUser(CreateUserRequest req) {
 		if (accountRepository.existsByUsername(req.getUsername())) {
 			throw new BadRequestException("Username already exists");
@@ -79,6 +83,11 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#req.id"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public void updateUser(UpdateUserRequest req) {
 		if (req.getRole() != null && !req.getRole().isBlank()) {
 			String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -125,6 +134,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "users", key = "#criteria.toString() + '_' + #page + '_' + #size")
 	public Page<UserResponse> getAllUsers(UserCriteria criteria, int page, int size) {
 		Page<User> users = userRepository.findAll(
 				PageRequest.of(page, size, Sort.by("id").ascending()));
@@ -133,6 +143,11 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#id"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public void deleteUser(Long id) {
 		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 		Account currentAccount = accountRepository.findByUsername(currentUsername)
@@ -159,6 +174,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "privileges", key = "#username")
 	public List<PrivilegeResponse> getPrivilegesByUsername(String username) {
 		Account account = accountRepository.findByUsername(username)
 				.orElseThrow(() -> new NotFoundException("Account not found"));
@@ -171,6 +187,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "userDetails", key = "#id")
 	public UserResponse getUserById(Long id) {
 		User user = userRepository.findByIdAndIsDeletedFalse(id)
 				.orElseThrow(() -> new NotFoundException("User not found with id: " + id));
@@ -179,6 +196,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {"users", "userDetails", "pendingDoctors"}, allEntries = true)
 	public void deleteUsers(List<Long> ids) {
 		if (ids == null || ids.isEmpty()) {
 			throw new BadRequestException("No user IDs provided");
@@ -209,6 +227,11 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#id"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public void restoreUser(Long id) {
 		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 		Account currentAccount = accountRepository.findByUsername(currentUsername)
@@ -232,6 +255,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {"users", "userDetails", "pendingDoctors"}, allEntries = true)
 	public void restoreUsers(List<Long> ids) {
 		if (ids == null || ids.isEmpty()) {
 			throw new BadRequestException("No user IDs provided");
@@ -296,6 +320,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Cacheable(value = "pendingDoctors")
 	public List<UserResponse> getPendingDoctorAccounts() {
 		List<User> pendingDoctors = userRepository.findPendingDoctorAccounts(RoleType.DOCTOR);
 		return pendingDoctors.stream()

@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -104,6 +107,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@CacheEvict(value = "privileges", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
 	public void changePassword(ChangePasswordRequest req) {
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 		Account account = accountRepository.findByUsername(username)
@@ -169,12 +173,19 @@ public class AuthServiceImpl implements AuthService {
 		message.setTo(account.getEmail());
 		message.setSubject("HealthCare - Password Reset OTP");
 		message.setText(String.format(
-			"Hello %s,\n\n" +
-			"You have requested to reset your password for your HealthCare account.\n\n" +
-			"Your OTP (One-Time Password) is: %s\n\n" +
-			"This code will expire in 10 minutes.\n\n" +
-			"If you did not request this password reset, please ignore this email.\n\n" +
-			"Best regards,\nHealthCare Team",
+			"""
+			Hello %s,
+
+			You have requested to reset your password for your HealthCare account.
+
+			Your OTP (One-Time Password) is: %s
+
+			This code will expire in 10 minutes.
+
+			If you did not request this password reset, please ignore this email.
+
+			Best regards,
+			HealthCare Team""",
 			account.getUsername(), otp
 		));
 		try {
@@ -205,6 +216,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@CacheEvict(value = {"users", "userDetails", "pendingDoctors"}, allEntries = true)
 	public Map<String, Object> register(RegisterRequest registerRequest) {
 		log.info("Starting registration process for username: {}", registerRequest.getUsername());
 		
@@ -278,6 +290,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@CacheEvict(value = {"users", "userDetails"}, allEntries = true)
 	public PersonalInfoResponse registerPersonalInfo(PersonalInfoRequest request) {
 		log.info("Starting personal info registration for identity card: {}", request.getIdentityCard());
 		
@@ -336,6 +349,7 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@Cacheable(value = "userDetails", key = "'identity:' + #identityCard")
 	public PersonalInfoResponse getPersonalInfoByIdentityCard(String identityCard) {
 		log.info("Fetching personal info for identity card: {}", identityCard);
 		
@@ -368,6 +382,11 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", allEntries = true),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public Map<String, Object> registerProfessionalInfo(ProfessionalInfoRequest request) {
 		log.info("Starting professional info registration for user ID: {}", request.getUserId());
 		
@@ -452,6 +471,11 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#userId"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public Map<String, Object> approveDoctorAccount(Long userId) {
 		log.info("Starting doctor account approval for user ID: {}", userId);
 		
@@ -488,6 +512,11 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#userId"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
 	public Map<String, Object> rejectDoctorAccount(Long userId, String reason) {
 		log.info("Starting doctor account rejection for user ID: {}", userId);
 		
