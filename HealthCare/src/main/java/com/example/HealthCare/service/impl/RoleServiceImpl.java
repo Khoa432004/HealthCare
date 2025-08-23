@@ -3,6 +3,9 @@ package com.example.HealthCare.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +35,7 @@ public class RoleServiceImpl implements RoleService {
 	private final AccountRepository accountRepository;
 
 	@Override
+	@CacheEvict(value = {"roles", "privileges"}, allEntries = true)
 	public RoleResponse createRole(CreateRoleRequest createRoleRequest) {
 		String roleName = createRoleRequest.getName();
 		if (roleName == null || roleName.isBlank()) {
@@ -62,6 +66,7 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {"roles", "privileges"}, allEntries = true)
 	public void updateRole(UpdateRoleRequest req) {
 		log.info("Starting role update process for role ID: {}", req.getId());
 
@@ -130,6 +135,7 @@ public class RoleServiceImpl implements RoleService {
 	}
 
 	@Override
+	@Cacheable(value = "roles", key = "#id")
 	public RoleResponse getRoleById(Long id) {
 		Role role = roleRepository.findById(id)
 				.orElseThrow(() -> new NotFoundException("Role not found with ID: " + id));
@@ -138,6 +144,7 @@ public class RoleServiceImpl implements RoleService {
 	}
 
 	@Override
+	@Cacheable(value = "roles", key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
 	public Page<RoleResponse> getAllRoles(Pageable pageable) {
 		return roleRepository.findAll(pageable)
 				.map(this::mapToRoleResponse);
@@ -145,6 +152,10 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	@Transactional
+	@Caching(evict = {
+		@CacheEvict(value = "roles", allEntries = true),
+		@CacheEvict(value = "privileges", allEntries = true)
+	})
 	public void deleteRole(Long id) {
 		log.info("Starting role deletion process for role ID: {}", id);
 
@@ -192,6 +203,7 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {"roles", "privileges"}, allEntries = true)
 	public void deleteRoles(List<Long> ids) {
 		log.info("Starting bulk role deletion process for role IDs: {}", ids);
 
@@ -248,6 +260,7 @@ public class RoleServiceImpl implements RoleService {
 	}
 
 	@Override
+	@Cacheable(value = "privileges", key = "#roleName")
 	public List<String> getPrivilegesByRole(String roleName) {
 		try {
 			RoleType roleType = RoleType.valueOf(roleName.toUpperCase());
