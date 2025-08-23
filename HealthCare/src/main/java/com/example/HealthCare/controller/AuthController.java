@@ -1,11 +1,12 @@
 package com.example.HealthCare.controller;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,35 +68,41 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
-		try {
-			Map<String, Object> response = authService.register(req);
-			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new ResponseSuccess(HttpStatus.CREATED, "Registration successful!", response));
-		} catch (Exception ex) {
-			log.warn("Registration failed for user {}: {}", req.getUsername(), ex.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-				"error", "registration_failed",
-				"message", ex.getMessage()
-			));
-		}
+	@Async("controllerTaskExecutor")
+	public CompletableFuture<ResponseEntity<?>> register(@Valid @RequestBody RegisterRequest req) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				Map<String, Object> response = authService.register(req);
+				return ResponseEntity.status(HttpStatus.CREATED)
+					.body(new ResponseSuccess(HttpStatus.CREATED, "Registration successful!", response));
+			} catch (Exception ex) {
+				log.warn("Registration failed for user {}: {}", req.getUsername(), ex.getMessage());
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+					"error", "registration_failed",
+					"message", ex.getMessage()
+				));
+			}
+		});
 	}
 
 	// 2-Step Registration Endpoints
 
 	@PostMapping("/register/personal-info")
-	public ResponseEntity<?> registerPersonalInfo(@Valid @RequestBody PersonalInfoRequest req) {
-		try {
-			PersonalInfoResponse response = authService.registerPersonalInfo(req);
-			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new ResponseSuccess(HttpStatus.CREATED, "Personal information saved successfully!", response));
-		} catch (Exception ex) {
-			log.warn("Personal info registration failed for identity card {}: {}", req.getIdentityCard(), ex.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-				"error", "personal_info_registration_failed",
-				"message", ex.getMessage()
-			));
-		}
+	@Async("controllerTaskExecutor")
+	public CompletableFuture<ResponseEntity<?>> registerPersonalInfo(@Valid @RequestBody PersonalInfoRequest req) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				PersonalInfoResponse response = authService.registerPersonalInfo(req);
+				return ResponseEntity.status(HttpStatus.CREATED)
+					.body(new ResponseSuccess(HttpStatus.CREATED, "Personal information saved successfully!", response));
+			} catch (Exception ex) {
+				log.warn("Personal info registration failed for identity card {}: {}", req.getIdentityCard(), ex.getMessage());
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+					"error", "personal_info_registration_failed",
+					"message", ex.getMessage()
+				));
+			}
+		});
 	}
 
 	@GetMapping("/register/personal-info/{identityCard}")
@@ -113,18 +120,21 @@ public class AuthController {
 	}
 
 	@PostMapping("/register/professional-info")
-	public ResponseEntity<?> registerProfessionalInfo(@Valid @RequestBody ProfessionalInfoRequest req) {
-		try {
-			Map<String, Object> response = authService.registerProfessionalInfo(req);
-			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new ResponseSuccess(HttpStatus.CREATED, "Professional registration completed successfully!", response));
-		} catch (Exception ex) {
-			log.warn("Professional info registration failed for user ID {}: {}", req.getUserId(), ex.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-				"error", "professional_info_registration_failed",
-				"message", ex.getMessage()
-			));
-		}
+	@Async("controllerTaskExecutor")
+	public CompletableFuture<ResponseEntity<?>> registerProfessionalInfo(@Valid @RequestBody ProfessionalInfoRequest req) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				Map<String, Object> response = authService.registerProfessionalInfo(req);
+				return ResponseEntity.status(HttpStatus.CREATED)
+					.body(new ResponseSuccess(HttpStatus.CREATED, "Professional registration completed successfully!", response));
+			} catch (Exception ex) {
+				log.warn("Professional info registration failed for user ID {}: {}", req.getUserId(), ex.getMessage());
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+					"error", "professional_info_registration_failed",
+					"message", ex.getMessage()
+				));
+			}
+		});
 	}
 
 	@PostMapping("/refresh")
@@ -145,19 +155,13 @@ public class AuthController {
 	@PostMapping("/forget-password")
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseSuccess forgetPassword(@Valid @RequestBody ForgetPasswordRequest req) {
-		log.info("=== FORGET PASSWORD REQUEST RECEIVED ===");
-		log.info("Request body: {}", req);
-		log.info("Username: {}", req.getUsername());
 		log.info("Forget password request for username: {}", req.getUsername());
-		log.info("Security context: {}", SecurityContextHolder.getContext().getAuthentication());
-		log.info("Request method: POST");
-		log.info("Request path: /api/auth/forget-password");
 		try {
 			authService.sendResetPasswordEmail(req.getUsername());
-			log.info("Forget password service call completed successfully");
-			return new ResponseSuccess(HttpStatus.OK, "Reset password email sent successfully!");
+			log.info("Forget password request processed successfully for username: {}", req.getUsername());
+			return new ResponseSuccess(HttpStatus.OK, "Reset password email is being sent. Please check your email for the OTP code.");
 		} catch (Exception e) {
-			log.error("Error in forget password endpoint: {}", e.getMessage(), e);
+			log.error("Error in forget password endpoint for username {}: {}", req.getUsername(), e.getMessage());
 			throw e;
 		}
 	}
