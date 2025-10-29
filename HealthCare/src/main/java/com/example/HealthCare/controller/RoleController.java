@@ -1,6 +1,7 @@
 package com.example.HealthCare.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +51,7 @@ public class RoleController {
 	@PutMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('UPDATE_ROLE')")
-	public ResponseSuccess updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest request) {
+	public ResponseSuccess updateRole(@PathVariable UUID id, @RequestBody UpdateRoleRequest request) {
 		log.info("Received request to update role with ID: {}", id);
 		log.info("Request body: {}", request);
 		log.info("Current user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
@@ -64,7 +65,7 @@ public class RoleController {
 	@GetMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('VIEW_ROLE')")
-	public ResponseSuccess getRoleById(@PathVariable Long id) {
+	public ResponseSuccess getRoleById(@PathVariable UUID id) {
 		log.info("Received request to get role with ID: {}", id);
 		RoleResponse role = roleService.getRoleById(id);
 		return new ResponseSuccess(HttpStatus.OK, "Role retrieved successfully", role);
@@ -93,7 +94,7 @@ public class RoleController {
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_ROLE')")
-	public ResponseSuccess deleteRole(@PathVariable Long id) {
+	public ResponseSuccess deleteRole(@PathVariable UUID id) {
 		log.info("Received request to delete role with ID: {}", id);
 		roleService.deleteRole(id);
 		return new ResponseSuccess(HttpStatus.OK, "Role deleted successfully");
@@ -102,7 +103,7 @@ public class RoleController {
 	@DeleteMapping("")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_ROLE')")
-	public ResponseSuccess deleteRoles(@RequestBody List<Long> ids) {
+	public ResponseSuccess deleteRoles(@RequestBody List<UUID> ids) {
 		log.info("Received request to delete multiple roles: {}", ids);
 		roleService.deleteRoles(ids);
 		return new ResponseSuccess(HttpStatus.OK, "Roles deleted successfully");

@@ -13,8 +13,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.example.HealthCare.model.Account;
-import com.example.HealthCare.repository.AccountRepository;
+import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.repository.UserAccountRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,14 +27,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
 	private final JwtUtil jwtUtil;
-	private final AccountRepository accountRepository;
+	private final UserAccountRepository userAccountRepository;
 	private final UserDetailsService userDetailsService;
 	private final TokenBlacklistService tokenBlacklistService;
 
-	public JwtAuthenticationFilter(JwtUtil jwtUtil, AccountRepository accountRepository, 
+	public JwtAuthenticationFilter(JwtUtil jwtUtil, UserAccountRepository userAccountRepository, 
 								  UserDetailsService userDetailsService, TokenBlacklistService tokenBlacklistService) {
 		this.jwtUtil = jwtUtil;
-		this.accountRepository = accountRepository;
+		this.userAccountRepository = userAccountRepository;
 		this.userDetailsService = userDetailsService;
 		this.tokenBlacklistService = tokenBlacklistService;
 	}
@@ -58,16 +58,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			return;
 		}
 		try {
-			String username = jwtUtil.extractUsername(token);
-			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-				Account account = accountRepository.findByUsername(username).orElse(null);
-				if (account != null && jwtUtil.isTokenValid(token, account)) {
-					UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+			String email = jwtUtil.extractEmail(token);
+			if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+				UserAccount userAccount = userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
+				if (userAccount != null && jwtUtil.isTokenValid(token, userAccount)) {
+					UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 					UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 							userDetails, null, userDetails.getAuthorities());
 					authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 					SecurityContextHolder.getContext().setAuthentication(authentication);
-					log.debug("Authentication set for user: {}", username);
+					log.debug("Authentication set for user: {}", email);
 				}
 			}
 		} catch (Exception ex) {

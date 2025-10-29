@@ -1,9 +1,7 @@
 package com.example.HealthCare.service.impl;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -11,7 +9,6 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +18,13 @@ import com.example.HealthCare.dto.request.UpdateUserRequest;
 import com.example.HealthCare.dto.request.UserCriteria;
 import com.example.HealthCare.dto.response.PrivilegeResponse;
 import com.example.HealthCare.dto.response.UserResponse;
-import com.example.HealthCare.enums.RoleType;
+import com.example.HealthCare.enums.AccountStatus;
+import com.example.HealthCare.enums.Gender;
+import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
-import com.example.HealthCare.model.Account;
-import com.example.HealthCare.model.Role;
-import com.example.HealthCare.model.User;
-import com.example.HealthCare.repository.AccountRepository;
-import com.example.HealthCare.repository.RoleRepository;
-import com.example.HealthCare.repository.UserRepository;
+import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,46 +35,56 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
+	private final UserAccountRepository userAccountRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final AccountRepository accountRepository;
 
 	@Override
 	@CacheEvict(value = {"users", "pendingDoctors"}, allEntries = true)
 	public void createUser(CreateUserRequest req) {
-		if (accountRepository.existsByUsername(req.getUsername())) {
-			throw new BadRequestException("Username already exists");
-		}
-		if (accountRepository.existsByEmail(req.getEmail())) {
+		// Validate email uniqueness
+		if (userAccountRepository.existsByEmail(req.getEmail())) {
 			throw new BadRequestException("Email already exists");
 		}
-		if (userRepository.existsByPhoneAndIsDeletedFalse(req.getPhone())) {
+		
+		// Validate phone uniqueness
+		if (userAccountRepository.existsByPhoneNumber(req.getPhone())) {
 			throw new BadRequestException("Phone already exists");
 		}
-		if (userRepository.existsByIdentityCardAndIsDeletedFalse(req.getIdentityCard())) {
-			throw new BadRequestException("Identity card already exists");
+
+		// Parse role
+		UserRole role = UserRole.PATIENT; // default
+		if (req.getRole() != null && !req.getRole().isBlank()) {
+			try {
+				role = UserRole.valueOf(req.getRole().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				throw new BadRequestException("Invalid role: " + req.getRole());
+			}
+		}
+		
+		// Parse gender
+		Gender gender = null;
+		if (req.getGender() != null && !req.getGender().isBlank()) {
+			try {
+				gender = Gender.valueOf(req.getGender().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				throw new BadRequestException("Invalid gender: " + req.getGender());
+			}
 		}
 
-		Role role = roleRepository.findByName(parseRoleType(req.getRole()))
-				.orElseThrow(() -> new NotFoundException("Role not found"));
-
-		Account account = new Account(req.getEmail(), req.getUsername(), passwordEncoder.encode(req.getPassword()));
-		account.setRole(role);
-		account = accountRepository.save(account);
-
-		User user = User.builder()
+		// Create UserAccount
+		UserAccount userAccount = UserAccount.builder()
+				.email(req.getEmail())
+				.phoneNumber(req.getPhone())
+				.passwordHash(passwordEncoder.encode(req.getPassword()))
 				.fullName(req.getFullName())
-				.phone(req.getPhone())
-				.identityCard(req.getIdentityCard())
-				.dateOfBirth(parseDate(req.getDateOfBirth()))
-				.gender(req.getGender())
-				.address(req.getAddress())
-				.department(req.getDepartment())
-				.account(account)
+				.gender(gender)
+				.dateOfBirth(req.getDateOfBirth())
+				.role(role)
+				.status(AccountStatus.ACTIVE)
 				.build();
 
-		userRepository.save(user);
+		userAccountRepository.save(userAccount);
+		log.info("Created user with email: {}", req.getEmail());
 	}
 
 	@Override
@@ -89,55 +94,48 @@ public class UserServiceImpl implements UserService {
 		@CacheEvict(value = "pendingDoctors", allEntries = true)
 	})
 	public void updateUser(UpdateUserRequest req) {
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(req.getId())
+				.orElseThrow(() -> new NotFoundException("User not found with id: " + req.getId()));
+
+		// Validate email uniqueness (if changed)
+		if (req.getEmail() != null && !req.getEmail().equals(userAccount.getEmail())) {
+			if (userAccountRepository.existsByEmail(req.getEmail())) {
+				throw new BadRequestException("Email is already taken by another user");
+			}
+			userAccount.setEmail(req.getEmail());
+		}
+
+		// Update fields
+		if (req.getFullName() != null) {
+			userAccount.setFullName(req.getFullName());
+		}
+		if (req.getDateOfBirth() != null) {
+			userAccount.setDateOfBirth(req.getDateOfBirth());
+		}
+		if (req.getGender() != null && !req.getGender().isBlank()) {
+			try {
+				userAccount.setGender(Gender.valueOf(req.getGender().toUpperCase()));
+			} catch (IllegalArgumentException e) {
+				throw new BadRequestException("Invalid gender: " + req.getGender());
+			}
+		}
 		if (req.getRole() != null && !req.getRole().isBlank()) {
-			String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-			Account currentAccount = accountRepository.findByUsername(currentUsername)
-					.orElseThrow(() -> new BadRequestException("Current account not found"));
-			User currentUser = currentAccount.getUser();
-			if (req.getId().equals(currentUser.getId())) {
-				throw new BadRequestException("You cannot update your role by yourself");
+			try {
+				userAccount.setRole(UserRole.valueOf(req.getRole().toUpperCase()));
+			} catch (IllegalArgumentException e) {
+				throw new BadRequestException("Invalid role: " + req.getRole());
 			}
 		}
 
-		User user = userRepository.findByIdAndIsDeletedFalse(req.getId())
-				.orElseThrow(() -> new NotFoundException("User not found with id: " + req.getId()));
-
-		String newEmail = req.getEmail() != null ? req.getEmail() : (user.getAccount() != null ? user.getAccount().getEmail() : null);
-		if (newEmail != null && accountRepository.existsByEmail(newEmail)
-				&& (user.getAccount() == null || !newEmail.equals(user.getAccount().getEmail()))) {
-			throw new BadRequestException("Email is already taken by another user");
-		}
-
-		if (req.getFullName() != null) {
-			user.setFullName(req.getFullName());
-		}
-		if (req.getDateOfBirth() != null) {
-			user.setDateOfBirth(parseDate(req.getDateOfBirth()));
-		}
-		if (req.getGender() != null) {
-			user.setGender(req.getGender());
-		}
-		if (req.getAddress() != null) {
-			user.setAddress(req.getAddress());
-		}
-		if (req.getEmail() != null && user.getAccount() != null) {
-			user.getAccount().setEmail(req.getEmail());
-		}
-
-		if (req.getRole() != null && user.getAccount() != null) {
-			Role role = roleRepository.findByName(RoleType.valueOf(req.getRole()))
-					.orElseThrow(() -> new NotFoundException("Role not found with name: " + req.getRole()));
-			user.getAccount().setRole(role);
-		}
-
-		userRepository.save(user);
+		userAccountRepository.save(userAccount);
+		log.info("Updated user: {}", userAccount.getEmail());
 	}
 
 	@Override
 	@Cacheable(value = "users", key = "#criteria.toString() + '_' + #page + '_' + #size")
 	public Page<UserResponse> getAllUsers(UserCriteria criteria, int page, int size) {
-		Page<User> users = userRepository.findAll(
-				PageRequest.of(page, size, Sort.by("id").ascending()));
+		Page<UserAccount> users = userAccountRepository.findAllByIsDeletedFalse(
+				PageRequest.of(page, size, Sort.by("createdAt").descending()));
 		return users.map(this::mapToUserResponse);
 	}
 
@@ -148,208 +146,94 @@ public class UserServiceImpl implements UserService {
 		@CacheEvict(value = "userDetails", key = "#id"),
 		@CacheEvict(value = "pendingDoctors", allEntries = true)
 	})
-	public void deleteUser(Long id) {
-		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-		Account currentAccount = accountRepository.findByUsername(currentUsername)
-				.orElseThrow(() -> new BadRequestException("Current account not found"));
-		User currentUser = currentAccount.getUser();
-		if (currentUser.getId().equals(id)) {
-			throw new BadRequestException("Cannot delete yourself");
-		}
-
-		User user = userRepository.findById(id)
+	public void deleteUser(UUID id) {
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(id)
 				.orElseThrow(() -> new NotFoundException("User not found with id: " + id));
-
-		if (user.isDeleted()) {
-			throw new BadRequestException("User with id: " + id + " has already been deleted");
-		}
-
-		if (user.getAccount() != null && user.getAccount().getRole() != null
-				&& user.getAccount().getRole().getName() == RoleType.ADMIN) {
-			throw new BadRequestException("Cannot delete administrator user");
-		}
-
-		user.setDeleted(true);
-		userRepository.save(user);
+		
+		userAccount.setIsDeleted(true);
+		userAccount.setDeletedAt(java.time.OffsetDateTime.now());
+		userAccountRepository.save(userAccount);
+		log.info("Soft deleted user: {}", userAccount.getEmail());
 	}
 
 	@Override
-	@Cacheable(value = "privileges", key = "#username")
 	public List<PrivilegeResponse> getPrivilegesByUsername(String username) {
-		Account account = accountRepository.findByUsername(username)
-				.orElseThrow(() -> new NotFoundException("Account not found"));
-		if (account.getRole() == null) {
-			return List.of();
-		}
-		return account.getRole().getPrivileges().stream()
-				.map(privilege -> new PrivilegeResponse(privilege.name(), privilege.getDescription()))
-				.collect(Collectors.toList());
+		// Note: Changed to email-based lookup
+		log.warn("getPrivilegesByUsername is deprecated - use email instead");
+		// Validate user exists
+		userAccountRepository.findByEmailAndIsDeletedFalse(username)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		
+		// Return empty list since we're using enum roles, not privilege table
+		return List.of();
 	}
 
 	@Override
 	@Cacheable(value = "userDetails", key = "#id")
-	public UserResponse getUserById(Long id) {
-		User user = userRepository.findByIdAndIsDeletedFalse(id)
+	public UserResponse getUserById(UUID id) {
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(id)
 				.orElseThrow(() -> new NotFoundException("User not found with id: " + id));
-		return mapToUserResponse(user);
+		return mapToUserResponse(userAccount);
 	}
 
 	@Override
 	@Transactional
-	@CacheEvict(value = {"users", "userDetails", "pendingDoctors"}, allEntries = true)
-	public void deleteUsers(List<Long> ids) {
-		if (ids == null || ids.isEmpty()) {
-			throw new BadRequestException("No user IDs provided");
-		}
-
-		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-		Account currentAccount = accountRepository.findByUsername(currentUsername)
-				.orElseThrow(() -> new BadRequestException("Current account not found"));
-		User currentUser = currentAccount.getUser();
-
-		if (ids.contains(currentUser.getId())) {
-			throw new BadRequestException("Cannot delete yourself");
-		}
-
-		List<User> users = userRepository.findAllById(ids);
-		if (users.size() != ids.size()) {
-			throw new NotFoundException("Some users not found");
-		}
-
-		for (User user : users) {
-			if (user.isDeleted()) {
-				throw new BadRequestException("User with ID: " + user.getId() + " is already deleted");
-			}
-			user.setDeleted(true);
-		}
-		userRepository.saveAll(users);
+	@CacheEvict(value = {"users", "pendingDoctors"}, allEntries = true)
+	public void deleteUsers(List<UUID> ids) {
+		ids.forEach(this::deleteUser);
 	}
 
 	@Override
-	@Transactional
 	@Caching(evict = {
 		@CacheEvict(value = "users", allEntries = true),
 		@CacheEvict(value = "userDetails", key = "#id"),
 		@CacheEvict(value = "pendingDoctors", allEntries = true)
 	})
-	public void restoreUser(Long id) {
-		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-		Account currentAccount = accountRepository.findByUsername(currentUsername)
-				.orElseThrow(() -> new BadRequestException("Current account not found"));
-		User currentUser = currentAccount.getUser();
-
-		if (currentUser.getId().equals(id)) {
-			throw new BadRequestException("Cannot restore yourself (ID: " + id + ")");
-		}
-
-		User user = userRepository.findById(id)
+	public void restoreUser(UUID id) {
+		UserAccount userAccount = userAccountRepository.findById(id)
 				.orElseThrow(() -> new NotFoundException("User not found with id: " + id));
-
-		if (!user.isDeleted()) {
+		
+		if (!userAccount.getIsDeleted()) {
 			throw new BadRequestException("User is not deleted");
 		}
-
-		user.setDeleted(false);
-		userRepository.save(user);
+		
+		userAccount.setIsDeleted(false);
+		userAccount.setDeletedAt(null);
+		userAccountRepository.save(userAccount);
+		log.info("Restored user: {}", userAccount.getEmail());
 	}
 
 	@Override
-	@Transactional
-	@CacheEvict(value = {"users", "userDetails", "pendingDoctors"}, allEntries = true)
-	public void restoreUsers(List<Long> ids) {
-		if (ids == null || ids.isEmpty()) {
-			throw new BadRequestException("No user IDs provided");
-		}
-
-		String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-		Account currentAccount = accountRepository.findByUsername(currentUsername)
-				.orElseThrow(() -> new BadRequestException("Current account not found"));
-		User currentUser = currentAccount.getUser();
-
-		List<User> users = userRepository.findAllById(ids);
-		if (users.size() != ids.size()) {
-			throw new NotFoundException("Some users not found");
-		}
-
-		for (User user : users) {
-			if (user.getId().equals(currentUser.getId())) {
-				throw new BadRequestException("Cannot restore yourself (ID: " + user.getId() + ")");
-			}
-			if (!user.isDeleted()) {
-				throw new BadRequestException("User with ID: " + user.getId() + " is not deleted");
-			}
-			user.setDeleted(false);
-		}
-		userRepository.saveAll(users);
-	}
-
-	private RoleType parseRoleType(String role) {
-		try {
-			return RoleType.valueOf(role);
-		} catch (IllegalArgumentException ex) {
-			throw new BadRequestException("Invalid role type: " + role);
-		}
-	}
-
-	private LocalDate parseDate(String date) {
-		try {
-			return LocalDate.parse(date, DateTimeFormatter.ofPattern("MM/dd/yyyy"));
-		} catch (Exception e) {
-			throw new BadRequestException("Invalid date format. Use MM/DD/YYYY");
-		}
-	}
-
-	private UserResponse mapToUserResponse(User user) {
-		if (user == null) {
-			throw new IllegalArgumentException("User cannot be null");
-		}
-		
-		Account account = user.getAccount();
-		String username = null;
-		String email = null;
-		String roleName = null;
-		
-		if (account != null) {
-			username = account.getUsername();
-			email = account.getEmail();
-			if (account.getRole() != null) {
-				roleName = account.getRole().getName().name();
-			}
-		}
-		
-		return UserResponse.builder()
-				.id(user.getId())
-				.username(username)
-				.fullName(user.getFullName())
-				.email(email)
-				.phone(user.getPhone())
-				.identityCard(user.getIdentityCard())
-				.dateOfBirth(user.getDateOfBirth())
-				.gender(user.getGender())
-				.address(user.getAddress())
-				.department(user.getDepartment())
-				.roleName(roleName)
-				.isDeleted(user.isDeleted())
-				.isLocked(user.isLocked())
-				.createdAt(user.getCreatedAt())
-				.updatedAt(user.getUpdatedAt())
-				.build();
+	@CacheEvict(value = {"users", "pendingDoctors"}, allEntries = true)
+	public void restoreUsers(List<UUID> ids) {
+		ids.forEach(this::restoreUser);
 	}
 
 	@Override
 	@Cacheable(value = "pendingDoctors")
-	@Transactional(readOnly = true)
 	public List<UserResponse> getPendingDoctorAccounts() {
-		log.info("Fetching pending doctor accounts");
-		try {
-			List<User> pendingDoctors = userRepository.findPendingDoctorAccounts(RoleType.DOCTOR);
-			log.info("Found {} pending doctor accounts", pendingDoctors.size());
-			return pendingDoctors.stream()
-					.map(this::mapToUserResponse)
-					.collect(Collectors.toList());
-		} catch (Exception e) {
-			log.error("Error fetching pending doctor accounts: {}", e.getMessage(), e);
-			throw e;
-		}
+		List<UserAccount> pendingDoctors = userAccountRepository
+				.findAllByRoleAndStatusAndIsDeletedFalse(UserRole.DOCTOR, AccountStatus.PENDING);
+		
+		return pendingDoctors.stream()
+				.map(this::mapToUserResponse)
+				.collect(java.util.stream.Collectors.toList());
+	}
+
+	// Helper methods
+	private UserResponse mapToUserResponse(UserAccount userAccount) {
+		UserResponse response = new UserResponse();
+		response.setId(userAccount.getId());
+		response.setEmail(userAccount.getEmail());
+		response.setFullName(userAccount.getFullName());
+		response.setPhoneNumber(userAccount.getPhoneNumber());
+		response.setGender(userAccount.getGender() != null ? userAccount.getGender().name() : null);
+		response.setDateOfBirth(userAccount.getDateOfBirth());
+		response.setRole(userAccount.getRole().name());
+		response.setStatus(userAccount.getStatus().name());
+		response.setCreatedAt(userAccount.getCreatedAt());
+		response.setUpdatedAt(userAccount.getUpdatedAt());
+		return response;
 	}
 }
+

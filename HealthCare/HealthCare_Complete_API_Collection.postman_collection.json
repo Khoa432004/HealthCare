@@ -1,0 +1,1164 @@
+{
+	"info": {
+		"_postman_id": "complete-healthcare-apis",
+		"name": "HealthCare - Complete API Collection",
+		"description": "Complete collection of all HealthCare APIs including Authentication, User Management, Role Management, and Cache Management. Updated for UUID support.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication APIs",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"if (response.data && response.data.access_token) {",
+									"    pm.environment.set(\"access_token\", response.data.access_token);",
+									"    pm.environment.set(\"refresh_token\", response.data.refresh_token);",
+									"    console.log(\"Access Token saved:\", response.data.access_token);",
+									"    console.log(\"Refresh Token saved:\", response.data.refresh_token);",
+									"} else {",
+									"    console.warn(\"Access token not found in response!\");",
+									"}",
+									"",
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 2000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/login",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login with email and password. Returns access_token and refresh_token."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/refresh",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/logout",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "logout"]
+						},
+						"description": "Logout and invalidate tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"oldPassword\": \"admin@123\",\n  \"newPassword\": \"Admin@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/change-password",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "change-password"]
+						},
+						"description": "Change password for authenticated user"
+					},
+					"response": []
+				},
+				{
+					"name": "Forget Password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/forget-password",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "forget-password"]
+						},
+						"description": "Request OTP for password reset via email"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/reset-password",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "reset-password"]
+						},
+						"description": "Reset password using email and OTP"
+					},
+					"response": []
+				},
+				{
+					"name": "Personal Information Registration",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Dr. Pham Linh\",\n  \"phone\": \"0903378359\",\n  \"identityCard\": \"177712789\",\n  \"dateOfBirth\": \"1987-05-01\",\n  \"gender\": \"FEMALE\",\n  \"address\": \"123 Nguyen Hue Street, Ho Chi Minh City, Vietnam\",\n  \"country\": \"Vietnam\",\n  \"state\": \"Ho Chi Minh City\",\n  \"city\": \"Ho Chi Minh City\",\n  \"zipCode\": \"3000\",\n  \"addressLine1\": \"123 Nguyen Hue Street\",\n  \"addressLine2\": \"District 1\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/register/personal-info",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "register", "personal-info"]
+						},
+						"description": "Register personal information for doctor"
+					},
+					"response": []
+				},
+				{
+					"name": "Auto-fill Personal Info",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/register/personal-info/177712789",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "register", "personal-info", "177712789"]
+						},
+						"description": "Auto-fill personal information using identity card number"
+					},
+					"response": []
+				},
+				{
+					"name": "Professional Information Registration",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{sample_user_uuid}}\",\n  \"username\": \"dr_pham_linh23\",\n  \"email\": \"pham.linh23@hospital.com\",\n  \"password\": \"securePassword123\",\n  \"title\": \"DOCTOR\",\n  \"currentProvince\": \"Thua Thien - Hue\",\n  \"clinicHospital\": \"Phong Kham Tam An\",\n  \"careForAdults\": true,\n  \"careForChildren\": true,\n  \"specialties\": [\"ENDOCRINOLOGY\"],\n  \"treatmentConditions\": [\"HEART FAILURE\", \"HYPERTENSION\", \"CARDIOMYOPATHY\"],\n  \"practicingCertificationId\": \"12323\",\n  \"languages\": [\"ENGLISH\", \"VIETNAMESE\"],\n  \"workFromYear\": 2002,\n  \"workToYear\": 2019,\n  \"workClinicHospital\": \"Phong Kham Tam An\",\n  \"workLocation\": \"Phong Kham Tam An\",\n  \"workSpecialties\": [\"ENDOCRINOLOGY\"],\n  \"educationalInstitution\": \"Ho Chi Minh City University of Medicine\",\n  \"graduationYear\": 2015,\n  \"specialty\": \"Cardiology Residency\",\n  \"department\": \"Cardiology\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/register/professional-info",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "register", "professional-info"]
+						},
+						"description": "Register professional information for doctor. Note: userId should be UUID format."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Doctor (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/admin/approve-doctor/{{sample_user_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "admin", "approve-doctor", "{{sample_user_uuid}}"]
+						},
+						"description": "Approve doctor account (Admin only). Replace {{sample_user_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Doctor (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Lý do từ chối\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/auth/admin/reject-doctor/{{sample_user_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "auth", "admin", "reject-doctor", "{{sample_user_uuid}}"]
+						},
+						"description": "Reject doctor account (Admin only). Replace {{sample_user_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get List Pending Doctors",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users/pending-doctors",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users", "pending-doctors"]
+						},
+						"description": "Get list of doctors pending approval"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication and authorization APIs"
+		},
+		{
+			"name": "👥 User Management APIs",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"doctor3@example.com\",\n  \"password\": \"doctor3@123\",\n  \"fullName\": \"Dr. John Doe\",\n  \"phone\": \"0123452789\",\n  \"dateOfBirth\": \"1985-01-15\",\n  \"gender\": \"male\",\n  \"role\": \"doctor\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "Create a new user (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{sample_user_uuid}}\",\n  \"fullName\": \"Dr. John Smith\",\n  \"email\": \"john.smith@example.com\",\n  \"dateOfBirth\": \"1985-01-15\",\n  \"gender\": \"male\",\n  \"role\": \"doctor\"\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "Update user information. Note: id should be UUID format."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users/{{sample_user_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users", "{{sample_user_uuid}}"]
+						},
+						"description": "Get user by UUID. Replace {{sample_user_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users (with pagination)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users?page=0&size=10",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Page size"
+								}
+							]
+						},
+						"description": "Get all users with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users/{{sample_user_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users", "{{sample_user_uuid}}"]
+						},
+						"description": "Soft delete user by UUID. Replace {{sample_user_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  \"uuid-1\",\n  \"uuid-2\",\n  \"uuid-3\"\n]"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "Soft delete multiple users by UUID array"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users/{{sample_user_uuid}}/restore",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users", "{{sample_user_uuid}}", "restore"]
+						},
+						"description": "Restore soft-deleted user by UUID"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Multiple Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  \"uuid-1\",\n  \"uuid-2\",\n  \"uuid-3\"\n]"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/users/restore",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "users", "restore"]
+						},
+						"description": "Restore multiple soft-deleted users by UUID array"
+					},
+					"response": []
+				}
+			],
+			"description": "User management APIs (CRUD operations)"
+		},
+		{
+			"name": "🔑 Role Management APIs",
+			"item": [
+				{
+					"name": "Create Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"DOCTOR\",\n  \"description\": \"Medical doctor role\",\n  \"privileges\": [\n    \"VIEW_USER\",\n    \"CREATE_USER\",\n    \"MODIFY_USER\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles"]
+						},
+						"description": "Create a new role (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"DOCTOR\",\n  \"description\": \"Updated doctor role description\",\n  \"privileges\": [\n    \"VIEW_USER\",\n    \"CREATE_USER\",\n    \"MODIFY_USER\",\n    \"DELETE_USER\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles/{{sample_role_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles", "{{sample_role_uuid}}"]
+						},
+						"description": "Update role information. Replace {{sample_role_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles/{{sample_role_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles", "{{sample_role_uuid}}"]
+						},
+						"description": "Get role by UUID. Replace {{sample_role_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Roles (with pagination)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles?page=0&size=10",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Page size"
+								}
+							]
+						},
+						"description": "Get all roles with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles/{{sample_role_uuid}}",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles", "{{sample_role_uuid}}"]
+						},
+						"description": "Delete role by UUID. Replace {{sample_role_uuid}} with actual UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Roles",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  \"uuid-1\",\n  \"uuid-2\",\n  \"uuid-3\"\n]"
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles"]
+						},
+						"description": "Delete multiple roles by UUID array"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Privileges by Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/api/v1/roles/privileges?role=DOCTOR",
+							"host": ["{{BaseUrl}}"],
+							"path": ["api", "v1", "roles", "privileges"],
+							"query": [
+								{
+									"key": "role",
+									"value": "DOCTOR",
+									"description": "Role name (ADMIN, DOCTOR, PATIENT)"
+								}
+							]
+						},
+						"description": "Get privileges for a specific role"
+					},
+					"response": []
+				}
+			],
+			"description": "Role and privilege management APIs"
+		},
+		{
+			"name": "💾 Cache Management APIs",
+			"item": [
+				{
+					"name": "📊 READ Operations",
+					"item": [
+						{
+							"name": "Get All Cache Names",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/names",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "names"]
+								},
+								"description": "Get list of all cache names in the system"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Cache Statistics",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/stats",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "stats"]
+								},
+								"description": "View detailed statistics of all caches"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Cache Size by Name",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/size/users",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "size", "users"]
+								},
+								"description": "Get size of specific cache. Replace 'users' with: userDetails, roles, privileges, pendingDoctors, jwtBlacklist"
+							},
+							"response": []
+						}
+					],
+					"description": "Read cache information"
+				},
+				{
+					"name": "🗑️ DELETE Operations",
+					"item": [
+						{
+							"name": "Clear All Caches",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/all",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "all"]
+								},
+								"description": "Clear all caches in the system. Use with caution!"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear User Caches",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/users",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "users"]
+								},
+								"description": "Clear all user-related caches (users, userDetails, pendingDoctors)"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear Role Caches",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/roles",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "roles"]
+								},
+								"description": "Clear all role-related caches"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear Privilege Caches",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/privileges",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "privileges"]
+								},
+								"description": "Clear all privilege-related caches"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear Specific Cache by Name",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/users",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "users"]
+								},
+								"description": "Clear specific cache by name. Replace 'users' with cache name"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear User Cache by User ID",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/user/{{sample_user_uuid}}",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "user", "{{sample_user_uuid}}"]
+								},
+								"description": "Clear cache for specific user by UUID"
+							},
+							"response": []
+						},
+						{
+							"name": "Clear User Cache by Username",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/username/admin",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "username", "admin"]
+								},
+								"description": "Clear cache for specific user by username"
+							},
+							"response": []
+						}
+					],
+					"description": "Delete/clear cache operations"
+				},
+				{
+					"name": "🔄 UTILITY Operations",
+					"item": [
+						{
+							"name": "Warm Up All Caches",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{BaseUrl}}/api/cache/warmup",
+									"host": ["{{BaseUrl}}"],
+									"path": ["api", "cache", "warmup"]
+								},
+								"description": "Warm up all caches by loading data from database"
+							},
+							"response": []
+						}
+					],
+					"description": "Cache utility operations"
+				}
+			],
+			"description": "Cache management and monitoring APIs"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-set base URL if not defined",
+					"if (!pm.environment.get('BaseUrl')) {",
+					"    pm.environment.set('BaseUrl', 'http://localhost:8080');",
+					"}",
+					"",
+					"// Set sample UUIDs for testing (replace with actual UUIDs from your system)",
+					"if (!pm.environment.get('sample_user_uuid')) {",
+					"    pm.environment.set('sample_user_uuid', '00000000-0000-0000-0000-000000000001');",
+					"}",
+					"if (!pm.environment.get('sample_role_uuid')) {",
+					"    pm.environment.set('sample_role_uuid', '00000000-0000-0000-0000-000000000001');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test('Response status code is successful', function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BaseUrl",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": "Base URL of the HealthCare API server"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT access token (set automatically after login)"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT refresh token (set automatically after login)"
+		},
+		{
+			"key": "sample_user_uuid",
+			"value": "00000000-0000-0000-0000-000000000001",
+			"type": "string",
+			"description": "Sample user UUID for testing (replace with actual UUID)"
+		},
+		{
+			"key": "sample_role_uuid",
+			"value": "00000000-0000-0000-0000-000000000001",
+			"type": "string",
+			"description": "Sample role UUID for testing (replace with actual UUID)"
+		}
+	]
+}
+

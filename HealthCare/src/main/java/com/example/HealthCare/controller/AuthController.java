@@ -1,6 +1,7 @@
 package com.example.HealthCare.controller;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpStatus;
@@ -9,12 +10,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,13 +55,13 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
 		try {
-			Map<String, Object> tokenResponse = authService.login(req.getUsername(), req.getPassword());
+			Map<String, Object> tokenResponse = authService.login(req.getEmail(), req.getPassword());
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Login successfully!", tokenResponse));
 		} catch (Exception ex) {
-			log.warn("Login failed for user {}: {}", req.getUsername(), ex.getMessage());
+			log.warn("Login failed for user {}: {}", req.getEmail(), ex.getMessage());
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
 				"error", "unauthorized",
-				"message", "Invalid username or password"
+				"message", "Invalid email or password"
 			));
 		}
 	}
@@ -76,7 +75,7 @@ public class AuthController {
 				return ResponseEntity.status(HttpStatus.CREATED)
 					.body(new ResponseSuccess(HttpStatus.CREATED, "Registration successful!", response));
 			} catch (Exception ex) {
-				log.warn("Registration failed for user {}: {}", req.getUsername(), ex.getMessage());
+				log.warn("Registration failed for user {}: {}", req.getEmail(), ex.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 					"error", "registration_failed",
 					"message", ex.getMessage()
@@ -105,28 +104,16 @@ public class AuthController {
 		});
 	}
 
-	@GetMapping("/register/personal-info/{identityCard}")
-	public ResponseEntity<?> getPersonalInfoByIdentityCard(@PathVariable String identityCard) {
-		try {
-			PersonalInfoResponse response = authService.getPersonalInfoByIdentityCard(identityCard);
-			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Personal information retrieved successfully!", response));
-		} catch (Exception ex) {
-			log.warn("Failed to get personal info for identity card {}: {}", identityCard, ex.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-				"error", "personal_info_not_found",
-				"message", ex.getMessage()
-			));
-		}
-	}
-
+	// Removed getPersonalInfoByIdentityCard - not needed in new UserAccount flow
+	
 	@PostMapping("/register/professional-info")
 	@Async("controllerTaskExecutor")
 	public CompletableFuture<ResponseEntity<?>> registerProfessionalInfo(@Valid @RequestBody ProfessionalInfoRequest req) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				Map<String, Object> response = authService.registerProfessionalInfo(req);
+				authService.registerProfessionalInfo(req); // Changed to void return
 				return ResponseEntity.status(HttpStatus.CREATED)
-					.body(new ResponseSuccess(HttpStatus.CREATED, "Professional registration completed successfully!", response));
+					.body(new ResponseSuccess(HttpStatus.CREATED, "Professional registration completed successfully!"));
 			} catch (Exception ex) {
 				log.warn("Professional info registration failed for user ID {}: {}", req.getUserId(), ex.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
@@ -148,20 +135,23 @@ public class AuthController {
 	@PutMapping("/change-password")
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseSuccess changePassword(@RequestBody ChangePasswordRequest req) {
-		authService.changePassword(req);
+		// Extract email from security context or request
+		String email = req.getEmail(); // Assuming ChangePasswordRequest has email field
+		authService.changePassword(email, req);
 		return new ResponseSuccess(HttpStatus.OK, "Change password successfully!");
 	}
 
 	@PostMapping("/forget-password")
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseSuccess forgetPassword(@Valid @RequestBody ForgetPasswordRequest req) {
-		log.info("Forget password request for username: {}", req.getUsername());
+		String email = req.getEmail(); // Changed from getUsername to getEmail
+		log.info("Forget password request for email: {}", email);
 		try {
-			authService.sendResetPasswordEmail(req.getUsername());
-			log.info("Forget password request processed successfully for username: {}", req.getUsername());
+			authService.forgetPassword(email);
+			log.info("Forget password request processed successfully for email: {}", email);
 			return new ResponseSuccess(HttpStatus.OK, "Reset password email is being sent. Please check your email for the OTP code.");
 		} catch (Exception e) {
-			log.error("Error in forget password endpoint for username {}: {}", req.getUsername(), e.getMessage());
+			log.error("Error in forget password endpoint for email {}: {}", email, e.getMessage());
 			throw e;
 		}
 	}
@@ -169,19 +159,19 @@ public class AuthController {
 	@PostMapping("/reset-password")
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseSuccess resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
-		authService.resetPasswordWithOtp(req.getUsername(), req.getOtp(), req.getNewPassword());
+		String email = req.getEmail(); // Changed from getUsername to getEmail
+		authService.resetPassword(email, req.getOtp(), req.getNewPassword());
 		return new ResponseSuccess(HttpStatus.OK, "Reset password successfully!");
 	}
 
 	@PostMapping("/logout")
 	@ResponseStatus(HttpStatus.OK)
-	public ResponseSuccess logout(@RequestHeader(value = "Authorization", required = false) String authorization,
-								 @RequestBody(required = false) RefreshTokenRequest request) {
+	public ResponseSuccess logout(@RequestBody(required = false) RefreshTokenRequest request) {
 		String refreshToken = null;
 		if (request != null) {
 			refreshToken = request.getRefreshToken();
 		}
-		authService.logout(authorization, refreshToken);
+		authService.logout(refreshToken); // Changed to single parameter
 		return new ResponseSuccess(HttpStatus.OK, "Logout successfully!");
 	}
 
@@ -189,10 +179,10 @@ public class AuthController {
 
 	@PostMapping("/admin/approve-doctor/{userId}")
 	@PreAuthorize("hasAuthority('APPROVE_DOCTOR')")
-	public ResponseEntity<?> approveDoctorAccount(@PathVariable Long userId) {
+	public ResponseEntity<?> approveDoctorAccount(@PathVariable UUID userId) {
 		try {
-			Map<String, Object> response = authService.approveDoctorAccount(userId);
-			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account approved successfully!", response));
+			authService.approveDoctorAccount(userId); // Changed to void return
+			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account approved successfully!"));
 		} catch (Exception ex) {
 			log.warn("Failed to approve doctor account for user ID {}: {}", userId, ex.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
@@ -204,11 +194,11 @@ public class AuthController {
 
 	@PostMapping("/admin/reject-doctor/{userId}")
 	@PreAuthorize("hasAuthority('REJECT_DOCTOR')")
-	public ResponseEntity<?> rejectDoctorAccount(@PathVariable Long userId, @RequestBody Map<String, String> body) {
+	public ResponseEntity<?> rejectDoctorAccount(@PathVariable UUID userId, @RequestBody Map<String, String> body) {
 		try {
 			String reason = body.getOrDefault("reason", "No reason provided");
-			Map<String, Object> response = authService.rejectDoctorAccount(userId, reason);
-			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account rejected successfully!", response));
+			authService.rejectDoctorAccount(userId, reason); // Changed to void return
+			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account rejected successfully!"));
 		} catch (Exception ex) {
 			log.warn("Failed to reject doctor account for user ID {}: {}", userId, ex.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(

@@ -1,6 +1,7 @@
 package com.example.HealthCare.service;
 
 import java.util.Map;
+import java.util.UUID;
 
 import com.example.HealthCare.dto.request.ChangePasswordRequest;
 import com.example.HealthCare.dto.request.PersonalInfoRequest;
@@ -8,21 +9,33 @@ import com.example.HealthCare.dto.request.ProfessionalInfoRequest;
 import com.example.HealthCare.dto.request.RegisterRequest;
 import com.example.HealthCare.dto.response.PersonalInfoResponse;
 
+/**
+ * Authentication Service - Refactored for UserAccount model
+ * Changes:
+ * - login now uses email instead of username
+ * - logout simplified (single refreshToken parameter)
+ * - changePassword uses email from ChangePasswordRequest
+ * - Methods return void where Map<String, Object> was unnecessary
+ */
 public interface AuthService {
-	Map<String, Object> login(String username, String password);
+	// Authentication
+	Map<String, Object> login(String email, String password);
 	Map<String, Object> refreshToken(String refreshToken);
-	void changePassword(ChangePasswordRequest req);
-	void logout(String accessToken, String refreshToken);
-	void sendResetPasswordEmail(String username);
-	void resetPasswordWithOtp(String username, String otp, String newPassword);
+	void logout(String refreshToken);
+	
+	// Password management
+	void changePassword(String email, ChangePasswordRequest request);
+	void forgetPassword(String email);
+	void resetPassword(String email, String otp, String newPassword);
+	
+	// Registration
 	Map<String, Object> register(RegisterRequest registerRequest);
 	
-	// New 2-step registration methods
+	// New 2-step registration methods (to be implemented)
 	PersonalInfoResponse registerPersonalInfo(PersonalInfoRequest request);
-	PersonalInfoResponse getPersonalInfoByIdentityCard(String identityCard);
-	Map<String, Object> registerProfessionalInfo(ProfessionalInfoRequest request);
+	void registerProfessionalInfo(ProfessionalInfoRequest request);
 	
 	// Admin approval methods
-	Map<String, Object> approveDoctorAccount(Long userId);
-	Map<String, Object> rejectDoctorAccount(Long userId, String reason);
+	void approveDoctorAccount(UUID userId);
+	void rejectDoctorAccount(UUID userId, String reason);
 }

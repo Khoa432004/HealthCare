@@ -1,6 +1,7 @@
 package com.example.HealthCare.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 
@@ -14,11 +15,11 @@ public interface UserService {
 	void createUser(CreateUserRequest req);
 	void updateUser(UpdateUserRequest req);
 	Page<UserResponse> getAllUsers(UserCriteria criteria, int page, int size);
-	void deleteUser(Long id);
+	void deleteUser(UUID id);
 	List<PrivilegeResponse> getPrivilegesByUsername(String username);
-	UserResponse getUserById(Long id);
-	void deleteUsers(List<Long> ids);
-	void restoreUser(Long id);
-	void restoreUsers(List<Long> ids);
+	UserResponse getUserById(UUID id);
+	void deleteUsers(List<UUID> ids);
+	void restoreUser(UUID id);
+	void restoreUsers(List<UUID> ids);
 	List<UserResponse> getPendingDoctorAccounts();
 }
