@@ -64,6 +64,10 @@ Frontend/.turbo
 **/.env
 **/.env.local
 
+# Docker volumes
+**/data/
+**/volumes/
+
 # OS
 .DS_Store
 Thumbs.db
