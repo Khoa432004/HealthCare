@@ -1,6 +1,7 @@
 package com.example.HealthCare.dto.request;
 
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -16,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class ProfessionalInfoRequest {
 
     @NotNull(message = "User ID is required")
-    private Long userId;
+    private UUID userId;
 
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")

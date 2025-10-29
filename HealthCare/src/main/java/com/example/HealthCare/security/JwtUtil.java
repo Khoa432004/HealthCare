@@ -3,14 +3,13 @@ package com.example.HealthCare.security;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.example.HealthCare.model.Account;
+import com.example.HealthCare.model.UserAccount;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -34,16 +33,19 @@ public class JwtUtil {
 		return new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
 	}
 
-	public String generateToken(Account account) {
-		List<String> roles = account.getRole() == null ? List.of() : List.of(account.getRole().getName().name());
-		List<String> privileges = account.getRole() == null || account.getRole().getPrivileges() == null ? List.of() : account.getRole().getPrivileges().stream().map(Enum::name).collect(Collectors.toList());
+	public String generateToken(UserAccount userAccount) {
+		List<String> roles = userAccount.getRole() == null ? 
+			List.of() : 
+			List.of(userAccount.getRole().name());
+		
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + expirationMs);
 
 		return Jwts.builder()
-			.setSubject(account.getUsername())
+			.setSubject(userAccount.getEmail())
+			.claim("userId", userAccount.getId().toString())
+			.claim("fullName", userAccount.getFullName())
 			.claim("roles", roles)
-			.claim("privileges", privileges)
 			.claim("type", "access")
 			.setIssuedAt(now)
 			.setExpiration(expiry)
@@ -51,12 +53,13 @@ public class JwtUtil {
 			.compact();
 	}
 
-	public String generateRefreshToken(Account account) {
+	public String generateRefreshToken(UserAccount userAccount) {
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + refreshExpirationMs);
 
 		return Jwts.builder()
-			.setSubject(account.getUsername())
+			.setSubject(userAccount.getEmail())
+			.claim("userId", userAccount.getId().toString())
 			.claim("type", "refresh")
 			.setIssuedAt(now)
 			.setExpiration(expiry)
@@ -64,17 +67,22 @@ public class JwtUtil {
 			.compact();
 	}
 
-	public String extractUsername(String token) {
+	public String extractEmail(String token) {
 		return getAllClaims(token).getSubject();
+	}
+	
+	// Backward compatibility - alias for extractEmail
+	public String extractUsername(String token) {
+		return extractEmail(token);
 	}
 
 	public Date getExpirationFromToken(String token) {
 		return getAllClaims(token).getExpiration();
 	}
 
-	public boolean isTokenValid(String token, Account account) {
-		final String username = extractUsername(token);
-		return username.equals(account.getUsername()) && !isTokenExpired(token);
+	public boolean isTokenValid(String token, UserAccount userAccount) {
+		final String email = extractEmail(token);
+		return email.equals(userAccount.getEmail()) && !isTokenExpired(token);
 	}
 
 	public boolean isRefreshToken(String token) {

@@ -2,6 +2,7 @@ package com.example.HealthCare.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -60,7 +61,7 @@ public class UserController {
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_USER')")
-	public ResponseSuccess deleteUser(@PathVariable Long id) {
+	public ResponseSuccess deleteUser(@PathVariable UUID id) {
 		userService.deleteUser(id);
 		return new ResponseSuccess(HttpStatus.OK, "Delete user successfully");
 	}
@@ -68,7 +69,7 @@ public class UserController {
 	@DeleteMapping
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_USER')")
-	public ResponseSuccess deleteUsers(@RequestBody List<Long> ids) {
+	public ResponseSuccess deleteUsers(@RequestBody List<UUID> ids) {
 		userService.deleteUsers(ids);
 		return new ResponseSuccess(HttpStatus.OK, "Delete users successfully");
 	}
@@ -76,7 +77,7 @@ public class UserController {
 	@PostMapping("/{id}/restore")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_USER')")
-	public ResponseSuccess restoreUser(@PathVariable Long id) {
+	public ResponseSuccess restoreUser(@PathVariable UUID id) {
 		userService.restoreUser(id);
 		return new ResponseSuccess(HttpStatus.OK, "Restore user successfully");
 	}
@@ -84,14 +85,14 @@ public class UserController {
 	@PostMapping("/restore")
 	@ResponseStatus(HttpStatus.OK)
 	@PreAuthorize("hasAuthority('DELETE_USER')")
-	public ResponseSuccess restoreUsers(@RequestBody List<Long> ids) {
+	public ResponseSuccess restoreUsers(@RequestBody List<UUID> ids) {
 		userService.restoreUsers(ids);
 		return new ResponseSuccess(HttpStatus.OK, "Restore users successfully");
 	}
 
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('VIEW_USER')")
-	public ResponseSuccess getUserById(@PathVariable Long id) {
+	public ResponseSuccess getUserById(@PathVariable UUID id) {
 		log.info("get user by id: {}", id);
 		UserResponse user = userService.getUserById(id);
 		return new ResponseSuccess(HttpStatus.OK, "Get user successfully", user);

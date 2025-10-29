@@ -1,9 +1,8 @@
 package com.example.HealthCare.dto.response;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import com.example.HealthCare.enums.Gender;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,19 +14,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse {
-	private Long id;
-	private String username;
-	private String fullName;
+	private UUID id;
 	private String email;
-	private String phone;
-	private String identityCard;
+	private String fullName;
+	private String phoneNumber;
+	private String gender; // Gender enum as string
 	private LocalDate dateOfBirth;
-	private Gender gender;
-	private String address;
-	private String department;
-	private String roleName;
-	private boolean isDeleted;
-	private boolean isLocked;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
+	private String role; // UserRole enum as string
+	private String status; // AccountStatus enum as string
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
+	
+	// Deprecated fields (for backward compatibility, if needed)
+	@Deprecated
+	private String username; // Maps to email
+	@Deprecated
+	private String phone; // Maps to phoneNumber
+	@Deprecated
+	private String roleName; // Maps to role
 }

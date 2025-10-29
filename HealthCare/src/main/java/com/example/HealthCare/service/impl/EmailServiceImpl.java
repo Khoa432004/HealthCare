@@ -50,4 +50,66 @@ public class EmailServiceImpl implements EmailService {
             // In production, you might want to add retry logic or dead letter queue
         }
     }
+    
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendOtpEmail(String email, String otp) {
+        log.info("Sending OTP email to: {}", email);
+        
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("HealthCare - Your OTP Code");
+        message.setText(String.format(
+            """
+            Hello,
+
+            Your OTP (One-Time Password) for HealthCare is: %s
+
+            This code will expire in 15 minutes.
+
+            If you did not request this, please ignore this email.
+
+            Best regards,
+            HealthCare Team""",
+            otp
+        ));
+        
+        try {
+            mailSender.send(message);
+            log.info("Successfully sent OTP email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendRejectionEmail(String email, String reason) {
+        log.info("Sending rejection email to: {}", email);
+        
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("HealthCare - Account Application Status");
+        message.setText(String.format(
+            """
+            Hello,
+
+            We regret to inform you that your account application has been rejected.
+
+            Reason: %s
+
+            If you have any questions, please contact our support team.
+
+            Best regards,
+            HealthCare Team""",
+            reason
+        ));
+        
+        try {
+            mailSender.send(message);
+            log.info("Successfully sent rejection email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to {}: {}", email, e.getMessage(), e);
+        }
+    }
 }

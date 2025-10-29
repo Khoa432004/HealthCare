@@ -1,14 +1,14 @@
 package com.example.HealthCare.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
@@ -26,24 +26,24 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class BaseEntity implements Serializable {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue
 	@Column(name = "id")
-	private Long id;
+	private UUID id;
 
 	@Column(name = "created_at", updatable = false)
-	private LocalDateTime createdAt;
+	private OffsetDateTime createdAt;
 
 	@Column(name = "updated_at")
-	private LocalDateTime updatedAt;
+	private OffsetDateTime updatedAt;
 
 	@PrePersist
 	public void prePersist() {
-		this.createdAt = LocalDateTime.now();
-		this.updatedAt = LocalDateTime.now();
+		this.createdAt = OffsetDateTime.now();
+		this.updatedAt = OffsetDateTime.now();
 	}
 
 	@PreUpdate
 	public void preUpdate() {
-		this.updatedAt = LocalDateTime.now();
+		this.updatedAt = OffsetDateTime.now();
 	}
 }

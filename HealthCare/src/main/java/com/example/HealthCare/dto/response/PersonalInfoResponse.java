@@ -1,6 +1,7 @@
 package com.example.HealthCare.dto.response;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.example.HealthCare.enums.Gender;
 
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PersonalInfoResponse {
     
-    private Long userId;
+    private UUID userId;
     private String fullName;
     private String phone;
     private String identityCard;

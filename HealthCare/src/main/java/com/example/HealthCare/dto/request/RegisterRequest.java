@@ -37,6 +37,9 @@ public class RegisterRequest {
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
     private String phone;
+    
+    // Optional role field (defaults to PATIENT if not provided)
+    private String role;
 
     @NotBlank(message = "Identity card is required")
     @Size(max = 20, message = "Identity card must not exceed 20 characters")
@@ -53,4 +56,9 @@ public class RegisterRequest {
 
     @NotBlank(message = "Department is required")
     private String department;
+    
+    // Alias method for backward compatibility
+    public String getPhoneNumber() {
+        return this.phone;
+    }
 }

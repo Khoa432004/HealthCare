@@ -1,7 +1,8 @@
 package com.example.HealthCare.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import com.example.HealthCare.enums.Privilege;
 
@@ -15,10 +16,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoleResponse {
-	private Long id;
+	private UUID id;
 	private String name;
 	private String description;
 	private List<Privilege> privileges;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 }
