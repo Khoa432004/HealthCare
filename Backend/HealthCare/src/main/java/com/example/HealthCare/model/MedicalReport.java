@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class MedicalReport extends BaseEntity {
 
-    @Column(name = "appointment_id", nullable = false, unique = true)
+    @Column(name = "appointment_id", nullable = false)
     private UUID appointmentId;
 
     @Column(name = "doctor_id", nullable = false)
@@ -47,8 +47,8 @@ public class MedicalReport extends BaseEntity {
     @Column(name = "province")
     private String province;
 
-    @Column(name = "chronic_conditions", columnDefinition = "TEXT[]")
-    private String[] chronicConditions;
+    @Column(name = "chronic_conditions")
+    private String chronicConditions;
 
     @Column(name = "illness")
     private String illness;
@@ -74,8 +74,7 @@ public class MedicalReport extends BaseEntity {
     @Column(name = "follow_up_date")
     private LocalDate followUpDate;
 
-    @Column(name = "update_at")
-    private OffsetDateTime updateAt;
+    
 
     @Column(name = "completed_at")
     private OffsetDateTime completedAt;

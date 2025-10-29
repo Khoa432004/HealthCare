@@ -3,8 +3,7 @@ package com.example.HealthCare.enums;
 public enum AccountStatus {
     PENDING("pending"),
     ACTIVE("active"),
-    INACTIVE("inactive"),
-    SUSPENDED("suspended");
+    INACTIVE("inactive");
 
     private final String value;
 

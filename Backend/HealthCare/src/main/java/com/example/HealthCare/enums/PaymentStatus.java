@@ -4,7 +4,8 @@ public enum PaymentStatus {
     PENDING("pending"),
     PAID("paid"),
     FAILED("failed"),
-    REFUNDED("refunded");
+    REFUNDED("refunded"),
+    PENDING_REFUND("pending_refund");
 
     private final String value;
 

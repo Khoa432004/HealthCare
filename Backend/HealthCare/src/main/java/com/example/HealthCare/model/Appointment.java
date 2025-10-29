@@ -73,6 +73,18 @@ public class Appointment extends BaseEntity {
     @Column(name = "cancellation_reason")
     private String cancellationReason;
 
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "started_at", nullable = false)
+    private OffsetDateTime startedAt;
+
+    @Column(name = "ended_at", nullable = false)
+    private OffsetDateTime endedAt;
+
+    @Column(name = "cancellation_by", nullable = false)
+    private String cancellationBy;
+
     @Column(name = "created_by")
     private UUID createdBy;
 
