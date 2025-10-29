@@ -6,31 +6,43 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { authService } from "@/services/auth.service"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function LoginForm() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("Pham.Linh@company.com")
-  const [password, setPassword] = useState("password123")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
     
     try {
-      // Handle login logic here
-      console.log("Login attempt:", { email, password })
+      // Call login API
+      const response = await authService.login({ email, password })
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirect to dashboard after successful login
-      // window.location.href = "/doctor-dashboard"
-    } catch (error) {
+      if (response.data) {
+        console.log("Login successful:", response.message)
+        
+        // Get user role and redirect to appropriate dashboard
+        const userRole = response.data.user.role
+        const dashboardRoute = authService.getDashboardRoute(userRole)
+        
+        // Redirect to dashboard
+        router.push(dashboardRoute)
+      }
+    } catch (error: any) {
       console.error("Login error:", error)
+      setError(error.message || "Đăng nhập không thành công. Vui lòng kiểm tra lại email và mật khẩu.")
     } finally {
       setIsLoading(false)
     }
@@ -53,6 +65,14 @@ export function LoginForm() {
 
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Email Field */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-slate-700 font-semibold text-sm">
