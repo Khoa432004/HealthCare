@@ -3,20 +3,37 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { LoadingSpinner } from "@/components/loading-spinner"
+import { AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { authService } from "@/services/auth.service"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     otp: "",
     newPassword: "",
     confirmPassword: "",
   })
+
+  // Get email from URL params if available
+  useEffect(() => {
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setFormData(prev => ({ ...prev, email: emailParam }))
+    }
+  }, [searchParams])
 
   const passwordsMatch = formData.newPassword === formData.confirmPassword && formData.newPassword.length > 0
 
@@ -25,27 +42,44 @@ export default function ResetPasswordPage() {
   }
 
   const handleResetPassword = async () => {
-    if (!passwordsMatch || formData.newPassword.length < 8) return
+    // Validation
+    if (!formData.email) {
+      setError("Vui lòng nhập email")
+      return
+    }
+    
+    if (!formData.otp || formData.otp.length !== 6) {
+      setError("Vui lòng nhập mã OTP 6 số")
+      return
+    }
+    
+    if (formData.newPassword.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự")
+      return
+    }
+    
+    if (!passwordsMatch) {
+      setError("Mật khẩu xác nhận không khớp")
+      return
+    }
+
+    setError(null)
+    setSuccess(null)
+    setIsLoading(true)
 
     try {
-      const resetData = {
-        username: formData.username,
-        otp: formData.otp,
-        newPassword: formData.newPassword,
-      }
-
-      console.log("Submitting password reset:", resetData)
-      // Here you would make the API call to /api/auth/reset-password
-      // const response = await fetch('/api/auth/reset-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(resetData)
-      // })
-
-      // Redirect to login on success
-      console.log("Password reset successful")
-    } catch (error) {
-      console.error("Error resetting password:", error)
+      await authService.resetPassword(formData.email, formData.otp, formData.newPassword)
+      setSuccess("Mật khẩu đã được đặt lại thành công! Đang chuyển đến trang đăng nhập...")
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    } catch (error: any) {
+      console.error("Reset password error:", error)
+      setError(error.message || "Không thể đặt lại mật khẩu. Vui lòng kiểm tra mã OTP và thử lại.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -77,43 +111,64 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-lg sm:text-xl font-bold text-[#0b0c0c]">Create New Password</h1>
-              <p className="text-[#09404c] text-xs">Enter your new password to complete the reset process</p>
+              <h1 className="text-lg sm:text-xl font-bold text-[#0b0c0c]">Tạo Mật Khẩu Mới</h1>
+              <p className="text-[#09404c] text-xs">Nhập mã OTP và mật khẩu mới của bạn</p>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive" className="bg-red-50 border-red-200">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success Alert */}
+            {success && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-sm text-green-700">{success}</AlertDescription>
+              </Alert>
+            )}
 
             <div className="space-y-4">
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <Label htmlFor="username" className="text-[#0b0c0c] font-medium text-sm">
-                    Username
+                  <Label htmlFor="email" className="text-[#0b0c0c] font-medium text-sm">
+                    Email
                   </Label>
                   <Input
-                    id="username"
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
-                    placeholder="admin"
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="example@email.com"
                     className="bg-white/80 border-0 rounded-xl px-3 py-2 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                    disabled={isLoading}
+                    required
                   />
                 </div>
 
                 <div className="space-y-1">
                   <Label htmlFor="otp" className="text-[#0b0c0c] font-medium text-sm">
-                    OTP Code
+                    Mã OTP
                   </Label>
                   <Input
                     id="otp"
                     type="text"
                     value={formData.otp}
                     onChange={(e) => handleInputChange("otp", e.target.value)}
-                    placeholder="577928"
+                    placeholder="Nhập mã OTP 6 số"
+                    maxLength={6}
                     className="bg-white/80 border-0 rounded-xl px-3 py-2 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                    disabled={isLoading}
+                    required
                   />
                 </div>
 
                 <div className="space-y-1">
                   <Label htmlFor="newPassword" className="text-[#0b0c0c] font-medium text-sm">
-                    New Password
+                    Mật khẩu mới
                   </Label>
                   <div className="relative">
                     <Input
@@ -121,13 +176,16 @@ export default function ResetPasswordPage() {
                       type={showPassword ? "text" : "password"}
                       value={formData.newPassword}
                       onChange={(e) => handleInputChange("newPassword", e.target.value)}
-                      placeholder="Admin@123"
+                      placeholder="Nhập mật khẩu mới"
                       className="bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                      disabled={isLoading}
+                      required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#09404c] hover:text-[#0b0c0c]"
+                      disabled={isLoading}
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -136,7 +194,7 @@ export default function ResetPasswordPage() {
 
                 <div className="space-y-1">
                   <Label htmlFor="confirmPassword" className="text-[#0b0c0c] font-medium text-sm">
-                    Confirm Password
+                    Xác nhận mật khẩu
                   </Label>
                   <div className="relative">
                     <Input
@@ -144,51 +202,62 @@ export default function ResetPasswordPage() {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      placeholder="Confirm new password"
+                      placeholder="Nhập lại mật khẩu mới"
                       className="bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                      disabled={isLoading}
+                      required
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#09404c] hover:text-[#0b0c0c]"
+                      disabled={isLoading}
                     >
                       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                   {formData.confirmPassword && !passwordsMatch && (
-                    <p className="text-xs text-red-500">Passwords do not match</p>
+                    <p className="text-xs text-red-500">Mật khẩu không khớp</p>
                   )}
                   {passwordsMatch && formData.confirmPassword && (
-                    <p className="text-xs text-green-500">Passwords match</p>
+                    <p className="text-xs text-green-500">Mật khẩu khớp</p>
                   )}
                 </div>
 
                 <div className="text-xs text-[#09404c] space-y-1">
-                  <p>Password must contain:</p>
+                  <p>Mật khẩu phải chứa:</p>
                   <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs">
-                    <li>At least 8 characters</li>
-                    <li>One uppercase letter</li>
-                    <li>One lowercase letter</li>
-                    <li>One number</li>
+                    <li>Ít nhất 6 ký tự</li>
+                    <li>Một chữ hoa</li>
+                    <li>Một chữ thường</li>
+                    <li>Một số</li>
                   </ul>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-3">
-                <Link href="/verify-otp" className="flex-1">
+                <Link href="/forgot-password" className="flex-1">
                   <Button
                     variant="outline"
                     className="w-full bg-transparent border-2 border-[#16a1bd] text-[#16a1bd] hover:bg-[#16a1bd] hover:text-white rounded-xl py-2 font-semibold transition-colors duration-200 text-sm h-9"
+                    disabled={isLoading}
                   >
-                    Back
+                    Quay lại
                   </Button>
                 </Link>
                 <Button
                   onClick={handleResetPassword}
                   className="flex-1 bg-[#0d6171] hover:bg-[#09404c] text-white rounded-xl py-2 font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm h-9"
-                  disabled={!passwordsMatch || formData.newPassword.length < 8 || !formData.username || !formData.otp}
+                  disabled={isLoading}
                 >
-                  Reset Password
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <LoadingSpinner size="sm" className="text-white" />
+                      <span>Đang xử lý...</span>
+                    </div>
+                  ) : (
+                    "Đặt lại mật khẩu"
+                  )}
                 </Button>
               </div>
             </div>
@@ -217,5 +286,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

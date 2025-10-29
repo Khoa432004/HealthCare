@@ -32,13 +32,19 @@ export function LoginForm() {
       
       if (response.data) {
         console.log("Login successful:", response.message)
+        console.log("User info:", response.data.user)
         
         // Get user role and redirect to appropriate dashboard
         const userRole = response.data.user.role
-        const dashboardRoute = authService.getDashboardRoute(userRole)
+        console.log("User role:", userRole)
         
-        // Redirect to dashboard
-        router.push(dashboardRoute)
+        const dashboardRoute = authService.getDashboardRoute(userRole)
+        console.log("Redirecting to:", dashboardRoute)
+        
+        // Small delay to ensure localStorage is updated
+        setTimeout(() => {
+          router.push(dashboardRoute)
+        }, 100)
       }
     } catch (error: any) {
       console.error("Login error:", error)

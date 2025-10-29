@@ -2,21 +2,23 @@ package com.example.HealthCare.security;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class TokenBlacklistService {
 
-	private final RedisTemplate<String, Object> redisTemplate;
-	private final JwtUtil jwtUtil;
+	@Autowired(required = false)
+	private RedisTemplate<String, Object> redisTemplate;
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 
 	@Value("${security.jwt.expiration-ms:86400000}")
 	private long jwtExpirationMs;
@@ -25,6 +27,11 @@ public class TokenBlacklistService {
 
 	public void blacklist(String token) {
 		if (token != null && !token.isBlank()) {
+			if (redisTemplate == null) {
+				log.warn("Redis is not available, token blacklist is disabled");
+				return;
+			}
+			
 			try {
 				// Calculate TTL based on token expiration
 				long ttlSeconds = calculateTokenTtl(token);
@@ -36,8 +43,12 @@ public class TokenBlacklistService {
 			} catch (Exception e) {
 				log.error("Failed to blacklist token: {}", e.getMessage());
 				// Fallback: set with default expiration
-				String key = BLACKLIST_PREFIX + token;
-				redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(jwtExpirationMs));
+				try {
+					String key = BLACKLIST_PREFIX + token;
+					redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(jwtExpirationMs));
+				} catch (Exception ex) {
+					log.error("Failed to blacklist token even with fallback: {}", ex.getMessage());
+				}
 			}
 		}
 	}
@@ -46,6 +57,11 @@ public class TokenBlacklistService {
 	public boolean isBlacklisted(String token) {
 		if (token == null || token.isBlank()) {
 			return false;
+		}
+		
+		if (redisTemplate == null) {
+			log.debug("Redis is not available, skipping blacklist check");
+			return false; // Cannot check blacklist without Redis
 		}
 		
 		try {

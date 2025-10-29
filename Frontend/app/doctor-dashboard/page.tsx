@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,10 +23,24 @@ import CriticalCasesTable from "@/components/critical-cases-table"
 import TodayAppointmentsSidebar from "@/components/today-appointments-sidebar"
 import PatientReviews from "@/components/patient-reviews"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
+import { authService } from "@/services/auth.service"
 
 export default function DoctorDashboard() {
+  const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Clear local data and redirect anyway
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   useEffect(() => {
     // Simulate initial data loading
@@ -158,7 +173,11 @@ export default function DoctorDashboard() {
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
                     <span className="font-medium">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
