@@ -78,11 +78,20 @@ public class AuthServiceImpl implements AuthService {
 		String accessToken = jwtUtil.generateToken(userAccount);
 		String refreshToken = jwtUtil.generateRefreshToken(userAccount);
 
+		// Build user info
+		Map<String, Object> userInfo = new HashMap<>();
+		userInfo.put("id", userAccount.getId().toString());
+		userInfo.put("email", userAccount.getEmail());
+		userInfo.put("fullName", userAccount.getFullName());
+		userInfo.put("role", userAccount.getRole().name());
+		userInfo.put("accountStatus", userAccount.getStatus().name());
+
 		Map<String, Object> response = new HashMap<>();
 		response.put("access_token", accessToken);
 		response.put("token_type", "Bearer");
 		response.put("expires_in", 86400); // 24 hours
 		response.put("refresh_token", refreshToken);
+		response.put("user", userInfo);
 
 		return response;
 	}

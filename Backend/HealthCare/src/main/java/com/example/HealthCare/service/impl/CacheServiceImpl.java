@@ -2,6 +2,7 @@ package com.example.HealthCare.service.impl;
 
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -13,19 +14,28 @@ import com.example.HealthCare.service.CacheService;
 import com.example.HealthCare.service.RoleService;
 import com.example.HealthCare.service.UserService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class CacheServiceImpl implements CacheService {
 
     private final CacheManager cacheManager;
-    private final RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired(required = false)
+    private RedisTemplate<String, Object> redisTemplate;
+    
     private final UserService userService;
     private final RoleService roleService;
     private final RoleRepository roleRepository;
+    
+    public CacheServiceImpl(CacheManager cacheManager, UserService userService, 
+                           RoleService roleService, RoleRepository roleRepository) {
+        this.cacheManager = cacheManager;
+        this.userService = userService;
+        this.roleService = roleService;
+        this.roleRepository = roleRepository;
+    }
 
     @Override
     public void evictAllCaches() {
@@ -146,6 +156,11 @@ public class CacheServiceImpl implements CacheService {
 
     @Override
     public long getCacheSize(String cacheName) {
+        if (redisTemplate == null) {
+            log.debug("Redis not available, cannot get cache size");
+            return -1;
+        }
+        
         try {
             // For Redis-backed caches, get the approximate size
             Set<String> keys = redisTemplate.keys("healthcare:" + cacheName + ":*");
@@ -158,6 +173,11 @@ public class CacheServiceImpl implements CacheService {
 
     // Additional utility methods
     public void evictCacheByPattern(String pattern) {
+        if (redisTemplate == null) {
+            log.warn("Redis not available, cannot evict caches by pattern");
+            return;
+        }
+        
         log.info("Evicting caches matching pattern: {}", pattern);
         try {
             Set<String> keys = redisTemplate.keys(pattern);
@@ -171,6 +191,11 @@ public class CacheServiceImpl implements CacheService {
     }
 
     public Set<String> getAllCacheKeys() {
+        if (redisTemplate == null) {
+            log.debug("Redis not available, cannot get cache keys");
+            return Set.of();
+        }
+        
         try {
             Set<String> keys = redisTemplate.keys("healthcare:*");
             return keys != null ? keys : Set.of();

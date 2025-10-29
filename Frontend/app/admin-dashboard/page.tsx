@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminMetricsCards } from "@/components/admin-metrics-cards"
 import { UserManagementTable } from "@/components/user-management-table"
@@ -21,9 +22,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { authService } from "@/services/auth.service"
 
 export default function AdminDashboardPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors">("overview")
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Clear local data and redirect anyway
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-[#e5f5f8] to [#e5f5f8]">
@@ -80,7 +95,10 @@ export default function AdminDashboardPage() {
                     <span className="font-medium">Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth cursor-pointer"
+                  >
                     <LogOut className="w-4 h-4" />
                     <span className="font-medium">Logout</span>
                   </DropdownMenuItem>
