@@ -1,0 +1,66 @@
+# Render Blueprint for HealthCare Application
+# This file can be used to automatically provision services on Render
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: healthcare-db
+    env: docker
+    plan: free
+    region: singapore
+    databases:
+      - name: healthcare_db
+        user: postgres
+
+  # Redis Cache
+  - type: redis
+    name: healthcare-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
+
+  # Spring Boot Backend
+  - type: web
+    name: healthcare-backend
+    env: docker
+    region: singapore
+    plan: free
+    rootDir: Backend/HealthCare
+    dockerfilePath: Backend/HealthCare/Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: healthcare-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: healthcare-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: healthcare-db
+          property: password
+      - key: SPRING_DATA_REDIS_HOST
+        fromService:
+          type: redis
+          name: healthcare-redis
+          property: host
+      - key: SPRING_DATA_REDIS_PORT
+        fromService:
+          type: redis
+          name: healthcare-redis
+          property: port
+      - key: SECURITY_JWT_SECRET
+        generateValue: true
+      - key: SECURITY_JWT_EXPIRATION_MS
+        value: 86400000
+      - key: SECURITY_JWT_REFRESH_EXPIRATION_MS
+        value: 604800000
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SERVER_PORT
+        value: 8080
+
