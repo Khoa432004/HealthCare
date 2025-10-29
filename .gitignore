@@ -1,25 +1,87 @@
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.DS_Store
 
 # Logs
 logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Java/Maven (Backend)
+Backend/HealthCare/target/
+Backend/HealthCare/*.jar
+Backend/HealthCare/*.war
+Backend/HealthCare/*.ear
+Backend/HealthCare/*.zip
+Backend/HealthCare/*.tar.gz
+Backend/HealthCare/*.rar
+Backend/HealthCare/hs_err_pid*
+Backend/HealthCare/.classpath
+Backend/HealthCare/.project
+Backend/HealthCare/.settings/
+Backend/HealthCare/bin/
+Backend/HealthCare/build/
+Backend/HealthCare/.gradle/
+
+# Spring Boot
+Backend/HealthCare/spring-boot-*.log
+Backend/HealthCare/HELP.md
+
+# Node.js/Next.js (Frontend)
+Frontend/node_modules/
+Frontend/.next/
+Frontend/out/
+Frontend/build/
+Frontend/dist/
+Frontend/.env*.local
+Frontend/.vercel
+Frontend/.turbo
+
+# Dependencies
+**/node_modules/
+**/.pnp
+**/.pnp.js
+
+# Testing
+**/coverage/
+**/.nyc_output
+**/*.lcov
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Environment
-.env
-.env.local
+# Docker
+**/docker-compose.override.yml
+**/.dockerignore
 
-# Dependencies
-node_modules/
+# Monitoring/Prometheus data
+Backend/HealthCare/monitoring/prometheus/data/
+**/prometheus/data/
+**/grafana/data/
 
-# Build outputs
-target/
-build/
-dist/
-.next/
-*.class
+# Temporary files
+*.tmp
+*.temp
+*.cache
+**/.cache/
 
