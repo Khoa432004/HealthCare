@@ -7,7 +7,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -22,15 +21,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@IdClass(DoctorProfileId.class)
 public class DoctorProfile {
 
     @Id
     @Column(name = "user_id")
     private UUID userId;
 
-    @Id
-    @Column(name = "practice_license_no", nullable = false)
+    @Column(name = "practice_license_no", nullable = false, unique = true)
     private String practiceLicenseNo;
 
     @Column(name = "cccd_number", nullable = false)
@@ -48,14 +45,14 @@ public class DoctorProfile {
     @Column(name = "clinic_address", nullable = false)
     private String clinicAddress;
 
-    @Column(name = "care_target", nullable = false, columnDefinition = "TEXT[]")
-    private String[] careTarget;
+    @Column(name = "care_target", nullable = false)
+    private String careTarget;
 
-    @Column(name = "specialties", nullable = false, columnDefinition = "TEXT[]")
-    private String[] specialties;
+    @Column(name = "specialties", nullable = false)
+    private String specialties;
 
-    @Column(name = "diseases_treated", nullable = false, columnDefinition = "TEXT[]")
-    private String[] diseasesTreated;
+    @Column(name = "diseases_treated", nullable = false)
+    private String diseasesTreated;
 
     @Column(name = "education_summary", nullable = false)
     private String educationSummary;

@@ -2,8 +2,7 @@ package com.example.HealthCare.enums;
 
 public enum Gender {
 	MALE("male"),
-	FEMALE("female"),
-	OTHER("other");
+	FEMALE("female");
 
 	private final String value;
 
