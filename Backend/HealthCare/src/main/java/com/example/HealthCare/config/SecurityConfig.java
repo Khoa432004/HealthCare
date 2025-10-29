@@ -28,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.example.HealthCare.security.CustomJwtGrantedAuthoritiesConverter;
 import com.example.HealthCare.security.JwtAuthenticationFilter;
@@ -39,20 +40,26 @@ public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final UserDetailsService userDetailsService;
+	private final CorsConfigurationSource corsConfigurationSource;
 
 	@Value("${security.jwt.secret}")
 	private String jwtSecret;
 
-	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+	public SecurityConfig(
+		JwtAuthenticationFilter jwtAuthenticationFilter, 
+		UserDetailsService userDetailsService,
+		CorsConfigurationSource corsConfigurationSource
+	) {
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 		this.userDetailsService = userDetailsService;
+		this.corsConfigurationSource = corsConfigurationSource;
 	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
 				.csrf(csrf -> csrf.disable())
-				.cors(cors -> cors.disable()) // Disable CORS for now
+				.cors(cors -> cors.configurationSource(corsConfigurationSource)) // Enable CORS with configuration
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.exceptionHandling(ex -> ex
 						.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
