@@ -4,13 +4,14 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.example.HealthCare.converter.PaymentMethodConverter;
+import com.example.HealthCare.converter.PaymentStatusConverter;
 import com.example.HealthCare.enums.PaymentMethod;
 import com.example.HealthCare.enums.PaymentStatus;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -47,11 +48,11 @@ public class Payment extends BaseEntity {
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PaymentMethodConverter.class)
     @Column(name = "method", nullable = false)
     private PaymentMethod method;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PaymentStatusConverter.class)
     @Column(name = "status", nullable = false)
     @lombok.Builder.Default
     private PaymentStatus status = PaymentStatus.PENDING;
