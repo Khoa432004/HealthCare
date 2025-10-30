@@ -6,9 +6,7 @@ import com.example.HealthCare.enums.Gender;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,8 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterRequest {
 
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    // Optional username field (not used for authentication, email is used instead)
     private String username;
 
     @NotBlank(message = "Email is required")
@@ -27,11 +24,9 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
     @NotBlank(message = "Full name is required")
-    @Size(max = 100, message = "Full name must not exceed 100 characters")
     private String fullName;
 
     @NotBlank(message = "Phone number is required")
@@ -41,20 +36,15 @@ public class RegisterRequest {
     // Optional role field (defaults to PATIENT if not provided)
     private String role;
 
-    @NotBlank(message = "Identity card is required")
-    @Size(max = 20, message = "Identity card must not exceed 20 characters")
+    // Optional fields for patients
     private String identityCard;
 
-    @NotNull(message = "Date of birth is required")
     private LocalDate dateOfBirth;
 
-    @NotNull(message = "Gender is required")
     private Gender gender;
 
-    @NotBlank(message = "Address is required")
     private String address;
 
-    @NotBlank(message = "Department is required")
     private String department;
     
     // Alias method for backward compatibility

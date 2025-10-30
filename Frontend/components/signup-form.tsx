@@ -7,13 +7,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-import { CalendarIcon, XIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+import { CalendarIcon, XIcon, AlertCircle } from "lucide-react"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { authService } from "@/services/auth.service"
+import { useRouter } from "next/navigation"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function SignUpForm() {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const [formData, setFormData] = useState({
     // Personal information - matches /api/auth/register/personal-info
@@ -22,36 +26,32 @@ export function SignUpForm() {
     identityCard: "",
     dateOfBirth: "",
     gender: "",
+    email: "",
     address: "",
     country: "",
     state: "",
     city: "",
     zipCode: "",
-    addressLine1: "",
-    addressLine2: "",
 
     // Professional information - matches /api/auth/register/professional-info
-    userId: 9, // This would come from personal info registration response
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    userId: "", // This will come from personal info registration response
+    cccdNumber: "",
     title: "DOCTOR",
     currentProvince: "",
     clinicHospital: "",
     careForAdults: true,
     careForChildren: true,
-    specialties: ["ENDOCRINOLOGY"],
-    treatmentConditions: ["HEART FAILURE", "HYPERTENSION", "CARDIOMYOPATHY"],
+    specialties: [] as string[],
+    treatmentConditions: [] as string[],
     practicingCertificationId: "",
-    languages: ["ENGLISH", "VIETNAMESE"],
-    workFromYear: 2002,
-    workToYear: 2019,
+    languages: ["VIETNAMESE"],
+    workFromYear: 2010,
+    workToYear: 2024,
     workClinicHospital: "",
     workLocation: "",
-    workSpecialties: ["ENDOCRINOLOGY"],
+    workSpecialties: [] as string[],
     educationalInstitution: "",
-    graduationYear: 2015,
+    graduationYear: 2020,
     specialty: "",
     department: "",
     termsAccepted: false,
@@ -123,41 +123,202 @@ export function SignUpForm() {
 
   const handleContinue = async () => {
     setIsLoading(true)
+    setError(null)
     
     try {
       if (currentStep === 1) {
+        // Validate required fields for step 1
+        if (!formData.fullName || !formData.phone || !formData.email || !formData.gender || !formData.dateOfBirth || !formData.identityCard || !formData.address) {
+          setError("Vui lòng điền đầy đủ thông tin bắt buộc")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(formData.email)) {
+          setError("Email không đúng định dạng")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate phone number (Vietnamese phone: 10 digits starting with 0)
+        const phoneRegex = /^0[0-9]{9}$/
+        if (!phoneRegex.test(formData.phone)) {
+          setError("Số điện thoại phải có 10 số và bắt đầu bằng 0")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate identity card (9-12 digits)
+        const identityCardRegex = /^[0-9]{9,12}$/
+        if (!identityCardRegex.test(formData.identityCard)) {
+          setError("Số CCCD phải có từ 9 đến 12 chữ số")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate full name (at least 2 characters, no numbers)
+        if (formData.fullName.length < 2 || formData.fullName.length > 100) {
+          setError("Họ và tên phải có từ 2 đến 100 ký tự")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate date of birth (YYYY-MM-DD format)
+        const dateRegex = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
+        if (!dateRegex.test(formData.dateOfBirth)) {
+          setError("Ngày sinh phải đúng định dạng YYYY-MM-DD")
+          setIsLoading(false)
+          return
+        }
+        
+        // Validate date is not in the future
+        const inputDate = new Date(formData.dateOfBirth)
+        const today = new Date()
+        if (inputDate > today) {
+          setError("Ngày sinh không thể là ngày trong tương lai")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate address
+        if (formData.address.length < 5 || formData.address.length > 200) {
+          setError("Địa chỉ phải có từ 5 đến 200 ký tự")
+          setIsLoading(false)
+          return
+        }
+
+        // Save identityCard as cccdNumber for step 2
+        setFormData(prev => ({
+          ...prev,
+          cccdNumber: prev.identityCard
+        }))
+        
+        // Just move to step 2 without calling API
+        setCurrentStep(2)
+        setIsLoading(false)
+      } else {
+        // Validate required fields
+        if (!formData.clinicHospital || !formData.practicingCertificationId || !formData.department) {
+          setError("Vui lòng điền đầy đủ thông tin chuyên môn bắt buộc")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate clinic hospital name
+        if (formData.clinicHospital.length < 3 || formData.clinicHospital.length > 100) {
+          setError("Tên phòng khám/bệnh viện phải có từ 3 đến 100 ký tự")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate practicing certification ID
+        if (formData.practicingCertificationId.length < 5 || formData.practicingCertificationId.length > 50) {
+          setError("Số chứng chỉ hành nghề phải có từ 5 đến 50 ký tự")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate department
+        if (formData.department.length < 2 || formData.department.length > 100) {
+          setError("Khoa phải có từ 2 đến 100 ký tự")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate specialties (at least one required)
+        if (!formData.specialties || formData.specialties.length === 0) {
+          setError("Vui lòng chọn ít nhất một chuyên khoa")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate treatment conditions (at least one required)
+        if (!formData.treatmentConditions || formData.treatmentConditions.length === 0) {
+          setError("Vui lòng chọn ít nhất một bệnh lý điều trị")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate medical care target (at least one checkbox should be checked)
+        if (!formData.careForAdults && !formData.careForChildren) {
+          setError("Vui lòng chọn ít nhất một đối tượng chăm sóc")
+          setIsLoading(false)
+          return
+        }
+
+        // Validate work experience years if provided
+        if (formData.workFromYear && formData.workToYear) {
+          if (formData.workFromYear > formData.workToYear) {
+            setError("Năm bắt đầu không thể lớn hơn năm kết thúc")
+            setIsLoading(false)
+            return
+          }
+          const currentYear = new Date().getFullYear()
+          if (formData.workFromYear < 1900 || formData.workFromYear > currentYear) {
+            setError("Năm bắt đầu không hợp lệ")
+            setIsLoading(false)
+            return
+          }
+          if (formData.workToYear < formData.workFromYear || formData.workToYear > currentYear) {
+            setError("Năm kết thúc không hợp lệ")
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // Validate graduation year if provided
+        if (formData.graduationYear) {
+          const currentYear = new Date().getFullYear()
+          if (formData.graduationYear < 1900 || formData.graduationYear > currentYear) {
+            setError("Năm tốt nghiệp không hợp lệ")
+            setIsLoading(false)
+            return
+          }
+        }
+        
+        if (!formData.termsAccepted || !formData.dataProtectionAccepted) {
+          setError("Vui lòng đồng ý với các điều khoản và chính sách")
+          setIsLoading(false)
+          return
+        }
+
+        // Prepare personal info data
         const personalInfoData = {
           fullName: formData.fullName,
           phone: formData.phone,
+          email: formData.email,
           identityCard: formData.identityCard,
           dateOfBirth: formData.dateOfBirth,
           gender: formData.gender,
           address: formData.address,
-          country: formData.country,
+          country: formData.country || "Vietnam",
           state: formData.state,
           city: formData.city,
           zipCode: formData.zipCode,
-          addressLine1: formData.addressLine1,
-          addressLine2: formData.addressLine2,
+          addressLine1: "",
+          addressLine2: "",
         }
 
         console.log("Submitting personal info:", personalInfoData)
-        // Here you would make the API call to /api/auth/register/personal-info
-        // const response = await fetch('/api/auth/register/personal-info', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(personalInfoData)
-        // })
+        
+        // Step 1: Call API to register personal info first
+        const response = await authService.registerPersonalInfo(personalInfoData as any)
+        console.log("Personal info registered:", response)
+        
+        // Get userId from response
+        const userId = response.data?.userId
+        if (!userId) {
+          throw new Error("Failed to get user ID from personal info registration")
+        }
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800))
-        setCurrentStep(2)
-      } else {
+        // Prepare professional info data with userId from personal info response
         const professionalInfoData = {
-          userId: formData.userId,
-          username: formData.username,
+          userId: userId,
           email: formData.email,
-          password: formData.password,
+          cccdNumber: formData.cccdNumber || formData.identityCard,
+          // No password - will be set during first login
           title: formData.title,
           currentProvince: formData.currentProvince,
           clinicHospital: formData.clinicHospital,
@@ -179,22 +340,21 @@ export function SignUpForm() {
         }
 
         console.log("Submitting professional info:", professionalInfoData)
-        // Here you would make the API call to /api/auth/register/professional-info
-        // const response = await fetch('/api/auth/register/professional-info', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(professionalInfoData)
-        // })
-
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1200))
         
-        // Redirect to login or success page
-        console.log("Registration completed successfully")
-        // window.location.href = "/login"
+        // Step 2: Call API to register professional info
+        await authService.registerProfessionalInfo(professionalInfoData as any)
+        
+        // Show success and redirect
+        setSuccess(true)
+        
+        // Redirect to login page after 2 seconds
+        setTimeout(() => {
+          router.push("/login")
+        }, 2000)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting form:", error)
+      setError(error.message || "Đăng ký thất bại. Vui lòng thử lại.")
     } finally {
       setIsLoading(false)
     }
@@ -257,6 +417,24 @@ export function SignUpForm() {
           </div>
         </div>
 
+        {/* Success Alert */}
+        {success && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-sm text-green-800">
+              Đăng kí thành công! Vui lòng chờ phê duyệt. Mật khẩu sẽ được gửi qua email khi Quản trị viên phê duyệt.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
+        )}
+
         {currentStep === 1 ? (
           <div className="space-y-4 sm:space-y-6">
             <div>
@@ -297,7 +475,6 @@ export function SignUpForm() {
                     <SelectContent>
                       <SelectItem value="FEMALE">Female</SelectItem>
                       <SelectItem value="MALE">Male</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -308,7 +485,7 @@ export function SignUpForm() {
                   <div className="relative mt-1">
                     <Input
                       id="dateOfBirth"
-                      placeholder="1987-05-01"
+                      placeholder="30/12/1987"
                       value={formData.dateOfBirth}
                       onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
                     />
@@ -317,20 +494,14 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="phone" className="text-sm font-medium">
-                    Phone number
+                    Phone number <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex mt-1">
-                    <Select defaultValue="vn">
-                      <SelectTrigger className="w-16 sm:w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="vn">🇻🇳</SelectItem>
-                        <SelectItem value="us">🇺🇸</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-center w-16 sm:w-20 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md px-3">
+                      <span className="text-xl">🇻🇳</span>
+                    </div>
                     <Input
-                      className="flex-1 ml-2"
+                      className="flex-1 ml-0 rounded-l-none"
                       placeholder="0903422256"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
@@ -339,7 +510,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium">
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="email"
@@ -360,13 +531,12 @@ export function SignUpForm() {
                   <Label htmlFor="country" className="text-sm font-medium">
                     Country
                   </Label>
-                  <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                  <Select value={formData.country || "Vietnam"} onValueChange={(value) => handleInputChange("country", value)}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Vietnam" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Vietnam">Vietnam</SelectItem>
-                      <SelectItem value="USA">United States</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -412,7 +582,7 @@ export function SignUpForm() {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="address" className="text-sm font-medium">
-                    Full Address
+                    Full Address <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="address"
@@ -422,47 +592,16 @@ export function SignUpForm() {
                     className="mt-1"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="addressLine1" className="text-sm font-medium">
-                    Address Line 1
-                  </Label>
-                  <Input
-                    id="addressLine1"
-                    placeholder="123 Nguyen Hue Street"
-                    value={formData.addressLine1}
-                    onChange={(e) => handleInputChange("addressLine1", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="addressLine2" className="text-sm font-medium">
-                    Address Line 2
-                  </Label>
-                  <Input
-                    id="addressLine2"
-                    placeholder="District 1"
-                    value={formData.addressLine2}
-                    onChange={(e) => handleInputChange("addressLine2", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
               </div>
             </div>
 
             <div className="flex justify-end pt-4">
               <Button
                 onClick={handleContinue}
-                disabled={isLoading}
+                disabled={false}
                 className="bg-teal-600 hover:bg-teal-700 text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <LoadingSpinner size="sm" className="text-white" />
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  "Continue"
-                )}
+                Continue
               </Button>
             </div>
           </div>
@@ -470,46 +609,6 @@ export function SignUpForm() {
           <div className="space-y-4 sm:space-y-6">
             <div>
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Professional information</h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-                <div>
-                  <Label htmlFor="username" className="text-sm font-medium">
-                    Username
-                  </Label>
-                  <Input
-                    id="username"
-                    placeholder="dr_pham_linh123"
-                    value={formData.username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </Label>
-                  <div className="relative mt-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="securePassword123"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                    >
-                      {showPassword ? (
-                        <EyeOffIcon className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <EyeIcon className="w-4 h-4 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
@@ -546,28 +645,15 @@ export function SignUpForm() {
 
               <div className="mt-4">
                 <Label htmlFor="clinicHospital" className="text-sm font-medium">
-                  Clinic / Hospital
+                  Clinic / Hospital <span className="text-red-500">*</span>
                 </Label>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-1">
-                  <Select
-                    value={formData.clinicHospital}
-                    onValueChange={(value) => handleInputChange("clinicHospital", value)}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Phong Kham Tam An" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Phong Kham Tam An">Phong Kham Tam An</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    className="text-teal-600 border-teal-600 hover:bg-teal-50 bg-transparent w-full sm:w-auto"
-                  >
-                    Add workplace
-                  </Button>
-                </div>
+                <Input
+                  id="clinicHospital"
+                  placeholder="Nhập tên phòng khám hoặc bệnh viện"
+                  value={formData.clinicHospital}
+                  onChange={(e) => handleInputChange("clinicHospital", e.target.value)}
+                  className="mt-1"
+                />
               </div>
 
               <div className="mt-4">
@@ -633,12 +719,8 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Languages</Label>
-                  <div className="mt-1">
-                    <TagInput
-                      field="languages"
-                      placeholder="Add language"
-                      suggestions={["ENGLISH", "VIETNAMESE", "FRENCH", "SPANISH"]}
-                    />
+                  <div className="mt-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                    Vietnamese
                   </div>
                 </div>
               </div>
@@ -652,8 +734,8 @@ export function SignUpForm() {
                     From year
                   </Label>
                   <Select
-                    value={formData.workFromYear}
-                    onValueChange={(value) => handleInputChange("workFromYear", value)}
+                    value={formData.workFromYear.toString()}
+                    onValueChange={(value) => handleInputChange("workFromYear", parseInt(value))}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="2002" />
@@ -671,7 +753,7 @@ export function SignUpForm() {
                   <Label htmlFor="workToYear" className="text-sm font-medium">
                     To year
                   </Label>
-                  <Select value={formData.workToYear} onValueChange={(value) => handleInputChange("workToYear", value)}>
+                  <Select value={formData.workToYear.toString()} onValueChange={(value) => handleInputChange("workToYear", parseInt(value))}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="2010" />
                     </SelectTrigger>
@@ -688,18 +770,13 @@ export function SignUpForm() {
                   <Label htmlFor="workClinicHospital" className="text-sm font-medium">
                     Work Clinic / Hospital
                   </Label>
-                  <Select
+                  <Input
+                    id="workClinicHospital"
+                    placeholder="Nhập tên phòng khám hoặc bệnh viện"
                     value={formData.workClinicHospital}
-                    onValueChange={(value) => handleInputChange("workClinicHospital", value)}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Phong Kham Tam An" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Phong Kham Tam An">Phong Kham Tam An</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => handleInputChange("workClinicHospital", e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="workLocation" className="text-sm font-medium">
@@ -715,23 +792,15 @@ export function SignUpForm() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-end space-y-2 sm:space-y-0">
-                <div className="flex-1 sm:mr-4">
-                  <Label className="text-sm font-medium">Specialties</Label>
-                  <div className="mt-1">
-                    <TagInput
-                      field="workSpecialties"
-                      placeholder="Add specialty"
-                      suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
-                    />
-                  </div>
+              <div className="mt-4">
+                <Label className="text-sm font-medium">Specialties</Label>
+                <div className="mt-1">
+                  <TagInput
+                    field="workSpecialties"
+                    placeholder="Add specialty"
+                    suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
+                  />
                 </div>
-                <Button
-                  variant="outline"
-                  className="text-teal-600 border-teal-600 hover:bg-teal-50 bg-transparent w-full sm:w-auto"
-                >
-                  Add workplace
-                </Button>
               </div>
             </div>
 
@@ -762,8 +831,8 @@ export function SignUpForm() {
                     Year of graduation
                   </Label>
                   <Select
-                    value={formData.graduationYear}
-                    onValueChange={(value) => handleInputChange("graduationYear", value)}
+                    value={formData.graduationYear.toString()}
+                    onValueChange={(value) => handleInputChange("graduationYear", parseInt(value))}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="2015" />

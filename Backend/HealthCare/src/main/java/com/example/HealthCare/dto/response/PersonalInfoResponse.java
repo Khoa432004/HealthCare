@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class PersonalInfoResponse {
     
     private UUID userId;
+    private String email;
     private String fullName;
     private String phone;
     private String identityCard;

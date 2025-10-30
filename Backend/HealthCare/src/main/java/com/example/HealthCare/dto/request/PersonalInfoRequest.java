@@ -25,6 +25,10 @@ public class PersonalInfoRequest {
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
     private String phone;
 
+    @NotBlank(message = "Email is required")
+    @jakarta.validation.constraints.Email(message = "Email should be valid")
+    private String email;
+
     @NotBlank(message = "Identity card is required")
     @Size(max = 20, message = "Identity card must not exceed 20 characters")
     private String identityCard;

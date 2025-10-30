@@ -65,15 +65,26 @@ class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({
           error: 'unknown_error',
-          message: 'An unexpected error occurred',
+          message: 'Mất kết nối. Vui lòng thử lại.',
         }))
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
       return await response.json()
-    } catch (error) {
+    } catch (error: any) {
       console.error('API Request Error:', error)
-      throw error
+      
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Mất kết nối. Vui lòng thử lại.')
+      }
+      
+      // Re-throw the error if it already has a message
+      if (error.message) {
+        throw error
+      }
+      
+      throw new Error('Mất kết nối. Vui lòng thử lại.')
     }
   }
 

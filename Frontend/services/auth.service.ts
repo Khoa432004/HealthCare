@@ -22,35 +22,64 @@ export interface LoginResponse {
     fullName: string
     role: string
     accountStatus: string
+    firstLoginRequired: boolean
   }
 }
 
 export interface RegisterData {
+  username?: string
   email: string
   password: string
   fullName: string
-  phoneNumber: string
+  phone: string
+  phoneNumber?: string // Alias for phone
   role: string
+  identityCard?: string
+  dateOfBirth?: string
+  gender?: string
+  address?: string
+  department?: string
 }
 
 export interface PersonalInfoData {
-  identityCard: string
   fullName: string
+  phone: string
+  email: string
+  identityCard: string
   dateOfBirth: string
   gender: string
-  phoneNumber: string
   address: string
-  email: string
-  password: string
-  role: string
+  country?: string
+  state?: string
+  city?: string
+  zipCode?: string
+  addressLine1?: string
+  addressLine2?: string
 }
 
 export interface ProfessionalInfoData {
   userId: string
-  specialization: string
-  licenseNumber: string
-  experience: string
-  qualifications: string
+  email: string
+  cccdNumber?: string
+  password: string
+  title: string
+  currentProvince?: string
+  clinicHospital: string
+  careForAdults: boolean
+  careForChildren: boolean
+  specialties: string[]
+  treatmentConditions: string[]
+  practicingCertificationId: string
+  languages?: string[]
+  workFromYear?: number
+  workToYear?: number
+  workClinicHospital?: string
+  workLocation?: string
+  workSpecialties?: string[]
+  educationalInstitution?: string
+  graduationYear?: number
+  specialty?: string
+  department: string
 }
 
 class AuthService {
@@ -145,6 +174,17 @@ class AuthService {
       email: user?.email,
       oldPassword,
       newPassword,
+    })
+  }
+
+  /**
+   * Change password on first login
+   */
+  async changePasswordOnFirstLogin(email: string, newPassword: string, confirmPassword: string): Promise<ApiResponse> {
+    return await apiClient.put<ApiResponse>(API_ENDPOINTS.AUTH.CHANGE_PASSWORD_FIRST_LOGIN, {
+      email,
+      newPassword,
+      confirmPassword,
     })
   }
 
