@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Search, Bell, Filter, ChevronLeft, ChevronRight, Plus, Calendar, User, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import { CalendarMonthView } from "@/components/calendar-month-view"
 import { CalendarWeekView } from "@/components/calendar-week-view"
 import { CalendarDayView } from "@/components/calendar-day-view"
 import { NewAppointmentModal } from "@/components/new-appointment-modal"
-import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 type ViewMode = "month" | "week" | "day"
 
@@ -29,25 +29,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)) // October 1, 2025
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
-
-  useEffect(() => {
-    // Simulate initial data loading
-    const loadData = async () => {
-      setIsLoading(true)
-      try {
-        // Simulate API calls for calendar data
-        await new Promise((resolve) => setTimeout(resolve, 900))
-      } catch (error) {
-        console.error("Error loading calendar data:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
 
   const handleCreateAppointment = async () => {
     setIsCreatingAppointment(true)
@@ -130,10 +112,6 @@ export default function CalendarPage() {
 
   const goToToday = () => {
     setCurrentDate(new Date())
-  }
-
-  if (isLoading) {
-    return <PageLoadingSpinner />
   }
 
   return (

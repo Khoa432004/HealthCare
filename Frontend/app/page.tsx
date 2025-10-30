@@ -1,3 +1,5 @@
+'use client'
+
 import { ArrowRight, Stethoscope, Grid3X3, Rocket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
