@@ -55,7 +55,7 @@ export default function DoctorSidebar() {
                   : "text-gray-600 hover:bg-gray-50"
               )}
               style={isActive ? { backgroundColor: '#d0eef5' } : {}}
-            >
+                >
               <Icon className="w-5 h-5" />
               <span>{item.label}</span>
             </button>

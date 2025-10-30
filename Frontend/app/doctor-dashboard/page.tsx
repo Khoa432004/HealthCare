@@ -65,9 +65,9 @@ export default function DoctorDashboard() {
 
               {/* Notifications */}
               <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
+                    <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </Button>
+                    </Button>
 
               {/* User Menu */}
               <DropdownMenu>
@@ -87,11 +87,11 @@ export default function DoctorDashboard() {
                   <DropdownMenuItem onClick={() => router.push('/my-profile')}>
                     <User className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
