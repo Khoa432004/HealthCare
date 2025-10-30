@@ -1,7 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Calendar,
@@ -26,6 +25,7 @@ const sidebarItems = [
 
 export default function DoctorSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -47,9 +47,9 @@ export default function DoctorSidebar() {
 
           return (
             <div key={index}>
-              <Link href={item.href} className="block">
                 <Button
                   variant="ghost"
+                onClick={() => router.push(item.href)}
                   className={`w-full justify-start mb-1 ${
                     isActive ? "bg-[#e5f5f8] text-[#0b0c0c] font-bold hover:bg-[#e5f5f8]" : "text-gray-600 hover:bg-gray-50"
                   }`}
@@ -58,7 +58,6 @@ export default function DoctorSidebar() {
                   <span className="flex-1 text-left">{item.label}</span>
                   {item.hasSubmenu && <ChevronDown className="w-4 h-4" />}
                 </Button>
-              </Link>
             </div>
           )
         })}

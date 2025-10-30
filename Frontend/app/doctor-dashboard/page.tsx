@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, Settings, LogOut } from "lucide-react"
+import { Search, Bell, ChevronRight, LayoutDashboard, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,13 +21,11 @@ import AppointmentTrendChart from "@/components/appointment-trend-chart"
 import CriticalCasesTable from "@/components/critical-cases-table"
 import TodayAppointmentsSidebar from "@/components/today-appointments-sidebar"
 import PatientReviews from "@/components/patient-reviews"
-import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
 
 export default function DoctorDashboard() {
   const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   const handleLogout = async () => {
     try {
@@ -41,23 +38,6 @@ export default function DoctorDashboard() {
       router.push('/login')
     }
   }
-
-  useEffect(() => {
-    // Simulate initial data loading
-    const loadData = async () => {
-      setIsLoading(true)
-      try {
-        // Simulate API calls for dashboard data
-        await new Promise(resolve => setTimeout(resolve, 800))
-      } catch (error) {
-        console.error('Error loading dashboard data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
 
   const notifications = [
     {
@@ -81,10 +61,6 @@ export default function DoctorDashboard() {
       time: "15 min ago",
     },
   ]
-
-  if (isLoading) {
-    return <PageLoadingSpinner />
-  }
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
@@ -160,18 +136,20 @@ export default function DoctorDashboard() {
                     <p className="font-semibold text-gray-900">Lê Thị Tuyết Hoa</p>
                     <p className="text-xs text-gray-500 font-medium">Doctor</p>
                   </div>
-                  <Link href="/my-profile">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/my-profile')}
+                    className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth cursor-pointer"
+                  >
                       <User className="w-4 h-4 text-[#16a1bd]" />
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
-                  </Link>
-                  <Link href="/settings">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/settings')}
+                    className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth cursor-pointer"
+                  >
                       <Settings className="w-4 h-4 text-[#16a1bd]" />
                       <span className="font-medium">Settings</span>
                     </DropdownMenuItem>
-                  </Link>
                   <DropdownMenuSeparator className="border-white/50" />
                   <DropdownMenuItem 
                     onClick={handleLogout}

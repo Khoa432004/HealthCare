@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, Settings, Heart, Activity, FileText, MessageSquare, LogOut } from "lucide-react"
+import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,13 +21,11 @@ import { HealthMetricsChart } from "@/components/health-metrics-chart"
 import { LatestMeasurements } from "@/components/latest-measurements"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
 import MedicalHistoryTable from "@/components/medical-history-table"
-import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
 
 export default function PatientDashboard() {
   const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   const handleLogout = async () => {
     try {
@@ -40,23 +38,6 @@ export default function PatientDashboard() {
       router.push('/login')
     }
   }
-
-  useEffect(() => {
-    // Simulate initial data loading
-    const loadData = async () => {
-      setIsLoading(true)
-      try {
-        // Simulate API calls for dashboard data
-        await new Promise(resolve => setTimeout(resolve, 800))
-      } catch (error) {
-        console.error('Error loading dashboard data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
 
   const notifications = [
     {
@@ -80,10 +61,6 @@ export default function PatientDashboard() {
       time: "1 day ago",
     },
   ]
-
-  if (isLoading) {
-    return <PageLoadingSpinner />
-  }
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
@@ -159,12 +136,13 @@ export default function PatientDashboard() {
                     <p className="font-semibold text-gray-900">Test stag patient</p>
                     <p className="text-xs text-gray-500 font-medium">Patient</p>
                   </div>
-                  <Link href="/patient-profile">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/patient-profile')}
+                    className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth cursor-pointer"
+                  >
                       <User className="w-4 h-4 text-[#16a1bd]" />
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
-                  </Link>
                   
                   <DropdownMenuSeparator className="border-white/50" />
                   <DropdownMenuItem 

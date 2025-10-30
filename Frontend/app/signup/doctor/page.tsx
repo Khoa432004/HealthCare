@@ -1,3 +1,5 @@
+'use client'
+
 import { SignUpForm } from "@/components/signup-form"
 
 export default function DoctorSignUpPage() {
