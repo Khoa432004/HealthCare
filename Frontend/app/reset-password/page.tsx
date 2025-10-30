@@ -19,6 +19,14 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [timeLeft, setTimeLeft] = useState(900)
+  const [canResend, setCanResend] = useState(false)
+  
+  const [fieldErrors, setFieldErrors] = useState({
+    otp: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
 
   const [formData, setFormData] = useState({
     email: "",
@@ -35,35 +43,96 @@ function ResetPasswordForm() {
     }
   }, [searchParams])
 
-  const passwordsMatch = formData.newPassword === formData.confirmPassword && formData.newPassword.length > 0
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      setCanResend(true)
+    }
+  }, [timeLeft])
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleResetPassword = async () => {
-    // Validation
+  const handleResendOTP = async () => {
     if (!formData.email) {
       setError("Vui lòng nhập email")
       return
     }
-    
-    if (!formData.otp || formData.otp.length !== 6) {
-      setError("Vui lòng nhập mã OTP 6 số")
-      return
+
+    setError(null)
+    setSuccess(null)
+    setIsLoading(true)
+
+    try {
+      await authService.forgetPassword(formData.email)
+      setSuccess("Mã OTP mới đã được gửi đến email của bạn!")
+      setTimeLeft(900) // Reset timer to 15 minutes
+      setCanResend(false)
+    } catch (error: any) {
+      console.error("Resend OTP error:", error)
+      setError(error.message || "Không thể gửi lại mã OTP. Vui lòng thử lại.")
+    } finally {
+      setIsLoading(false)
     }
-    
-    if (formData.newPassword.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự")
-      return
+  }
+
+  const passwordsMatch = formData.newPassword === formData.confirmPassword && formData.newPassword.length > 0
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear field error when user starts typing
+    setFieldErrors((prev) => ({ ...prev, [field]: "" }))
+  }
+
+  const validateForm = (): boolean => {
+    let isValid = true
+    const newFieldErrors = { otp: "", newPassword: "", confirmPassword: "" }
+
+    // Validate OTP
+    if (!formData.otp || formData.otp.trim() === "") {
+      newFieldErrors.otp = "Vui lòng nhập mã OTP."
+      isValid = false
+    } else if (formData.otp.length !== 6) {
+      newFieldErrors.otp = "Mã OTP phải có 6 chữ số."
+      isValid = false
     }
+
+    // Validate new password
+    if (!formData.newPassword || formData.newPassword.trim() === "") {
+      newFieldErrors.newPassword = "Vui lòng nhập trường này."
+      isValid = false
+    }
+
+    // Validate confirm password
+    if (!formData.confirmPassword || formData.confirmPassword.trim() === "") {
+      newFieldErrors.confirmPassword = "Vui lòng nhập trường này."
+      isValid = false
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newFieldErrors.confirmPassword = "Mật khẩu nhập lại không khớp."
+      isValid = false
+    }
+
+    setFieldErrors(newFieldErrors)
+    return isValid
+  }
+
+  const handleResetPassword = async () => {
+    // Clear previous errors
+    setError(null)
     
-    if (!passwordsMatch) {
-      setError("Mật khẩu xác nhận không khớp")
+    // Validate form
+    if (!validateForm()) {
       return
     }
 
-    setError(null)
     setSuccess(null)
     setIsLoading(true)
 
@@ -77,7 +146,17 @@ function ResetPasswordForm() {
       }, 2000)
     } catch (error: any) {
       console.error("Reset password error:", error)
-      setError(error.message || "Không thể đặt lại mật khẩu. Vui lòng kiểm tra mã OTP và thử lại.")
+      // Map backend error messages to user-friendly messages
+      const errorMessage = error.message || ""
+      if (errorMessage.toLowerCase().includes("otp") && errorMessage.toLowerCase().includes("sai") || 
+          errorMessage.toLowerCase().includes("invalid") && errorMessage.toLowerCase().includes("otp")) {
+        setError("Mã OTP không chính xác.")
+      } else if (errorMessage.toLowerCase().includes("otp") && errorMessage.toLowerCase().includes("hết hạn") ||
+                 errorMessage.toLowerCase().includes("expired")) {
+        setError("Mã OTP hết hạn. Vui lòng gửi lại OTP.")
+      } else {
+        setError(errorMessage || "Không thể đặt lại mật khẩu. Vui lòng kiểm tra mã OTP và thử lại.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -160,10 +239,33 @@ function ResetPasswordForm() {
                     onChange={(e) => handleInputChange("otp", e.target.value)}
                     placeholder="Nhập mã OTP 6 số"
                     maxLength={6}
-                    className="bg-white/80 border-0 rounded-xl px-3 py-2 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                    className={`bg-white/80 border-0 rounded-xl px-3 py-2 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm ${fieldErrors.otp ? 'border border-red-500' : ''}`}
                     disabled={isLoading}
                     required
                   />
+                  {fieldErrors.otp && (
+                    <p className="text-xs text-red-500">{fieldErrors.otp}</p>
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[#09404c]">
+                        Mã OTP còn hiệu lực: <span className="font-semibold text-red-600">{formatTime(timeLeft)}</span>
+                      </span>
+                      {canResend && (
+                        <span className="text-red-600 font-semibold text-xs">Mã OTP đã hết hạn</span>
+                      )}
+                    </div>
+                    {canResend && (
+                      <button
+                        type="button"
+                        onClick={handleResendOTP}
+                        disabled={isLoading}
+                        className="w-full text-[#16a1bd] hover:text-[#0d6171] font-semibold transition-colors duration-200 underline text-xs"
+                      >
+                        {isLoading ? "Đang gửi..." : "Gửi lại OTP"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -177,7 +279,7 @@ function ResetPasswordForm() {
                       value={formData.newPassword}
                       onChange={(e) => handleInputChange("newPassword", e.target.value)}
                       placeholder="Nhập mật khẩu mới"
-                      className="bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                      className={`bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm ${fieldErrors.newPassword ? 'border border-red-500' : ''}`}
                       disabled={isLoading}
                       required
                     />
@@ -190,6 +292,9 @@ function ResetPasswordForm() {
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  {fieldErrors.newPassword && (
+                    <p className="text-xs text-red-500">{fieldErrors.newPassword}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -203,7 +308,7 @@ function ResetPasswordForm() {
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                       placeholder="Nhập lại mật khẩu mới"
-                      className="bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm"
+                      className={`bg-white/80 border-0 rounded-xl px-3 py-2 pr-10 text-[#0b0c0c] placeholder:text-[#09404c]/60 focus:ring-2 focus:ring-[#16a1bd] focus:ring-offset-0 h-9 text-sm ${fieldErrors.confirmPassword ? 'border border-red-500' : ''}`}
                       disabled={isLoading}
                       required
                     />
@@ -216,10 +321,10 @@ function ResetPasswordForm() {
                       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
-                  {formData.confirmPassword && !passwordsMatch && (
-                    <p className="text-xs text-red-500">Mật khẩu không khớp</p>
+                  {fieldErrors.confirmPassword && (
+                    <p className="text-xs text-red-500">{fieldErrors.confirmPassword}</p>
                   )}
-                  {passwordsMatch && formData.confirmPassword && (
+                  {!fieldErrors.confirmPassword && formData.confirmPassword && passwordsMatch && (
                     <p className="text-xs text-green-500">Mật khẩu khớp</p>
                   )}
                 </div>

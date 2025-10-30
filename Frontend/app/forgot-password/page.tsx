@@ -14,13 +14,38 @@ import { authService } from "@/services/auth.service"
 export default function ForgotPasswordPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  const validateEmail = (email: string): boolean => {
+    // Check if empty
+    if (!email || email.trim() === "") {
+      setEmailError("Vui lòng nhập Email.")
+      return false
+    }
+    // Check email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setEmailError("Email không đúng định dạng.")
+      return false
+    }
+    setEmailError(null)
+    return true
+  }
+
   const handleForgotPassword = async () => {
+    // Clear previous errors
     setError(null)
+    setEmailError(null)
     setSuccess(null)
+
+    // Validate email
+    if (!validateEmail(email)) {
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -33,7 +58,19 @@ export default function ForgotPasswordPage() {
       }, 2000)
     } catch (error: any) {
       console.error("Forget password error:", error)
-      setError(error.message || "Không thể gửi email khôi phục mật khẩu. Vui lòng thử lại.")
+      // Map backend error messages to user-friendly messages
+      const errorMessage = error.message || ""
+      if (errorMessage.toLowerCase().includes("not found") || errorMessage.toLowerCase().includes("không tồn tại")) {
+        setError("Tài khoản chưa tồn tại.")
+      } else if (errorMessage.toLowerCase().includes("pending")) {
+        setError("Hồ sơ đang chờ phê duyệt.")
+      } else if (errorMessage.toLowerCase().includes("inactive") || errorMessage.toLowerCase().includes("bị khóa")) {
+        setError("Tài khoản đang bị khóa.")
+      } else if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("gửi")) {
+        setError("Không thể gửi mã xác thực. Vui lòng thử lại.")
+      } else {
+        setError(errorMessage || "Không thể gửi email khôi phục mật khẩu. Vui lòng thử lại.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -97,12 +134,18 @@ export default function ForgotPasswordPage() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setEmailError(null) // Clear error on input change
+                  }}
                   placeholder="Nhập email của bạn"
-                  className="bg-white/70 backdrop-blur-sm border-white/50 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-9 text-sm rounded-xl"
+                  className={`bg-white/70 backdrop-blur-sm border-white/50 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-9 text-sm rounded-xl ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                   required
                 />
+                {emailError && (
+                  <p className="text-xs text-red-500">{emailError}</p>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
