@@ -92,9 +92,9 @@ export default function PatientAppointmentsSidebar() {
   }
 
   return (
-    <div className="w-80 glass border-l border-white/50 flex flex-col shadow-soft-lg">
+    <div className="w-80 bg-white flex flex-col" style={{ marginRight: '16px', marginTop: '16px', borderRadius: '16px', height: 'calc(100vh - 32px)' }}>
       {/* Header */}
-      <div className="p-6 border-b border-white/50">
+      <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">
             My Appointments

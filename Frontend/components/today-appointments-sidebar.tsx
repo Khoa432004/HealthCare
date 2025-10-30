@@ -21,7 +21,7 @@ const appointments = [
 
 export default function TodayAppointmentsSidebar() {
   return (
-    <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto">
+    <div className="w-96 bg-white overflow-y-auto" style={{ marginRight: '16px', marginTop: '16px', borderRadius: '16px', height: 'calc(100vh - 32px)' }}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-gray-500 uppercase tracking-wide">THURSDAY</span>
