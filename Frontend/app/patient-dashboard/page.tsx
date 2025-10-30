@@ -65,7 +65,7 @@ export default function PatientDashboard() {
 
               {/* Notifications */}
               <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
+                    <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               </Button>
 
@@ -76,7 +76,7 @@ export default function PatientDashboard() {
                     <Avatar className="w-8 h-8">
                       <AvatarImage src="/placeholder-user.jpg" />
                       <AvatarFallback>TE</AvatarFallback>
-                    </Avatar>
+              </Avatar>
                     <div className="text-left">
                       <p className="text-sm font-medium">Test stag patient</p>
                       <p className="text-xs text-gray-500">Patient</p>
@@ -87,7 +87,7 @@ export default function PatientDashboard() {
                   <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
                     <User className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
