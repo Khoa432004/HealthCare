@@ -209,6 +209,13 @@ class AuthService {
   }
 
   /**
+   * Approve doctor account (Admin only)
+   */
+  async approveDoctor(userId: string): Promise<ApiResponse> {
+    return await apiClient.post<ApiResponse>(`/api/auth/admin/approve-doctor/${userId}`)
+  }
+
+  /**
    * Store authentication data in localStorage
    */
   private storeAuthData(data: LoginResponse): void {

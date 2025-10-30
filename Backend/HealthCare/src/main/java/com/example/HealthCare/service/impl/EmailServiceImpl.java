@@ -112,4 +112,37 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send rejection email to {}: {}", email, e.getMessage(), e);
         }
     }
+    
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendApprovalEmail(String email, String fullName, String password) {
+        log.info("Sending approval email to: {}", email);
+        
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("HealthCare - Tài khoản đã được phê duyệt");
+        message.setText(String.format(
+            """
+            Xin chào %s,
+
+            Tài khoản của bạn đã được phê duyệt thành công!
+
+            Thông tin đăng nhập:
+            Email: %s
+            Mật khẩu tạm thời: %s
+
+            Vui lòng đăng nhập và thay đổi mật khẩu trong lần đăng nhập đầu tiên.
+
+            Trân trọng,
+            Đội ngũ HealthCare""",
+            fullName, email, password
+        ));
+        
+        try {
+            mailSender.send(message);
+            log.info("Successfully sent approval email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send approval email to {}: {}", email, e.getMessage(), e);
+        }
+    }
 }

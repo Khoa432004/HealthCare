@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -524,7 +525,10 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	@CacheEvict(value = "pendingDoctors", allEntries = true)
+	@Caching(evict = {
+		@CacheEvict(value = "pendingDoctors", allEntries = true),
+		@CacheEvict(value = "users", allEntries = true)
+	})
 	public void approveDoctorAccount(UUID userId) {
 		UserAccount userAccount = userAccountRepository.findById(userId)
 				.orElseThrow(() -> new BadRequestException("User not found"));
@@ -533,12 +537,48 @@ public class AuthServiceImpl implements AuthService {
 			throw new BadRequestException("User is not a doctor");
 		}
 
-		userAccount.setStatus(AccountStatus.ACTIVE);
-		// Set first_login_required to true for doctors when approved (they need to change temporary password)
-		userAccount.setFirstLoginRequired(true);
-		userAccountRepository.save(userAccount);
+		// Get current admin user
+		UserAccount currentAdmin = getCurrentUser();
+		log.info("Current admin retrieved: {}", currentAdmin != null ? currentAdmin.getEmail() : "null");
 
-		log.info("Doctor account approved: {} (firstLoginRequired set to true)", userAccount.getEmail());
+		// Generate random password for the doctor
+		String randomPassword = generateRandomPassword();
+
+		// Update ApprovalRequest status to APPROVED
+		approvalRequestRepository.findByUserId(userId).ifPresent(approvalRequest -> {
+			approvalRequest.setStatus(RequestStatus.APPROVED);
+			approvalRequest.setReviewedAt(OffsetDateTime.now());
+			// Set reviewed_by to current admin
+			if (currentAdmin != null) {
+				approvalRequest.setReviewedBy(currentAdmin.getId());
+				log.info("Approval request reviewed by admin: {} (ID: {})", currentAdmin.getEmail(), currentAdmin.getId());
+			} else {
+				log.warn("Cannot set reviewedBy - current admin is null");
+			}
+			approvalRequestRepository.save(approvalRequest);
+		});
+
+		// Update user account status to ACTIVE
+		userAccount.setStatus(AccountStatus.ACTIVE);
+		// Set random password and first_login_required to true for doctors when approved
+		userAccount.setPasswordHash(passwordEncoder.encode(randomPassword));
+		userAccount.setFirstLoginRequired(true);
+		// Set updated_by to current admin
+		if (currentAdmin != null) {
+			userAccount.setUpdatedBy(currentAdmin);
+			log.info("Set updatedBy to admin: {} (ID: {})", currentAdmin.getEmail(), currentAdmin.getId());
+			log.info("UserAccount updatedBy before save: {}", 
+				userAccount.getUpdatedBy() != null ? userAccount.getUpdatedBy().getId() : "null");
+		} else {
+			log.warn("Cannot set updatedBy - current admin is null");
+		}
+		userAccountRepository.save(userAccount);
+		log.info("UserAccount saved successfully");
+
+		// Send approval email with temporary password
+		emailService.sendApprovalEmail(userAccount.getEmail(), userAccount.getFullName(), randomPassword);
+
+		log.info("Doctor account approved: {} (firstLoginRequired set to true, password emailed)", userAccount.getEmail());
 	}
 
 	@Override
@@ -561,10 +601,90 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	// Helper methods
+	private UserAccount getCurrentUser() {
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			if (authentication == null) {
+				log.warn("No authentication found in SecurityContext");
+				return null;
+			}
+			
+			Object principal = authentication.getPrincipal();
+			log.debug("Principal type: {}", principal.getClass().getName());
+			
+			String email = null;
+			
+			// Handle UserDetails (from form login)
+			if (principal instanceof UserDetails) {
+				email = ((UserDetails) principal).getUsername();
+				log.debug("Current user email from UserDetails: {}", email);
+			} 
+			// Handle Jwt (from OAuth2 Resource Server)
+			else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt) {
+				org.springframework.security.oauth2.jwt.Jwt jwt = (org.springframework.security.oauth2.jwt.Jwt) principal;
+				email = jwt.getClaimAsString("sub"); // subject is email
+				log.debug("Current user email from JWT: {}", email);
+			} else {
+				log.warn("Principal is neither UserDetails nor Jwt: {}", principal.getClass().getName());
+				return null;
+			}
+			
+			if (email == null || email.isEmpty()) {
+				log.warn("Email is null or empty from principal");
+				return null;
+			}
+			
+			UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
+			if (user != null) {
+				log.debug("Found current user: {} (ID: {})", user.getEmail(), user.getId());
+			} else {
+				log.warn("User not found in database for email: {}", email);
+			}
+			return user;
+		} catch (Exception e) {
+			log.error("Error getting current user: {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
 	private String generateOtp() {
 		Random random = new Random();
 		int otp = 100000 + random.nextInt(900000);
 		return String.valueOf(otp);
+	}
+
+	/**
+	 * Generate a random password (8 characters: uppercase, lowercase, numbers)
+	 */
+	private String generateRandomPassword() {
+		String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+		String numbers = "0123456789";
+		String allChars = upperCase + lowerCase + numbers;
+		
+		Random random = new Random();
+		StringBuilder password = new StringBuilder();
+		
+		// Ensure at least one character from each type
+		password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+		password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+		password.append(numbers.charAt(random.nextInt(numbers.length())));
+		
+		// Fill the rest randomly
+		for (int i = 3; i < 8; i++) {
+			password.append(allChars.charAt(random.nextInt(allChars.length())));
+		}
+		
+		// Shuffle the characters
+		char[] chars = password.toString().toCharArray();
+		for (int i = chars.length - 1; i > 0; i--) {
+			int j = random.nextInt(i + 1);
+			char temp = chars[i];
+			chars[i] = chars[j];
+			chars[j] = temp;
+		}
+		
+		return new String(chars);
 	}
 
 	private UserRole determineRole(String roleString) {

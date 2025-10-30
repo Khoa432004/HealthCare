@@ -9,6 +9,9 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.repository.ApprovalRequestRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.UserService;
 
@@ -36,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserServiceImpl implements UserService {
 
 	private final UserAccountRepository userAccountRepository;
+	private final ApprovalRequestRepository approvalRequestRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
@@ -132,7 +137,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	@Cacheable(value = "users", key = "#criteria.toString() + '_' + #page + '_' + #size")
 	public Page<UserResponse> getAllUsers(UserCriteria criteria, int page, int size) {
 		Page<UserAccount> users = userAccountRepository.findAllByIsDeletedFalse(
 				PageRequest.of(page, size, Sort.by("createdAt").descending()));
@@ -220,7 +224,94 @@ public class UserServiceImpl implements UserService {
 				.collect(java.util.stream.Collectors.toList());
 	}
 
+	@Override
+	@Caching(evict = {
+		@CacheEvict(value = "users", allEntries = true),
+		@CacheEvict(value = "userDetails", key = "#userId"),
+		@CacheEvict(value = "pendingDoctors", allEntries = true)
+	})
+	public void toggleAccountStatus(UUID userId, boolean activate) {
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+		
+		// Prevent deactivating admin accounts
+		if (!activate && userAccount.getRole() == UserRole.ADMIN) {
+			throw new BadRequestException("Cannot deactivate admin accounts");
+		}
+		
+		// Get current admin user
+		UserAccount currentUser = getCurrentUser();
+		log.info("Current user retrieved: {}", currentUser != null ? currentUser.getEmail() : "null");
+		
+		if (activate) {
+			userAccount.setStatus(AccountStatus.ACTIVE);
+			log.info("Activated user account: {}", userAccount.getEmail());
+		} else {
+			userAccount.setStatus(AccountStatus.INACTIVE);
+			log.info("Deactivated user account: {}", userAccount.getEmail());
+		}
+		
+		// Set updated_by to current admin
+		if (currentUser != null) {
+			userAccount.setUpdatedBy(currentUser);
+			log.info("Set updatedBy to admin: {} (ID: {})", currentUser.getEmail(), currentUser.getId());
+			log.info("UserAccount updatedBy before save: {}", 
+				userAccount.getUpdatedBy() != null ? userAccount.getUpdatedBy().getId() : "null");
+		} else {
+			log.warn("Cannot set updatedBy - current user is null");
+		}
+		
+		userAccountRepository.save(userAccount);
+		log.info("UserAccount saved successfully");
+	}
+
 	// Helper methods
+	private UserAccount getCurrentUser() {
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			if (authentication == null) {
+				log.warn("No authentication found in SecurityContext");
+				return null;
+			}
+			
+			Object principal = authentication.getPrincipal();
+			log.debug("Principal type: {}", principal.getClass().getName());
+			
+			String email = null;
+			
+			// Handle UserDetails (from form login)
+			if (principal instanceof UserDetails) {
+				email = ((UserDetails) principal).getUsername();
+				log.debug("Current user email from UserDetails: {}", email);
+			} 
+			// Handle Jwt (from OAuth2 Resource Server)
+			else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt) {
+				org.springframework.security.oauth2.jwt.Jwt jwt = (org.springframework.security.oauth2.jwt.Jwt) principal;
+				email = jwt.getClaimAsString("sub"); // subject is email
+				log.debug("Current user email from JWT: {}", email);
+			} else {
+				log.warn("Principal is neither UserDetails nor Jwt: {}", principal.getClass().getName());
+				return null;
+			}
+			
+			if (email == null || email.isEmpty()) {
+				log.warn("Email is null or empty from principal");
+				return null;
+			}
+			
+			UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
+			if (user != null) {
+				log.debug("Found current user: {} (ID: {})", user.getEmail(), user.getId());
+			} else {
+				log.warn("User not found in database for email: {}", email);
+			}
+			return user;
+		} catch (Exception e) {
+			log.error("Error getting current user: {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
 	private UserResponse mapToUserResponse(UserAccount userAccount) {
 		UserResponse response = new UserResponse();
 		response.setId(userAccount.getId());
@@ -233,6 +324,14 @@ public class UserServiceImpl implements UserService {
 		response.setStatus(userAccount.getStatus().name());
 		response.setCreatedAt(userAccount.getCreatedAt());
 		response.setUpdatedAt(userAccount.getUpdatedAt());
+		
+		// Set approval request status if exists
+		if (userAccount.getRole() == UserRole.DOCTOR) {
+			approvalRequestRepository.findByUserId(userAccount.getId()).ifPresent(approvalRequest -> {
+				response.setApprovalRequestStatus(approvalRequest.getStatus().name());
+			});
+		}
+		
 		return response;
 	}
 }
