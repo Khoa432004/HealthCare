@@ -3,7 +3,10 @@
  * Handles all HTTP requests to the backend
  */
 
-import { API_BASE_URL, STORAGE_KEYS } from './api-config'
+import { API_BASE_URL, STORAGE_KEYS, API_ENDPOINTS } from './api-config'
+
+// Re-export API_ENDPOINTS for convenience
+export { API_ENDPOINTS }
 
 export interface ApiResponse<T = any> {
   statusCode: number

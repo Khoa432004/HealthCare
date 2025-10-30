@@ -287,7 +287,7 @@ export function UserManagementTable() {
                             >
                               <Unlock className="w-4 h-4 mr-1" />
                               Mở khóa
-                            </Button>
+                      </Button>
                           )
                         )}
                       </div>

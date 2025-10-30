@@ -26,6 +26,9 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/users/${id}`,
     DELETE: (id: string) => `/api/users/${id}`,
   },
+  DASHBOARD: {
+    GET_STATS: '/api/v1/dashboard/stats',
+  },
 } as const
 
 // Token storage keys

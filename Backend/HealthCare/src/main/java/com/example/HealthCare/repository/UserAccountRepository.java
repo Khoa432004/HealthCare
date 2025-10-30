@@ -61,6 +61,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
     
     long countByRoleAndIsDeletedFalse(UserRole role);
     
+    Long countByIsDeletedFalse();
+    
     // Custom queries
     @Query("SELECT u FROM UserAccount u WHERE u.isDeleted = false AND " +
            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
