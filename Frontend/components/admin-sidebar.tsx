@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { LayoutDashboard, Users, Bell, BarChart3, FileText, Settings, LogOut, RefreshCw, XCircle, DollarSign, Stethoscope } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -22,42 +21,37 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
   ]
 
   return (
-    <aside className="w-64 h-screen glass border-r border-white/50 flex flex-col shadow-soft-lg">
-      <div className="p-6 border-b border-white/50 flex-shrink-0">
-        <Link href="/" className="flex items-center gap-2 hover-lift">
-          <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">YSALUS</div>
-          <span className="w-2.5 h-2.5 bg-[#fe2f2f] rounded-full pulse-soft shadow-soft"></span>
-        </Link>
-        <p className="text-xs text-gray-500 mt-2 font-medium">Admin Panel</p>
+    <aside className="w-64 h-screen bg-white flex flex-col" style={{ borderRadius: '24px', margin: '16px', marginRight: '0', height: 'calc(100vh - 32px)' }}>
+      <div className="p-6 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-xl">S</span>
+          </div>
+          <div className="text-xl font-bold" style={{ color: '#00a8cc' }}>YSALUS</div>
+        </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-smooth",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left",
               activeTab === item.id 
-                ? "gradient-primary text-white shadow-soft-md hover:shadow-soft-lg" 
-                : "text-gray-700 hover:bg-white/50 glass",
+                ? "text-gray-900 font-semibold" 
+                : "text-gray-600 hover:bg-gray-50",
             )}
+            style={activeTab === item.id ? { backgroundColor: '#d0eef5' } : {}}
           >
             <item.icon className="w-5 h-5" />
-            <span className="font-semibold">{item.label}</span>
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-white/50 space-y-2 flex-shrink-0">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-700 hover:bg-white/50 transition-smooth glass">
-          <Settings className="w-5 h-5" />
-          <span className="font-semibold">Settings</span>
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-600 hover:bg-red-50 transition-smooth glass">
-          <LogOut className="w-5 h-5" />
-          <span className="font-semibold">Logout</span>
-        </button>
+      <div className="p-4 border-t border-gray-100 flex-shrink-0">
+        <p className="text-xs text-gray-400 text-center">© 2025 YSalus All rights reserved</p>
       </div>
     </aside>
   )

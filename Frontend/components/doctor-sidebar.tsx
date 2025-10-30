@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Calendar,
@@ -9,18 +10,16 @@ import {
   MessageSquare,
   BarChart3,
   HelpCircle,
-  ChevronDown,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/doctor-dashboard", hasSubmenu: false },
-  { icon: Calendar, label: "Calendar", href: "/calendar", hasSubmenu: false },
-  { icon: Activity, label: "Monitoring", href: "/monitoring", hasSubmenu: true },
-  { icon: FileText, label: "EMR", href: "/emr", hasSubmenu: true },
-  { icon: MessageSquare, label: "Chats", href: "/chats", hasSubmenu: false },
-  { icon: BarChart3, label: "Reports", href: "/reports", hasSubmenu: false },
-  { icon: HelpCircle, label: "Help Centre", href: "/help", hasSubmenu: false },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/doctor-dashboard" },
+  { icon: Calendar, label: "Calendar", href: "/calendar" },
+  { icon: Activity, label: "Monitoring", href: "/monitoring" },
+  { icon: FileText, label: "EMR", href: "/emr" },
+  { icon: MessageSquare, label: "Chats", href: "/chats" },
+  { icon: BarChart3, label: "Reports", href: "/reports" },
+  { icon: HelpCircle, label: "Help Centre", href: "/help" },
 ]
 
 export default function DoctorSidebar() {
@@ -28,44 +27,45 @@ export default function DoctorSidebar() {
   const router = useRouter()
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">Y</span>
+    <aside className="w-64 h-screen bg-white flex flex-col" style={{ borderRadius: '24px', margin: '16px', marginRight: '0', height: 'calc(100vh - 32px)' }}>
+      <div className="p-6 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-xl">S</span>
           </div>
-          <span className="text-xl font-bold text-[#16a1bd]">YSALUS</span>
+          <div className="text-xl font-bold" style={{ color: '#00a8cc' }}>YSALUS</div>
         </div>
       </div>
 
-      <div className="flex-1 py-4 px-3">
-        {sidebarItems.map((item, index) => {
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        {sidebarItems.map((item) => {
           const Icon = item.icon
           const isActive =
             pathname === item.href ||
             (item.href === "/doctor-dashboard" && (pathname === "/my-profile" || pathname === "/settings"))
 
           return (
-            <div key={index}>
-                <Button
-                  variant="ghost"
-                onClick={() => router.push(item.href)}
-                  className={`w-full justify-start mb-1 ${
-                    isActive ? "bg-[#e5f5f8] text-[#0b0c0c] font-bold hover:bg-[#e5f5f8]" : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {item.hasSubmenu && <ChevronDown className="w-4 h-4" />}
-                </Button>
-            </div>
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left",
+                isActive 
+                  ? "text-gray-900 font-semibold" 
+                  : "text-gray-600 hover:bg-gray-50"
+              )}
+              style={isActive ? { backgroundColor: '#d0eef5' } : {}}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{item.label}</span>
+            </button>
           )
         })}
-      </div>
+      </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <p className="text-xs text-gray-400 text-center">@ 2025 YSalus All rights reserved</p>
+      <div className="p-4 border-t border-gray-100 flex-shrink-0">
+        <p className="text-xs text-gray-400 text-center">© 2025 YSalus All rights reserved</p>
       </div>
-    </div>
+    </aside>
   )
 }

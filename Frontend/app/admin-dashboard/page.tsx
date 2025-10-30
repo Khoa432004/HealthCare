@@ -46,14 +46,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
       {/* Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         {/* Top Navigation */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <header className="bg-white px-6 py-4 mx-4 mb-4" style={{ borderRadius: '16px' }}>
           <div className="flex items-center justify-between">
             {/* Search */}
             <div className="flex-1 max-w-md">
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 px-6 pb-6">
           {renderContent()}
         </main>
       </div>
