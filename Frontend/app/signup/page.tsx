@@ -13,8 +13,6 @@ export default function RoleSelectionPage() {
   const handleContinue = () => {
     if (selectedRole === "doctor") {
       router.push("/signup/doctor")
-    } else if (selectedRole === "clinic-admin") {
-      router.push("/signup/clinic-admin")
     } else if (selectedRole === "patient") {
       router.push("/signup/patient")
     }
@@ -60,7 +58,6 @@ export default function RoleSelectionPage() {
                         <SelectValue placeholder="Chọn vai trò" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="clinic-admin">Quản trị phòng khám</SelectItem>
                         <SelectItem value="doctor">Bác sĩ</SelectItem>
                         <SelectItem value="patient">Bệnh nhân</SelectItem>
                       </SelectContent>

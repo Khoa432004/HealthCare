@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.example.HealthCare.dto.request.ChangePasswordRequest;
+import com.example.HealthCare.dto.request.FirstLoginPasswordChangeRequest;
 import com.example.HealthCare.dto.request.PersonalInfoRequest;
 import com.example.HealthCare.dto.request.ProfessionalInfoRequest;
 import com.example.HealthCare.dto.request.RegisterRequest;
@@ -25,6 +26,7 @@ public interface AuthService {
 	
 	// Password management
 	void changePassword(String email, ChangePasswordRequest request);
+	void changePasswordOnFirstLogin(String email, FirstLoginPasswordChangeRequest request);
 	void forgetPassword(String email);
 	void resetPassword(String email, String otp, String newPassword);
 	

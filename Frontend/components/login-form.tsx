@@ -12,6 +12,7 @@ import { authService } from "@/services/auth.service"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FirstLoginPasswordModal } from "@/components/first-login-password-modal"
 
 export function LoginForm() {
   const router = useRouter()
@@ -20,9 +21,47 @@ export function LoginForm() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(false)
+  const [loggedInUserEmail, setLoggedInUserEmail] = useState<string>("")
+  
+  // Form validation errors
+  const [emailError, setEmailError] = useState<string>("")
+  const [passwordError, setPasswordError] = useState<string>("")
+
+  const validateForm = (): boolean => {
+    let isValid = true
+    
+    // Clear previous errors
+    setEmailError("")
+    setPasswordError("")
+    setError(null)
+    
+    // Validate email
+    if (!email || email.trim() === "") {
+      setEmailError("Vui lòng nhập Email.")
+      isValid = false
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      setEmailError("Email không đúng định dạng.")
+      isValid = false
+    }
+    
+    // Validate password
+    if (!password || password.trim() === "") {
+      setPasswordError("Vui lòng nhập Mật khẩu.")
+      isValid = false
+    }
+    
+    return isValid
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    if (!validateForm()) {
+      return
+    }
+    
     setIsLoading(true)
     setError(null)
     
@@ -33,6 +72,17 @@ export function LoginForm() {
       if (response.data) {
         console.log("Login successful:", response.message)
         console.log("User info:", response.data.user)
+        console.log("First login required:", response.data.user.firstLoginRequired)
+        console.log("User role:", response.data.user.role)
+        
+        // Check if first login is required (only for doctors)
+        if (response.data.user.firstLoginRequired && response.data.user.role === 'DOCTOR') {
+          console.log("Doctor first login required - showing modal")
+          setLoggedInUserEmail(response.data.user.email)
+          setShowFirstLoginModal(true)
+          setIsLoading(false)
+          return
+        }
         
         // Get user role and redirect to appropriate dashboard
         const userRole = response.data.user.role
@@ -41,17 +91,47 @@ export function LoginForm() {
         const dashboardRoute = authService.getDashboardRoute(userRole)
         console.log("Redirecting to:", dashboardRoute)
         
-        // Small delay to ensure localStorage is updated
-        setTimeout(() => {
-          router.push(dashboardRoute)
-        }, 100)
+        try {
+          // Small delay to ensure localStorage is updated
+          setTimeout(() => {
+            router.push(dashboardRoute)
+          }, 100)
+        } catch (navError) {
+          console.error("Navigation error:", navError)
+          setError("Lỗi điều hướng. Vui lòng thử lại.")
+          setIsLoading(false)
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error)
       setError(error.message || "Đăng nhập không thành công. Vui lòng kiểm tra lại email và mật khẩu.")
-    } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleFirstLoginSuccess = () => {
+    setShowFirstLoginModal(false)
+    // Get user info from localStorage
+    const userInfo = authService.getUserInfo()
+    if (userInfo) {
+      const dashboardRoute = authService.getDashboardRoute(userInfo.role)
+      console.log("First login password changed, redirecting to:", dashboardRoute)
+      
+      try {
+        // Small delay to ensure localStorage is updated
+        setTimeout(() => {
+          router.push(dashboardRoute)
+        }, 100)
+      } catch (navError) {
+        console.error("Navigation error:", navError)
+        setError("Lỗi điều hướng. Vui lòng thử lại.")
+      }
+    }
+  }
+
+  const handleFirstLoginError = (errorMessage: string) => {
+    console.error("First login password change error:", errorMessage)
+    // Keep the modal open so user can try again
   }
 
 
@@ -88,11 +168,19 @@ export function LoginForm() {
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="bg-white/70 backdrop-blur-sm border-white/50 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-11 text-base"
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setEmailError("")
+              setError(null)
+            }}
+            className={`bg-white/70 backdrop-blur-sm text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:border-blue-500 h-11 text-base ${
+              emailError ? "border-red-500 focus:ring-red-500" : "border-white/50 focus:ring-blue-500"
+            }`}
             placeholder="Nhập email của bạn"
-            required
           />
+          {emailError && (
+            <p className="text-sm text-red-600">{emailError}</p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -105,10 +193,15 @@ export function LoginForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/70 backdrop-blur-sm border-white/50 pr-12 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-11 text-base"
+              onChange={(e) => {
+                setPassword(e.target.value)
+                setPasswordError("")
+                setError(null)
+              }}
+              className={`bg-white/70 backdrop-blur-sm pr-12 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:border-blue-500 h-11 text-base ${
+                passwordError ? "border-red-500 focus:ring-red-500" : "border-white/50 focus:ring-blue-500"
+              }`}
               placeholder="Nhập mật khẩu của bạn"
-              required
             />
             <button
               type="button"
@@ -118,6 +211,9 @@ export function LoginForm() {
               {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
             </button>
           </div>
+          {passwordError && (
+            <p className="text-sm text-red-600">{passwordError}</p>
+          )}
         </div>
 
         {/* Forgot Password Link */}
@@ -155,6 +251,14 @@ export function LoginForm() {
           </Link>
         </div>
       </form>
+
+      {/* First Login Password Change Modal */}
+      <FirstLoginPasswordModal
+        open={showFirstLoginModal}
+        email={loggedInUserEmail}
+        onSuccess={handleFirstLoginSuccess}
+        onError={handleFirstLoginError}
+      />
     </div>
   </div>
 );

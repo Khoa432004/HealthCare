@@ -76,13 +76,13 @@ public class Appointment extends BaseEntity {
     @Column(name = "title")
     private String title;
 
-    @Column(name = "started_at", nullable = false)
+    @Column(name = "started_at")
     private OffsetDateTime startedAt;
 
-    @Column(name = "ended_at", nullable = false)
+    @Column(name = "ended_at")
     private OffsetDateTime endedAt;
 
-    @Column(name = "cancellation_by", nullable = false)
+    @Column(name = "cancellation_by")
     private String cancellationBy;
 
     @Column(name = "created_by")

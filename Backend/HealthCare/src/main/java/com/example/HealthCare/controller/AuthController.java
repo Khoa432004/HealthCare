@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HealthCare.dto.request.ChangePasswordRequest;
+import com.example.HealthCare.dto.request.FirstLoginPasswordChangeRequest;
 import com.example.HealthCare.dto.request.ForgetPasswordRequest;
 import com.example.HealthCare.dto.request.LoginRequest;
 import com.example.HealthCare.dto.request.PersonalInfoRequest;
@@ -57,11 +58,18 @@ public class AuthController {
 		try {
 			Map<String, Object> tokenResponse = authService.login(req.getEmail(), req.getPassword());
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Login successfully!", tokenResponse));
-		} catch (Exception ex) {
+		} catch (com.example.HealthCare.exception.BadRequestException ex) {
+			// Pass through specific error messages from service layer
 			log.warn("Login failed for user {}: {}", req.getEmail(), ex.getMessage());
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
 				"error", "unauthorized",
-				"message", "Invalid email or password"
+				"message", ex.getMessage()
+			));
+		} catch (Exception ex) {
+			log.error("Unexpected error during login for user {}: {}", req.getEmail(), ex.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+				"error", "internal_server_error",
+				"message", "Đăng nhập không thành công. Vui lòng thử lại sau."
 			));
 		}
 	}
@@ -139,6 +147,14 @@ public class AuthController {
 		String email = req.getEmail(); // Assuming ChangePasswordRequest has email field
 		authService.changePassword(email, req);
 		return new ResponseSuccess(HttpStatus.OK, "Change password successfully!");
+	}
+
+	@PutMapping("/change-password-first-login")
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseSuccess changePasswordOnFirstLogin(@Valid @RequestBody FirstLoginPasswordChangeRequest req) {
+		String email = req.getEmail();
+		authService.changePasswordOnFirstLogin(email, req);
+		return new ResponseSuccess(HttpStatus.OK, "First login password changed successfully!");
 	}
 
 	@PostMapping("/forget-password")

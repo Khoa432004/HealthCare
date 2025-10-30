@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     LOGOUT: '/api/auth/logout',
     REFRESH_TOKEN: '/api/auth/refresh',
     CHANGE_PASSWORD: '/api/auth/change-password',
+    CHANGE_PASSWORD_FIRST_LOGIN: '/api/auth/change-password-first-login',
     FORGET_PASSWORD: '/api/auth/forget-password',
     RESET_PASSWORD: '/api/auth/reset-password',
   },

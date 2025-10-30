@@ -70,6 +70,7 @@ public class SecurityConfig {
 								"/api/auth/refresh",
 								"/api/auth/forget-password",
 								"/api/auth/reset-password",
+								"/api/auth/change-password-first-login",
 								"/api/auth/test-forget-password",
 								"/api/auth/register",
 								"/api/auth/register/personal-info",
@@ -133,6 +134,7 @@ public class SecurityConfig {
 					|| path.equals("/api/auth/refresh")
 					|| path.equals("/api/auth/forget-password")
 					|| path.equals("/api/auth/reset-password")
+					|| path.equals("/api/auth/change-password-first-login")
 					|| path.equals("/api/auth/test-forget-password")
 					|| path.equals("/api/auth/register")
 					|| path.startsWith("/api/auth/register/personal-info")
