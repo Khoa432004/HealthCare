@@ -343,7 +343,7 @@ export function SignUpForm() {
         
         // Step 2: Call API to register professional info
         await authService.registerProfessionalInfo(professionalInfoData as any)
-        
+
         // Show success and redirect
         setSuccess(true)
         
@@ -650,7 +650,7 @@ export function SignUpForm() {
                 <Input
                   id="clinicHospital"
                   placeholder="Nhập tên phòng khám hoặc bệnh viện"
-                  value={formData.clinicHospital}
+                    value={formData.clinicHospital}
                   onChange={(e) => handleInputChange("clinicHospital", e.target.value)}
                   className="mt-1"
                 />
@@ -793,14 +793,14 @@ export function SignUpForm() {
               </div>
 
               <div className="mt-4">
-                <Label className="text-sm font-medium">Specialties</Label>
-                <div className="mt-1">
-                  <TagInput
-                    field="workSpecialties"
-                    placeholder="Add specialty"
-                    suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
-                  />
-                </div>
+                  <Label className="text-sm font-medium">Specialties</Label>
+                  <div className="mt-1">
+                    <TagInput
+                      field="workSpecialties"
+                      placeholder="Add specialty"
+                      suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
+                    />
+                  </div>
               </div>
             </div>
 

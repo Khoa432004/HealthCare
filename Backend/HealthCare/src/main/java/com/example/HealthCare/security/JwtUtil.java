@@ -38,6 +38,9 @@ public class JwtUtil {
 			List.of() : 
 			List.of(userAccount.getRole().name());
 		
+		// Generate privileges based on role
+		List<String> privileges = getPrivilegesByRole(userAccount.getRole());
+		
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + expirationMs);
 
@@ -46,11 +49,37 @@ public class JwtUtil {
 			.claim("userId", userAccount.getId().toString())
 			.claim("fullName", userAccount.getFullName())
 			.claim("roles", roles)
+			.claim("privileges", privileges)
 			.claim("type", "access")
 			.setIssuedAt(now)
 			.setExpiration(expiry)
 			.signWith(getSigningKey())
 			.compact();
+	}
+
+	/**
+	 * Map user roles to privileges
+	 */
+	private List<String> getPrivilegesByRole(com.example.HealthCare.enums.UserRole role) {
+		if (role == null) {
+			return List.of();
+		}
+		
+		switch (role) {
+			case ADMIN:
+				return List.of(
+					"VIEW_USER", "CREATE_USER", "MODIFY_USER", "DELETE_USER",
+					"APPROVE_DOCTOR", "REJECT_DOCTOR"
+				);
+			case DOCTOR:
+				return List.of(
+					"VIEW_USER"
+				);
+			case PATIENT:
+				return List.of();
+			default:
+				return List.of();
+		}
 	}
 
 	public String generateRefreshToken(UserAccount userAccount) {

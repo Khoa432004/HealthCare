@@ -24,6 +24,7 @@ public class UserResponse {
 	private String status; // AccountStatus enum as string
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;
+	private String approvalRequestStatus; // ApprovalRequest status (PENDING, APPROVED, REJECTED) - only for doctors
 	
 	// Deprecated fields (for backward compatibility, if needed)
 	@Deprecated

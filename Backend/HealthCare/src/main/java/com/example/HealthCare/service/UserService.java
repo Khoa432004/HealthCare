@@ -22,4 +22,5 @@ public interface UserService {
 	void restoreUser(UUID id);
 	void restoreUsers(List<UUID> ids);
 	List<UserResponse> getPendingDoctorAccounts();
+	void toggleAccountStatus(UUID userId, boolean activate);
 }

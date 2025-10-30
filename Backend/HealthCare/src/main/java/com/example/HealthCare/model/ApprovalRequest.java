@@ -6,9 +6,8 @@ import java.util.UUID;
 import com.example.HealthCare.enums.RequestStatus;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -35,7 +34,7 @@ public class ApprovalRequest extends BaseEntity {
     @lombok.Builder.Default
     private String type = "doctor_onboarding";
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.example.HealthCare.converter.RequestStatusConverter.class)
     @Column(name = "status", nullable = false)
     @lombok.Builder.Default
     private RequestStatus status = RequestStatus.PENDING;

@@ -133,4 +133,21 @@ public class UserController {
 			));
 		}
 	}
+
+	@PostMapping("/{id}/toggle-status")
+	@PreAuthorize("hasAuthority('MODIFY_USER')")
+	public ResponseEntity<?> toggleAccountStatus(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
+		try {
+			Boolean activate = body.getOrDefault("activate", false);
+			userService.toggleAccountStatus(id, activate);
+			String message = activate ? "Account activated successfully!" : "Account deactivated successfully!";
+			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, message));
+		} catch (Exception ex) {
+			log.error("Error toggling account status for user ID {}: {}", id, ex.getMessage(), ex);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+				"error", "toggle_status_failed",
+				"message", ex.getMessage()
+			));
+		}
+	}
 }

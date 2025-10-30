@@ -6,4 +6,5 @@ public interface EmailService {
     // Additional email methods for UserAccount flow
     void sendOtpEmail(String email, String otp);
     void sendRejectionEmail(String email, String reason);
+    void sendApprovalEmail(String email, String fullName, String password);
 }
