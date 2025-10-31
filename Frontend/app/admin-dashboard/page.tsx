@@ -4,6 +4,8 @@ import { useState } from "react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminOverview } from "@/components/admin-overview"
 import { UserManagementTable } from "@/components/user-management-table"
+import { CanceledAppointmentsTable } from "@/components/canceled-appointments-table"
+import { DoctorPayrollTable } from "@/components/doctor-payroll-table"
 import { Input } from "@/components/ui/input"
 import { Search, Bell, User, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -35,9 +37,9 @@ export default function AdminDashboard() {
       case "refunds":
         return <div className="p-4">Refunds - Coming soon</div>
       case "cancellations":
-        return <div className="p-4">Cancellations - Coming soon</div>
+        return <CanceledAppointmentsTable />
       case "revenue":
-        return <div className="p-4">Revenue - Coming soon</div>
+        return <DoctorPayrollTable />
       case "doctors":
         return <div className="p-4">Doctors - Coming soon</div>
       default:
@@ -80,8 +82,7 @@ export default function AdminDashboard() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder-avatar.jpg" alt="Admin" />
-                      <AvatarFallback>AD</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">AD</AvatarFallback>
                     </Avatar>
                     <div className="text-left">
                       <p className="text-sm font-medium">Admin</p>
