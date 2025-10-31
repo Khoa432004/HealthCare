@@ -29,6 +29,12 @@ export const API_ENDPOINTS = {
   DASHBOARD: {
     GET_STATS: '/api/v1/dashboard/stats',
   },
+  ADMIN: {
+    APPROVE_DOCTOR: (userId: string) => `/api/auth/admin/approve-doctor/${userId}`,
+    TOGGLE_ACCOUNT_STATUS: (userId: string) => `/api/v1/users/${userId}/toggle-status`,
+    CANCELED_APPOINTMENTS: '/api/v1/admin/canceled-appointments',
+    PAYROLL: '/api/v1/admin/payroll',
+  },
 } as const
 
 // Token storage keys

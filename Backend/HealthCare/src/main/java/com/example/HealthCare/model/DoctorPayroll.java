@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.example.HealthCare.converter.PayrollStatusConverter;
 import com.example.HealthCare.enums.PayrollStatus;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -50,7 +50,7 @@ public class DoctorPayroll extends BaseEntity {
     @lombok.Builder.Default
     private BigDecimal netAmount = BigDecimal.ZERO;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PayrollStatusConverter.class)
     @Column(name = "status", nullable = false)
     @lombok.Builder.Default
     private PayrollStatus status = PayrollStatus.UNSETTLED;

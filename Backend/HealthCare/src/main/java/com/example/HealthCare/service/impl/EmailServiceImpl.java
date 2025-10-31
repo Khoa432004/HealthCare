@@ -1,5 +1,9 @@
 package com.example.HealthCare.service.impl;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
+
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -143,6 +147,106 @@ public class EmailServiceImpl implements EmailService {
             log.info("Successfully sent approval email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send approval email to {}: {}", email, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendRefundNotificationEmail(String email, String patientName, BigDecimal refundAmount, String refundReason) {
+        log.info("Sending refund notification email to: {}", email);
+        
+        // Format currency as VND
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        String formattedAmount = currencyFormatter.format(refundAmount);
+        
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("YSalus - Thông báo hoàn tiền lịch hẹn");
+        message.setText(String.format(
+            """
+            Xin chào %s,
+
+            Chúng tôi xin thông báo rằng lịch hẹn của bạn đã được hoàn tiền thành công.
+
+            Thông tin hoàn tiền:
+            - Số tiền hoàn: %s
+            - Lý do hoàn tiền: %s
+
+            Số tiền sẽ được chuyển về tài khoản của bạn trong vòng 3-5 ngày làm việc.
+
+            Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi qua:
+            - Email: support@ysalus.com
+            - Hotline: 1900-xxxx
+
+            Trân trọng,
+            Đội ngũ YSalus Healthcare""",
+            patientName, 
+            formattedAmount,
+            refundReason != null ? refundReason : "Hủy lịch hẹn"
+        ));
+        
+        try {
+            mailSender.send(message);
+            log.info("Successfully sent refund notification email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send refund notification email to {}: {}", email, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Async("emailTaskExecutor")
+    public void sendPayrollSettlementEmail(String email, String doctorName, Integer year, Integer month,
+                                           BigDecimal netSalary, BigDecimal grossRevenue, BigDecimal platformFee, 
+                                           int appointments) {
+        log.info("Sending payroll settlement email to: {}", email);
+        
+        // Format currency as VND
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        String formattedNetSalary = currencyFormatter.format(netSalary);
+        String formattedGrossRevenue = currencyFormatter.format(grossRevenue);
+        String formattedPlatformFee = currencyFormatter.format(platformFee);
+        
+        // Get month name
+        String[] monthNames = {"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+                              "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"};
+        String monthName = monthNames[month - 1];
+        
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject(String.format("YSalus - Thông báo tất toán lương %s/%d", monthName, year));
+        message.setText(String.format(
+            """
+            Xin chào Bác sĩ %s,
+
+            Chúng tôi xin thông báo lương của bạn cho kỳ %s/%d đã được tất toán.
+
+            Chi tiết thanh toán:
+            - Kỳ: %s/%d
+            - Số lịch khám hoàn thành: %d
+            - Tổng doanh thu (Gross): %s
+            - Phí nền tảng (15%%): %s
+            - Lương bác sĩ (Net): %s
+
+            Số tiền sẽ được chuyển khoản vào tài khoản của bạn trong vòng 3-5 ngày làm việc.
+
+            Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi qua:
+            - Email: support@ysalus.com
+            - Hotline: 1900-xxxx
+
+            Trân trọng,
+            Đội ngũ YSalus Healthcare""",
+            doctorName, monthName, year,
+            monthName, year, appointments,
+            formattedGrossRevenue,
+            formattedPlatformFee,
+            formattedNetSalary
+        ));
+        
+        try {
+            mailSender.send(message);
+            log.info("Successfully sent payroll settlement email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send payroll settlement email to {}: {}", email, e.getMessage(), e);
         }
     }
 }

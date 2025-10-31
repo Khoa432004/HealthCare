@@ -177,7 +177,7 @@ CREATE TABLE "payment" (
   "appointment_id" uuid NOT NULL,
   "amount" numeric NOT NULL,
   "discount" numeric,
-  "tax" numeric DEFAULT 0.08,
+  "tax" numeric DEFAULT 0.05,
   "total_amount" numeric NOT NULL,
   "method" text NOT NULL,
   "status" payment_status NOT NULL DEFAULT 'pending',

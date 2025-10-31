@@ -43,7 +43,7 @@ public class Payment extends BaseEntity {
 
     @Column(name = "tax")
     @lombok.Builder.Default
-    private BigDecimal tax = new BigDecimal("0.08");
+    private BigDecimal tax = new BigDecimal("0.05");
 
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
