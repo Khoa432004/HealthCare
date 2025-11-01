@@ -35,6 +35,11 @@ export const API_ENDPOINTS = {
     CANCELED_APPOINTMENTS: '/api/v1/admin/canceled-appointments',
     PAYROLL: '/api/v1/admin/payroll',
   },
+  NOTIFICATIONS: {
+    BASE: '/api/v1/notifications',
+    BY_ID: (id: string) => `/api/v1/notifications/${id}`,
+    USER: (userId: string) => `/api/v1/notifications/user/${userId}`,
+  },
 } as const
 
 // Token storage keys

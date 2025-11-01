@@ -25,7 +25,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @PostMapping("/stats")
-    @PreAuthorize("hasAuthority('VIEW_USER')") // Admin only
+    @PreAuthorize("hasAuthority('VIEW_DASHBOARD')") // Admin only
     public ResponseEntity<?> getDashboardStats(@RequestBody(required = false) DashboardFilterRequest filter) {
         try {
             if (filter == null) {

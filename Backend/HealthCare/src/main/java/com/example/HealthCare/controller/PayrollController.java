@@ -31,7 +31,7 @@ public class PayrollController {
     private final PayrollService payrollService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('VIEW_USER')")
+    @PreAuthorize("hasAuthority('VIEW_PAYROLL')")
     public ResponseEntity<ResponseSuccess> getDoctorPayrolls(
             @RequestParam Integer year,
             @RequestParam Integer month,
@@ -62,7 +62,7 @@ public class PayrollController {
     }
 
     @PostMapping("/settle")
-    @PreAuthorize("hasAuthority('MODIFY_USER')")
+    @PreAuthorize("hasAuthority('SETTLE_PAYROLL')")
     public ResponseEntity<ResponseSuccess> settlePayroll(@Valid @RequestBody SettlePayrollRequest request) {
         try {
             payrollService.settlePayroll(request);

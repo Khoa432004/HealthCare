@@ -6,6 +6,7 @@ import { AdminOverview } from "@/components/admin-overview"
 import { UserManagementTable } from "@/components/user-management-table"
 import { CanceledAppointmentsTable } from "@/components/canceled-appointments-table"
 import { DoctorPayrollTable } from "@/components/doctor-payroll-table"
+import { NotificationManagement } from "@/components/notification-management"
 import { Input } from "@/components/ui/input"
 import { Search, Bell, User, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
       case "statistics":
         return <div className="p-4">Statistics - Coming soon</div>
       case "notifications":
-        return <div className="p-4">Notifications - Coming soon</div>
+        return <NotificationManagement />
       case "refunds":
         return <div className="p-4">Refunds - Coming soon</div>
       case "cancellations":
