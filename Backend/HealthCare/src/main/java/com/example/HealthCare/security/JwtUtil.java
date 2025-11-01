@@ -69,7 +69,10 @@ public class JwtUtil {
 			case ADMIN:
 				return List.of(
 					"VIEW_USER", "CREATE_USER", "MODIFY_USER", "DELETE_USER",
-					"APPROVE_DOCTOR", "REJECT_DOCTOR"
+					"APPROVE_DOCTOR", "REJECT_DOCTOR",
+					"VIEW_DASHBOARD", "MANAGE_NOTIFICATIONS", "VIEW_APPOINTMENTS",
+					"PROCESS_REFUNDS", "VIEW_PAYROLL", "SETTLE_PAYROLL",
+					"ADMIN_PRIVILEGES"
 				);
 			case DOCTOR:
 				return List.of(

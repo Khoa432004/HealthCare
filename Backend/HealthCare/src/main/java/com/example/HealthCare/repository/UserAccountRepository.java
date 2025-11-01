@@ -56,6 +56,9 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
     // Find by role and status
     java.util.List<UserAccount> findAllByRoleAndStatusAndIsDeletedFalse(UserRole role, AccountStatus status);
     
+    // Find all active users by role (for notifications)
+    java.util.List<UserAccount> findAllByRoleAndIsDeletedFalse(UserRole role);
+    
     // Count by role
     long countByRole(UserRole role);
     

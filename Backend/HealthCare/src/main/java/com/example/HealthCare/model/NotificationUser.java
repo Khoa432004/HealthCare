@@ -1,18 +1,18 @@
 package com.example.HealthCare.model;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,34 +20,34 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notification_user")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Notification {
+public class NotificationUser {
     
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     
-    @Column(nullable = false)
-    private String title;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_id", nullable = false)
+    private Notification notification;
     
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserAccount user;
     
-    @Column(nullable = false)
-    private String type; // SYSTEM, ADMIN, USER
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
     
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "target_roles", columnDefinition = "text[]")
-    private List<String> targetRoles; // ["DOCTOR", "PATIENT", "ADMIN"] or null for all
-    
-    @Column(name = "created_by", nullable = false)
-    private UUID createdBy;
+    @Column(name = "read_at")
+    private OffsetDateTime readAt;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 }
+

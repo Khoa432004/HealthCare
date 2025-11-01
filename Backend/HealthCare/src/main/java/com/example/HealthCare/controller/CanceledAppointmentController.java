@@ -31,7 +31,7 @@ public class CanceledAppointmentController {
     private final CanceledAppointmentService canceledAppointmentService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('VIEW_USER')")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
     public ResponseEntity<ResponseSuccess> getCanceledAppointments(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -58,7 +58,7 @@ public class CanceledAppointmentController {
     }
 
     @PostMapping("/refund")
-    @PreAuthorize("hasAuthority('MODIFY_USER')")
+    @PreAuthorize("hasAuthority('PROCESS_REFUNDS')")
     public ResponseEntity<ResponseSuccess> processRefund(@Valid @RequestBody RefundRequest request) {
         try {
             canceledAppointmentService.processRefund(request);
