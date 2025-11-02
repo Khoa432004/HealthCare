@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings } from "lucide-react"
@@ -21,9 +22,31 @@ import { LatestMeasurements } from "@/components/latest-measurements"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
 import MedicalHistoryTable from "@/components/medical-history-table"
 import { authService } from "@/services/auth.service"
+import { AuthGuard } from "@/components/auth-guard"
 
-export default function PatientDashboard() {
+function PatientDashboardContent() {
   const router = useRouter()
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
+
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    if (user) {
+      setUserInfo({
+        fullName: user.fullName || 'Patient',
+        role: user.role || 'PATIENT'
+      })
+    }
+  }, [])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'PT'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
 
   const handleLogout = async () => {
     try {
@@ -75,11 +98,11 @@ export default function PatientDashboard() {
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="w-8 h-8">
                       <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>TE</AvatarFallback>
-              </Avatar>
+                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
+                    </Avatar>
                     <div className="text-left">
-                      <p className="text-sm font-medium">Test stag patient</p>
-                      <p className="text-xs text-gray-500">Patient</p>
+                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
+                      <p className="text-xs text-gray-500">Bệnh nhân</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
@@ -195,5 +218,13 @@ export default function PatientDashboard() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PatientDashboard() {
+  return (
+    <AuthGuard allowedRoles={['PATIENT']}>
+      <PatientDashboardContent />
+    </AuthGuard>
   )
 }

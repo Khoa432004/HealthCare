@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminOverview } from "@/components/admin-overview"
 import { UserManagementTable } from "@/components/user-management-table"
@@ -19,11 +20,58 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { authService } from "@/services/auth.service"
+import { AuthGuard } from "@/components/auth-guard"
 
 type TabType = "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors"
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>("overview")
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
+
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    if (user) {
+      setUserInfo({
+        fullName: user.fullName || 'Admin',
+        role: user.role || 'ADMIN'
+      })
+    }
+  }, [])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'AD'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  // Helper function to get role display name
+  const getRoleDisplayName = (role: string): string => {
+    const roleMap: Record<string, string> = {
+      ADMIN: 'Quản trị viên',
+      CLINIC_ADMIN: 'Quản trị phòng khám',
+      DOCTOR: 'Bác sĩ',
+      PATIENT: 'Bệnh nhân'
+    }
+    return roleMap[role.toUpperCase()] || 'Người dùng'
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Clear local data and redirect anyway
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -83,11 +131,13 @@ export default function AdminDashboard() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">AD</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">
+                        {userInfo ? getInitials(userInfo.fullName) : 'AD'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="text-left">
-                      <p className="text-sm font-medium">Admin</p>
-                      <p className="text-xs text-gray-500">Quản trị viên</p>
+                      <p className="text-sm font-medium">{userInfo?.fullName || 'Admin'}</p>
+                      <p className="text-xs text-gray-500">{userInfo ? getRoleDisplayName(userInfo.role) : 'Quản trị viên'}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
@@ -99,7 +149,7 @@ export default function AdminDashboard() {
                     <span>Hồ sơ</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
@@ -115,5 +165,13 @@ export default function AdminDashboard() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function AdminDashboard() {
+  return (
+    <AuthGuard allowedRoles={['ADMIN', 'CLINIC_ADMIN']}>
+      <AdminDashboardContent />
+    </AuthGuard>
   )
 }

@@ -225,6 +225,10 @@ class AuthService {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token)
     localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(data.user))
     localStorage.setItem(STORAGE_KEYS.USER_ROLE, data.user.role)
+    
+    // Also set cookies for middleware access
+    document.cookie = `access_token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`
+    document.cookie = `user_role=${data.user.role}; path=/; max-age=86400; SameSite=Strict`
   }
 
   /**
@@ -237,6 +241,10 @@ class AuthService {
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
     localStorage.removeItem(STORAGE_KEYS.USER_INFO)
     localStorage.removeItem(STORAGE_KEYS.USER_ROLE)
+    
+    // Also clear cookies
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   }
 
   /**

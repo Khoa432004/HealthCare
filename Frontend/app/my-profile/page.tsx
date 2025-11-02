@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,7 +34,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 
-export default function MyProfilePage() {
+function MyProfilePageContent() {
   const router = useRouter()
   const [isEditMode, setIsEditMode] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -783,5 +784,13 @@ export default function MyProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export default function MyProfilePage() {
+  return (
+    <AuthGuard allowedRoles={['DOCTOR']}>
+      <MyProfilePageContent />
+    </AuthGuard>
   )
 }

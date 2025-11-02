@@ -17,6 +17,7 @@ import {
   HelpCircle,
   LogOut,
 } from "lucide-react"
+import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -33,7 +34,7 @@ import {
 import { AddChronicModal } from "@/components/add-chronic-modal"
 import { AddAllergiesModal } from "@/components/add-allergies-modal"
 import { PatientSidebar } from "@/components/patient-sidebar"
-export default function PatientProfile() {
+function PatientProfileContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -562,5 +563,13 @@ export default function PatientProfile() {
       />
     </div>
   </div>
+  )
+}
+
+export default function PatientProfile() {
+  return (
+    <AuthGuard allowedRoles={['PATIENT']}>
+      <PatientProfileContent />
+    </AuthGuard>
   )
 }
