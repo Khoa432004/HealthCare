@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { Appointment, AppointmentStatus } from "@/services/appointment.service"
 
 interface Event {
   id: string
@@ -27,66 +28,84 @@ interface Event {
 
 interface CalendarMonthViewProps {
   currentDate: Date
+  appointments?: Appointment[]
+  userRole?: 'DOCTOR' | 'PATIENT'
 }
 
-// Sample events data
-const SAMPLE_EVENTS: Event[] = [
-  {
-    id: "1",
-    title: "Sale Demo",
-    date: new Date(2025, 9, 14),
-    startTime: "03:00",
-    endTime: "03:30",
-    doctor: "Lê Thị Tuyết Hoa",
-    doctorGender: "Female",
-    patient: "Nguyễn Văn Nam",
-    patientGender: "Male",
-    status: "upcoming",
-    location: "At Clinic",
-    reason: "test",
-    symptomsOnset: "test",
-    symptomsSeverity: "test",
-    medicationsUsed: "test",
-  },
-  {
-    id: "2",
-    title: "Nguyễn Văn A",
-    date: new Date(2025, 9, 20),
-    startTime: "09:35",
-    endTime: "10:05",
-    doctor: "Lê Thị Tuyết Hoa",
-    doctorGender: "Female",
-    patient: "Nguyễn Văn A",
-    patientGender: "Male",
-    status: "upcoming",
-    location: "At Clinic",
-    reason: "Consultation",
-    symptomsOnset: "2 days ago",
-    symptomsSeverity: "Mild",
-    medicationsUsed: "Paracetamol",
-  },
-  {
-    id: "3",
-    title: "Test 1",
-    date: new Date(2025, 9, 20),
-    startTime: "11:18",
-    endTime: "11:48",
-    doctor: "Lê Thị Tuyết Hoa",
-    doctorGender: "Female",
-    patient: "Test Patient",
-    patientGender: "Male",
-    status: "pending",
-    location: "At Clinic",
-    reason: "Medical test",
-    symptomsOnset: "test",
-    symptomsSeverity: "test",
-    medicationsUsed: "test",
-  },
-]
-
-export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
+export function CalendarMonthView({ currentDate, appointments = [], userRole }: CalendarMonthViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Convert Appointment to Event format
+  const convertAppointmentToEvent = (appointment: Appointment): Event => {
+    const scheduledStart = new Date(appointment.scheduledStart)
+    const scheduledEnd = new Date(appointment.scheduledEnd)
+    
+    // Format time as HH:MM
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      })
+    }
+
+    // Map appointment status to event status
+    // Backend returns lowercase: "scheduled", "canceled", "completed", "in_process"
+    const mapStatus = (status: AppointmentStatus): "upcoming" | "pending" | "cancelled" | "completed" => {
+      if (!status) {
+        console.warn('Appointment status is null or undefined')
+        return 'pending'
+      }
+      
+      // Normalize to uppercase for comparison (backend may return lowercase)
+      const statusUpper = String(status).toUpperCase().trim()
+      
+      switch (statusUpper) {
+        case 'SCHEDULED':
+          return 'upcoming'
+        case 'IN_PROCESS':
+        case 'IN_PROCESS':
+          return 'upcoming'
+        case 'CANCELED':
+        case 'CANCELLED':
+          return 'cancelled'
+        case 'COMPLETED':
+          return 'completed'
+        default:
+          // Log unknown status for debugging
+          console.warn('Unknown appointment status:', status, '-> normalized to:', statusUpper)
+          return 'pending'
+      }
+    }
+
+    // Get partner name based on user role
+    const getPartnerName = () => {
+      if (userRole === 'DOCTOR') {
+        return appointment.patientFullName || appointment.patientName || 'Patient'
+      } else {
+        return appointment.doctorFullName || appointment.doctorName || 'Doctor'
+      }
+    }
+
+    return {
+      id: appointment.id,
+      title: appointment.title || getPartnerName(),
+      date: scheduledStart,
+      startTime: formatTime(scheduledStart),
+      endTime: formatTime(scheduledEnd),
+      doctor: appointment.doctorFullName || appointment.doctorName,
+      doctorGender: appointment.doctorGender,
+      patient: appointment.patientFullName || appointment.patientName,
+      patientGender: appointment.patientGender,
+      status: mapStatus(appointment.status),
+      location: "At Clinic",
+      reason: appointment.reason || undefined,
+      symptomsOnset: appointment.symptomsOns || undefined,
+      symptomsSeverity: appointment.symptomsSever || undefined,
+      medicationsUsed: appointment.currentMedication || undefined,
+    }
+  }
 
   // Get the first day of the month and number of days
   const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
@@ -94,11 +113,14 @@ export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
   const daysInMonth = lastDay.getDate()
   const startingDayOfWeek = firstDay.getDay()
 
-  // Get events for this month
-  const monthEvents = SAMPLE_EVENTS.filter(
-    (event) =>
-      event.date.getMonth() === currentDate.getMonth() && event.date.getFullYear() === currentDate.getFullYear(),
-  )
+  // Convert appointments to events and filter for this month
+  const monthEvents = appointments
+    .map(convertAppointmentToEvent)
+    .filter(
+      (event) =>
+        event.date.getMonth() === currentDate.getMonth() && 
+        event.date.getFullYear() === currentDate.getFullYear()
+    )
 
   // Create calendar grid
   const calendarDays: (number | null)[] = []
@@ -116,15 +138,45 @@ export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "upcoming":
-        return "cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis w-full flex flex-col relative z-20 rounded-md p-4 bg-teal-50 text-teal-600 border-teal-600 border border-l-[4px]"
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-blue-50 text-blue-700 border-blue-300 border border-l-[3px] hover:bg-blue-100 transition-colors"
       case "pending":
-        return "cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis w-full flex flex-col relative z-20 rounded-md p-4 bg-teal-50 text-teal-600 border-teal-600 border border-l-[4px]"
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-yellow-50 text-yellow-700 border-yellow-300 border border-l-[3px] hover:bg-yellow-100 transition-colors"
       case "cancelled":
-        return "cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis w-full flex flex-col relative z-20 rounded-md p-4 bg-red-50 text-red-600 border-red-600 border border-l-[4px]"
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-red-50 text-red-700 border-red-300 border border-l-[3px] hover:bg-red-100 transition-colors"
       case "completed":
-        return "cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis w-full flex flex-col relative z-20 rounded-md p-4 bg-green-50 text-green-600 border-green-600 border border-l-[4px]"
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-green-50 text-green-700 border-green-300 border border-l-[3px] hover:bg-green-100 transition-colors"
       default:
-        return "cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis w-full flex flex-col relative z-20 rounded-md p-4 bg-gray-50 text-gray-600 border-gray-600 border border-l-[4px]"
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-gray-50 text-gray-700 border-gray-300 border border-l-[3px] hover:bg-gray-100 transition-colors"
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return {
+          text: "Up Coming",
+          className: "bg-[#16A1BD] hover:bg-teal-600 text-white"
+        }
+      case "pending":
+        return {
+          text: "Pending",
+          className: "bg-yellow-500 hover:bg-yellow-600 text-white"
+        }
+      case "cancelled":
+        return {
+          text: "Cancelled",
+          className: "bg-red-500 hover:bg-red-600 text-white"
+        }
+      case "completed":
+        return {
+          text: "Completed",
+          className: "bg-green-500 hover:bg-green-600 text-white"
+        }
+      default:
+        return {
+          text: "Unknown",
+          className: "bg-gray-500 hover:bg-gray-600 text-white"
+        }
     }
   }
 
@@ -187,10 +239,13 @@ export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
                           className={`w-full text-left px-2 py-1 rounded text-xs font-medium truncate border transition-all hover:shadow-md ${getStatusColor(
                             event.status,
                           )}`}
-                          title={`${event.title} - ${event.startTime}`}
+                          title={`${event.title} - ${event.startTime}-${event.endTime} - ${userRole === 'DOCTOR' ? event.patient : event.doctor}`}
                         >
-                          <div className="truncate">{event.title}</div>
-                          <div className="text-xs opacity-75">{event.startTime}</div>
+                          <div className="truncate font-semibold">{event.title}</div>
+                          <div className="text-xs opacity-75">{event.startTime}-{event.endTime}</div>
+                          <div className="text-xs opacity-60 truncate mt-0.5">
+                            {userRole === 'DOCTOR' ? event.patient : event.doctor}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -204,7 +259,7 @@ export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
 
       {/* Event Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
+        <DialogContent className="max-w-md p-0 overflow-hidden" showCloseButton={false}>
           <DialogTitle className="sr-only">{selectedEvent?.title} - Appointment Details</DialogTitle>
           {selectedEvent && (
             <div className="flex flex-col h-full max-h-[90vh]">
@@ -212,7 +267,14 @@ export function CalendarMonthView({ currentDate }: CalendarMonthViewProps) {
               <div className="px-6 pt-6 pb-4 border-b border-gray-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex gap-2">
-                  <span data-slot="badge" className="inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold w-fit whitespace-nowrap shrink-0 [&amp;&gt;svg]:size-3 gap-1 [&amp;&gt;svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-all duration-300 overflow-hidden shadow-soft border-transparent [a&amp;]:hover:bg-primary/90 [a&amp;]:hover:scale-105 bg-[#16A1BD] hover:bg-teal-600 text-white">Up Coming</span>
+                    {(() => {
+                      const statusBadge = getStatusBadge(selectedEvent.status)
+                      return (
+                        <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold w-fit whitespace-nowrap shrink-0 ${statusBadge.className}`}>
+                          {statusBadge.text}
+                        </span>
+                      )
+                    })()}
                     {selectedEvent.location && (
                       <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
                         {selectedEvent.location}
