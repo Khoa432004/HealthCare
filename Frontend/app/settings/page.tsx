@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { AuthGuard } from "@/components/auth-guard"
 import { Bell, Search, Calendar, Users, ExternalLink, Pencil, Plus, LayoutDashboard, User, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +22,7 @@ import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false)
   const [selectedDuration, setSelectedDuration] = useState("10 mins")
   const [selectedClinic, setSelectedClinic] = useState("Clinic 1")
@@ -473,5 +474,13 @@ export default function SettingsPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <AuthGuard allowedRoles={['DOCTOR', 'ADMIN', 'CLINIC_ADMIN']}>
+      <SettingsPageContent />
+    </AuthGuard>
   )
 }

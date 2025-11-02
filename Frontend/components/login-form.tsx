@@ -24,6 +24,15 @@ export function LoginForm() {
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false)
   const [loggedInUserEmail, setLoggedInUserEmail] = useState<string>("")
   
+  // Get redirect URL from query params
+  const getRedirectUrl = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('redirect')
+    }
+    return null
+  }
+  
   // Form validation errors
   const [emailError, setEmailError] = useState<string>("")
   const [passwordError, setPasswordError] = useState<string>("")
@@ -84,17 +93,19 @@ export function LoginForm() {
           return
         }
         
-        // Get user role and redirect to appropriate dashboard
+        // Get user role and redirect to appropriate dashboard or redirect URL
         const userRole = response.data.user.role
         console.log("User role:", userRole)
         
-        const dashboardRoute = authService.getDashboardRoute(userRole)
-        console.log("Redirecting to:", dashboardRoute)
+        // Check if there's a redirect URL, otherwise use dashboard route
+        const redirectUrl = getRedirectUrl()
+        const targetRoute = redirectUrl || authService.getDashboardRoute(userRole)
+        console.log("Redirecting to:", targetRoute)
         
         try {
-          // Small delay to ensure localStorage is updated
+          // Small delay to ensure localStorage and cookies are updated
           setTimeout(() => {
-            router.push(dashboardRoute)
+            router.push(targetRoute)
           }, 100)
         } catch (navError) {
           console.error("Navigation error:", navError)
@@ -114,13 +125,15 @@ export function LoginForm() {
     // Get user info from localStorage
     const userInfo = authService.getUserInfo()
     if (userInfo) {
-      const dashboardRoute = authService.getDashboardRoute(userInfo.role)
-      console.log("First login password changed, redirecting to:", dashboardRoute)
+      // Check if there's a redirect URL, otherwise use dashboard route
+      const redirectUrl = getRedirectUrl()
+      const targetRoute = redirectUrl || authService.getDashboardRoute(userInfo.role)
+      console.log("First login password changed, redirecting to:", targetRoute)
       
       try {
-        // Small delay to ensure localStorage is updated
+        // Small delay to ensure localStorage and cookies are updated
         setTimeout(() => {
-          router.push(dashboardRoute)
+          router.push(targetRoute)
         }, 100)
       } catch (navError) {
         console.error("Navigation error:", navError)
