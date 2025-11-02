@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { AuthGuard } from "@/components/auth-guard"
+import { NotificationBell } from "@/components/notification-bell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -29,18 +30,50 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, Search, Edit, Loader2, AlertCircle, LayoutDashboard, Calendar, User, Settings } from "lucide-react"
+import { Search, Edit, Loader2, AlertCircle, LayoutDashboard, Calendar, User, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
+import { authService } from "@/services/auth.service"
 
 function MyProfilePageContent() {
   const router = useRouter()
+  const [userInfo, setUserInfo] = useState<any>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    setUserInfo(user)
+  }, [])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) {
+      // Determine default based on role
+      if (userInfo?.role === 'PATIENT') return 'PT'
+      return 'DR'
+    }
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   useEffect(() => {
     // Simulate initial data loading
@@ -173,114 +206,65 @@ function MyProfilePageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
       <DoctorSidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         {/* Header */}
-        <header className="glass border-b border-white/50 px-6 py-4 shadow-soft">
+        <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl shadow-soft-md">
-              <div className="w-5 h-5 gradient-primary rounded-lg flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <User className="w-5 h-5 text-gray-700" />
+                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
               </div>
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">My Profile</h1>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input type="search" placeholder="Search..." className="pl-12 w-80 glass border-white/50 hover:bg-white transition-all" />
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input 
+                  type="search"
+                  placeholder="Search..." 
+                  className="pl-10 bg-gray-50 border-gray-200" 
+                />
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative gradient-primary text-white hover:opacity-90 shadow-soft hover:shadow-soft-md transition-smooth"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full pulse-soft shadow-soft" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-4">Notifications</h3>
-                    <div className="space-y-4">
-                      {[
-                        {
-                          title: "Profile Updated",
-                          message: "Your profile information has been successfully updated.",
-                          time: "1 hour ago",
-                        },
-                        {
-                          title: "New Patient Review",
-                          message: "You received a new 5-star review from a patient.",
-                          time: "4 hours ago",
-                        },
-                        {
-                          title: "Appointment Reminder",
-                          message: "You have an appointment with Nguyễn Văn A in 30 minutes.",
-                          time: "6 hours ago",
-                        },
-                        {
-                          title: "Certification Renewal",
-                          message: "Your medical certification will expire in 30 days.",
-                          time: "1 day ago",
-                        },
-                        {
-                          title: "New Message",
-                          message: "You have a new message from a patient.",
-                          time: "2 days ago",
-                        },
-                      ].map((notif, index) => (
-                        <div key={index} className="pb-4 border-b last:border-0">
-                          <h4 className="font-medium text-sm mb-1">{notif.title}</h4>
-                          <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
-                          <span className="text-xs text-gray-400">• {notif.time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="ghost" className="w-full mt-4">
-                      Read All Notifications
-                    </Button>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Notifications */}
+              <NotificationBell />
 
+              {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl hover:bg-white/50 transition-smooth">
-                    <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
-                      <AvatarFallback className="gradient-primary text-white font-semibold">LH</AvatarFallback>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={userInfo?.role === 'PATIENT' ? "/placeholder-user.jpg" : "/clean-female-doctor.png"} />
+                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : (userInfo?.role === 'PATIENT' ? 'PT' : 'DR')}</AvatarFallback>
                     </Avatar>
-                    <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">Lê Thị Tuyết Hoa</p>
-                      <p className="text-xs text-gray-500">Doctor</p>
+                    <div className="text-left">
+                      <p className="text-sm font-medium">{userInfo?.fullName || (userInfo?.role === 'PATIENT' ? 'Patient' : 'Doctor')}</p>
+                      <p className="text-xs text-gray-500">{userInfo?.role === 'PATIENT' ? 'Bệnh nhân' : 'Bác sĩ'}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
-                  <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">Lê Thị Tuyết Hoa</p>
-                    <p className="text-xs text-gray-500 font-medium">Doctor</p>
-                  </div>
-                  <Link href="/my-profile">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <User className="w-4 h-4 text-[#16a1bd]" />
-                      <span className="font-medium">My Profile</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/settings">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <Settings className="w-4 h-4 text-[#16a1bd]" />
-                      <span className="font-medium">Settings</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
-                    <span className="font-medium">Logout</span>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => router.push(userInfo?.role === 'PATIENT' ? '/patient-profile' : '/my-profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
+                  {userInfo?.role !== 'PATIENT' && (
+                    <>
+                      <DropdownMenuItem onClick={() => router.push('/settings')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

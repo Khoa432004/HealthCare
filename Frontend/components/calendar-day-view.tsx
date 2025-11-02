@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Clock, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Edit2, MoreVertical, X, Stethoscope, Heart, Pill, Frown } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
+import { Appointment, AppointmentStatus } from "@/services/appointment.service"
 
 interface Event {
   id: string
@@ -13,80 +14,173 @@ interface Event {
   startTime: string
   endTime: string
   doctor?: string
+  doctorGender?: string
   patient?: string
+  patientGender?: string
   status: "upcoming" | "pending" | "cancelled" | "completed"
-  description?: string
+  location?: string
+  reason?: string
+  symptomsOnset?: string
+  symptomsSeverity?: string
+  medicationsUsed?: string
 }
 
 interface CalendarDayViewProps {
   currentDate: Date
+  appointments?: Appointment[]
+  userRole?: 'DOCTOR' | 'PATIENT'
 }
 
-// Sample events data
-const SAMPLE_EVENTS: Event[] = [
-  {
-    id: "1",
-    title: "Sale Demo",
-    date: new Date(2025, 9, 14),
-    startTime: "03:00",
-    endTime: "03:30",
-    doctor: "Lê Thị Tuyết Hoa",
-    patient: "Nguyễn Văn Nam",
-    status: "upcoming",
-  },
-  {
-    id: "2",
-    title: "Nguyễn Văn A",
-    date: new Date(2025, 9, 20),
-    startTime: "09:35",
-    endTime: "10:05",
-    doctor: "Lê Thị Tuyết Hoa",
-    patient: "Nguyễn Văn A",
-    status: "upcoming",
-  },
-  {
-    id: "3",
-    title: "Test 1",
-    date: new Date(2025, 9, 20),
-    startTime: "11:18",
-    endTime: "11:48",
-    doctor: "Lê Thị Tuyết Hoa",
-    patient: "Test Patient",
-    status: "pending",
-  },
-]
-
-export function CalendarDayView({ currentDate }: CalendarDayViewProps) {
+export function CalendarDayView({ currentDate, appointments = [], userRole }: CalendarDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const dayEvents = SAMPLE_EVENTS.filter((event) => event.date.toDateString() === currentDate.toDateString())
+  // Convert Appointment to Event format
+  const convertAppointmentToEvent = (appointment: Appointment): Event => {
+    const scheduledStart = new Date(appointment.scheduledStart)
+    const scheduledEnd = new Date(appointment.scheduledEnd)
+    
+    // Format time as HH:MM
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      })
+    }
+
+    // Map appointment status to event status
+    // Backend returns lowercase: "scheduled", "canceled", "completed", "in_process"
+    const mapStatus = (status: AppointmentStatus): "upcoming" | "pending" | "cancelled" | "completed" => {
+      if (!status) {
+        console.warn('Appointment status is null or undefined')
+        return 'pending'
+      }
+      
+      // Normalize to uppercase for comparison (backend may return lowercase)
+      const statusUpper = String(status).toUpperCase().trim()
+      
+      switch (statusUpper) {
+        case 'SCHEDULED':
+          return 'upcoming'
+        case 'IN_PROCESS':
+        case 'IN_PROCESS':
+          return 'upcoming'
+        case 'CANCELED':
+        case 'CANCELLED':
+          return 'cancelled'
+        case 'COMPLETED':
+          return 'completed'
+        default:
+          // Log unknown status for debugging
+          console.warn('Unknown appointment status:', status, '-> normalized to:', statusUpper)
+          return 'pending'
+      }
+    }
+
+    // Get partner name based on user role
+    const getPartnerName = () => {
+      if (userRole === 'DOCTOR') {
+        return appointment.patientFullName || appointment.patientName || 'Patient'
+      } else {
+        return appointment.doctorFullName || appointment.doctorName || 'Doctor'
+      }
+    }
+
+    return {
+      id: appointment.id,
+      title: appointment.title || getPartnerName(),
+      date: scheduledStart,
+      startTime: formatTime(scheduledStart),
+      endTime: formatTime(scheduledEnd),
+      doctor: appointment.doctorFullName || appointment.doctorName,
+      doctorGender: appointment.doctorGender,
+      patient: appointment.patientFullName || appointment.patientName,
+      patientGender: appointment.patientGender,
+      status: mapStatus(appointment.status),
+      location: "At Clinic",
+      reason: appointment.reason || undefined,
+      symptomsOnset: appointment.symptomsOns || undefined,
+      symptomsSeverity: appointment.symptomsSever || undefined,
+      medicationsUsed: appointment.currentMedication || undefined,
+    }
+  }
+
+  // Convert appointments to events and filter for this day
+  const dayEvents = appointments
+    .map(convertAppointmentToEvent)
+    .filter((event) => {
+      const eventDate = new Date(event.date)
+      return eventDate.getDate() === currentDate.getDate() &&
+             eventDate.getMonth() === currentDate.getMonth() &&
+             eventDate.getFullYear() === currentDate.getFullYear()
+    })
+    .sort((a, b) => {
+      // Sort by start time
+      const timeA = a.startTime.split(':').map(Number)
+      const timeB = b.startTime.split(':').map(Number)
+      return timeA[0] * 60 + timeA[1] - (timeB[0] * 60 + timeB[1])
+    })
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "upcoming":
-        return "bg-cyan-100 text-cyan-700 border-cyan-300"
+        return "bg-blue-50 text-blue-700 border-blue-300 border-l-[3px]"
       case "pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300"
+        return "bg-yellow-50 text-yellow-700 border-yellow-300 border-l-[3px]"
       case "cancelled":
-        return "bg-red-100 text-red-700 border-red-300"
+        return "bg-red-50 text-red-700 border-red-300 border-l-[3px]"
       case "completed":
-        return "bg-green-100 text-green-700 border-green-300"
+        return "bg-green-50 text-green-700 border-green-300 border-l-[3px]"
       default:
-        return "bg-gray-100 text-gray-700 border-gray-300"
+        return "bg-gray-50 text-gray-700 border-gray-300 border-l-[3px]"
     }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return {
+          text: "Up Coming",
+          className: "bg-[#16A1BD] hover:bg-teal-600 text-white"
+        }
+      case "pending":
+        return {
+          text: "Pending",
+          className: "bg-yellow-500 hover:bg-yellow-600 text-white"
+        }
+      case "cancelled":
+        return {
+          text: "Cancelled",
+          className: "bg-red-500 hover:bg-red-600 text-white"
+        }
+      case "completed":
+        return {
+          text: "Completed",
+          className: "bg-green-500 hover:bg-green-600 text-white"
+        }
+      default:
+        return {
+          text: "Unknown",
+          className: "bg-gray-500 hover:bg-gray-600 text-white"
+        }
+    }
+  }
+
+  const getInitials = (name: string) => {
+    if (!name) return ''
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2)
   }
 
   const handleEventClick = (event: Event) => {
     setSelectedEvent(event)
     setIsDialogOpen(true)
   }
-
-  // Generate time slots
-  const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, "0")
-    return `${hour}:00`
-  })
 
   return (
     <>
@@ -103,7 +197,7 @@ export function CalendarDayView({ currentDate }: CalendarDayViewProps) {
 
           {dayEvents.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">No events scheduled for this day</p>
+              <p className="text-gray-500">Không có lịch khám nào trong ngày này</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -115,14 +209,22 @@ export function CalendarDayView({ currentDate }: CalendarDayViewProps) {
                     event.status,
                   )}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{event.title}</h3>
-                      <p className="text-sm opacity-75">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1">{event.title}</h3>
+                      <p className="text-sm text-gray-600 mb-1">
                         {event.startTime} - {event.endTime}
                       </p>
+                      <p className="text-sm text-gray-500">
+                        {userRole === 'DOCTOR' ? `Bệnh nhân: ${event.patient}` : `Bác sĩ: ${event.doctor}`}
+                      </p>
                     </div>
-                    <Badge className={`${getStatusColor(event.status)}`}>{event.status}</Badge>
+                    <Badge className={`${getStatusColor(event.status)} whitespace-nowrap`}>
+                      {event.status === 'upcoming' ? 'Sắp tới' : 
+                       event.status === 'pending' ? 'Chờ xử lý' :
+                       event.status === 'cancelled' ? 'Đã hủy' :
+                       event.status === 'completed' ? 'Hoàn thành' : event.status}
+                    </Badge>
                   </div>
                 </button>
               ))}
@@ -133,43 +235,155 @@ export function CalendarDayView({ currentDate }: CalendarDayViewProps) {
 
       {/* Event Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-0 overflow-hidden" showCloseButton={false}>
           <DialogTitle className="sr-only">{selectedEvent?.title} - Appointment Details</DialogTitle>
-
           {selectedEvent && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>
-                  {selectedEvent.date.toLocaleDateString()} • {selectedEvent.startTime} - {selectedEvent.endTime}
-                </span>
+            <div className="flex flex-col h-full max-h-[90vh]">
+              {/* Header with badges and actions */}
+              <div className="px-6 pt-6 pb-4 border-b border-gray-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex gap-2">
+                    {(() => {
+                      const statusBadge = getStatusBadge(selectedEvent.status)
+                      return (
+                        <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold w-fit whitespace-nowrap shrink-0 ${statusBadge.className}`}>
+                          {statusBadge.text}
+                        </span>
+                      )
+                    })()}
+                    {selectedEvent.location && (
+                      <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
+                        {selectedEvent.location}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                      <Edit2 className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                      <MoreVertical className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => setIsDialogOpen(false)}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    >
+                      <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Title and time */}
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedEvent.title}</h2>
+                <p className="text-sm text-gray-600">
+                  {selectedEvent.date.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}{" "}
+                  · {selectedEvent.startTime} - {selectedEvent.endTime}
+                </p>
               </div>
 
-              {selectedEvent.doctor && (
-                <div className="flex items-start gap-3">
-                  <User className="w-4 h-4 mt-1 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Doctor</p>
-                    <p className="font-medium">{selectedEvent.doctor}</p>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                {/* Doctor info */}
+                {selectedEvent.doctor && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Doctor</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-700">
+                        {getInitials(selectedEvent.doctor)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{selectedEvent.doctor}</p>
+                        <p className="text-sm text-gray-500">{selectedEvent.doctorGender}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {selectedEvent.patient && (
-                <div className="flex items-start gap-3">
-                  <User className="w-4 h-4 mt-1 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Patient</p>
-                    <p className="font-medium">{selectedEvent.patient}</p>
+                {/* Patient section */}
+                {selectedEvent.patient && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Patient</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-700">
+                        {getInitials(selectedEvent.patient)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{selectedEvent.patient}</p>
+                        <p className="text-sm text-gray-500">{selectedEvent.patientGender}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex-1 bg-transparent">
-                  Edit
-                </Button>
-                <Button className="flex-1 gradient-primary text-white">View Details</Button>
+                {/* Details section */}
+                {(selectedEvent.reason || selectedEvent.symptomsOnset || selectedEvent.symptomsSeverity || selectedEvent.medicationsUsed) && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Details</h3>
+                    <div className="space-y-3">
+                      {selectedEvent.reason && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                            <Stethoscope className="w-4 h-4 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Reason</p>
+                            <p className="text-sm text-gray-600">{selectedEvent.reason}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedEvent.symptomsOnset && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                            <Heart className="w-4 h-4 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Symptoms onset</p>
+                            <p className="text-sm text-gray-600">{selectedEvent.symptomsOnset}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedEvent.symptomsSeverity && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                            <Frown className="w-4 h-4 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Symptoms severity</p>
+                            <p className="text-sm text-gray-600">{selectedEvent.symptomsSeverity}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedEvent.medicationsUsed && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                            <Pill className="w-4 h-4 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Medications being used</p>
+                            <p className="text-sm text-gray-600">{selectedEvent.medicationsUsed}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer with View Details button */}
+              <div className="px-6 py-4 border-t border-gray-200">
+                <Link href={`/calendar/appointment/${selectedEvent.id}`} className="w-full">
+                  <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#e5f5f8] border border-[#0d6171] text-[#0d6171]" type="button">
+                    View details
+                  </button>
+                </Link>
               </div>
             </div>
           )}

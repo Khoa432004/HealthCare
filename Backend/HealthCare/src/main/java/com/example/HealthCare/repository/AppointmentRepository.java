@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.HealthCare.enums.AppointmentStatus;
@@ -15,5 +17,33 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     Long countByCreatedAtBetween(OffsetDateTime fromDate, OffsetDateTime toDate);
     Long countByStatusAndCreatedAtBetween(AppointmentStatus status, OffsetDateTime fromDate, OffsetDateTime toDate);
     List<Appointment> findByStatus(AppointmentStatus status);
+    
+    // Find appointments by patient ID within date range
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient " +
+           "JOIN FETCH a.doctor " +
+           "WHERE a.patientId = :userId " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate " +
+           "ORDER BY a.scheduledStart ASC")
+    List<Appointment> findByPatientIdAndDateRange(
+        @Param("userId") UUID userId,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+    
+    // Find appointments by doctor ID within date range
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient " +
+           "JOIN FETCH a.doctor " +
+           "WHERE a.doctorId = :userId " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate " +
+           "ORDER BY a.scheduledStart ASC")
+    List<Appointment> findByDoctorIdAndDateRange(
+        @Param("userId") UUID userId,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
 }
 

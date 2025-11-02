@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   Search,
-  Bell,
   User,
   Calendar,
   MapPin,
@@ -18,6 +18,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
+import { NotificationBell } from "@/components/notification-bell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -34,110 +35,101 @@ import {
 import { AddChronicModal } from "@/components/add-chronic-modal"
 import { AddAllergiesModal } from "@/components/add-allergies-modal"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { authService } from "@/services/auth.service"
 function PatientProfileContent() {
+  const router = useRouter()
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [showNotifications, setShowNotifications] = useState(false)
   const [activeTab, setActiveTab] = useState("personal")
   const [showChronicModal, setShowChronicModal] = useState(false)
   const [showAllergiesModal, setShowAllergiesModal] = useState(false)
   const [chronicConditions, setChronicConditions] = useState<string[]>(["HYPERTENSION"])
   const [allergies, setAllergies] = useState<string[]>(["EGGS", "MILK", "PEANUTS"])
 
-  const notifications = [
-    {
-      title: "Profile Update",
-      message: "Your profile has been successfully updated.",
-      time: "2 hours ago",
-    },
-    {
-      title: "Medical Record",
-      message: "New medical record has been added to your profile.",
-      time: "1 day ago",
-    },
-  ]
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    if (user) {
+      setUserInfo({
+        fullName: user.fullName || 'Patient',
+        role: user.role || 'PATIENT'
+      })
+    }
+  }, [])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'PT'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   return (
-        <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
       <PatientSidebar />
-    <div className="min-h-screen flex" style={{ backgroundColor: "#e5f5f8" }}>
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         {/* Header */}
-        <header className="border-b border-gray-200 px-6 py-4 shadow-soft">
+        <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl shadow-soft-md">
-                <div className="w-5 h-5 gradient-primary rounded-lg flex items-center justify-center">
-                  <Calendar className="w-3.5 h-3.5 text-white" />
-                </div>
-                <h1 className="text-xl font-semibold text-[#16a1bd]">My Profile</h1>
-              </div>  
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <User className="w-5 h-5 text-gray-700" />
+                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
+              </div>
+            </div>
+
             <div className="flex items-center space-x-4">
               {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  placeholder="Search..."
-                  className="pl-12 w-80 bg-white border-gray-200 rounded-full focus:ring-2 focus:ring-teal-500"
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input 
+                  type="search"
+                  placeholder="Search..." 
+                  className="pl-10 bg-gray-50 border-gray-200" 
                 />
               </div>
 
               {/* Notifications */}
-              <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative bg-gradient-to-br from-teal-500 to-cyan-600 text-white hover:opacity-90 rounded-full"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-4">Notifications</h3>
-                    <div className="space-y-4">
-                      {notifications.map((notif, index) => (
-                        <div key={index} className="pb-4 border-b last:border-0">
-                          <h4 className="font-medium text-sm mb-1">{notif.title}</h4>
-                          <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
-                          <span className="text-xs text-gray-400">• {notif.time}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationBell />
 
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-3 bg-white/50 px-4 py-2 rounded-full hover:bg-white/80"
-                  >
-                    <Avatar className="w-9 h-9 ring-2 ring-white">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
                       <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-600 text-white font-semibold">
-                        TE
-                      </AvatarFallback>
+                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-gray-700">TE</span>
+                    <div className="text-left">
+                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
+                      <p className="text-xs text-gray-500">Bệnh nhân</p>
+                    </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-3 py-3 border-b">
-                    <p className="font-semibold text-gray-900">Test stag patient</p>
-                    <p className="text-xs text-gray-500">Patient</p>
-                  </div>
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2">
-                    <User className="w-4 h-4 text-teal-600" />
-                    <span className="font-medium">My Profile</span>
+                  <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600">
-                    <span className="font-medium">Logout</span>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -146,7 +138,7 @@ function PatientProfileContent() {
         </header>
 
         {/* Main Content */}
-        <div className="p-6 flex-1 overflow-auto">
+        <div className="flex-1 px-6 pb-6 overflow-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex items-center justify-between mb-6">
               <TabsList className="bg-transparent border-b border-gray-300 rounded-none h-auto p-0">
@@ -562,7 +554,6 @@ function PatientProfileContent() {
         currentAllergies={allergies}
       />
     </div>
-  </div>
   )
 }
 

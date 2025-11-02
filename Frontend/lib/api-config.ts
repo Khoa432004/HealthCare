@@ -40,6 +40,10 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/api/v1/notifications/${id}`,
     USER: (userId: string) => `/api/v1/notifications/user/${userId}`,
   },
+  APPOINTMENTS: {
+    MY_APPOINTMENTS: '/api/v1/appointments/my-appointments',
+    BY_ID: (id: string) => `/api/v1/appointments/${id}`,
+  },
 } as const
 
 // Token storage keys
