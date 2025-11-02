@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Bell, ChevronRight, LayoutDashboard, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -87,10 +88,7 @@ function DoctorDashboardContent() {
               </div>
 
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                    </Button>
+              <NotificationBell />
 
               {/* User Menu */}
               <DropdownMenu>

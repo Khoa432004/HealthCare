@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, Bell, Filter, ChevronLeft, ChevronRight, Plus, Calendar, User, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Filter, ChevronLeft, ChevronRight, Plus, Calendar, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { authService } from "@/services/auth.service"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +28,44 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 type ViewMode = "month" | "week" | "day"
 
 export default function CalendarPage() {
+  const router = useRouter()
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)) // October 1, 2025
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
+
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    if (user) {
+      setUserInfo({
+        fullName: user.fullName || 'Doctor',
+        role: user.role || 'DOCTOR'
+      })
+    }
+  }, [])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'DR'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   const handleCreateAppointment = async () => {
     setIsCreatingAppointment(true)
@@ -45,36 +81,12 @@ export default function CalendarPage() {
       setIsCreatingAppointment(false)
     }
   }
-  const [showNotifications, setShowNotifications] = useState(false)
   const [filters, setFilters] = useState({
     upcoming: false,
     pending: false,
     cancelled: false,
     completed: false,
   })
-
-  const notifications = [
-    {
-      title: "tracto-curia-sunt",
-      message: "Terebro taedium alius debitis concedo velit acervus.",
-      time: "15 min ago",
-    },
-    {
-      title: "decet-at-tubineus",
-      message: "Basium cilicium at odit tenetur coma thalassinus quia derelinquo voluptatem.",
-      time: "15 min ago",
-    },
-    {
-      title: "aestas-substantia-claro",
-      message: "Dolorum vicinus blandior alienus.",
-      time: "15 min ago",
-    },
-    {
-      title: "ventito-verecundia-decens",
-      message: "Vester coniecto adeptio.",
-      time: "15 min ago",
-    },
-  ]
 
   const getDateRangeText = () => {
     if (viewMode === "month") {
@@ -115,99 +127,61 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
       <DoctorSidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className=" border-b border-white/50 px-6 py-4 shadow-soft">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
+        <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl shadow-soft-md">
-                <div className="w-5 h-5 gradient-primary rounded-lg flex items-center justify-center">
-                  <Calendar className="w-3.5 h-3.5 text-white" />
-                </div>
-                <h1 className="text-xl font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">
-                  Calendar
-                </h1>
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-gray-700" />
+                <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <Input
-                  placeholder="Search..."
-                  className="pl-12 w-80 glass border-white/50 hover:bg-white transition-all"
+              {/* Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input 
+                  type="search"
+                  placeholder="Search..." 
+                  className="pl-10 bg-gray-50 border-gray-200" 
                 />
               </div>
 
-              <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative gradient-primary text-white hover:opacity-90 shadow-soft hover:shadow-soft-md transition-smooth"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full pulse-soft shadow-soft"></div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-4">Notifications</h3>
-                    <div className="space-y-4">
-                      {notifications.map((notif, index) => (
-                        <div key={index} className="pb-4 border-b last:border-0">
-                          <h4 className="font-medium text-sm mb-1">{notif.title}</h4>
-                          <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
-                          <span className="text-xs text-gray-400">• {notif.time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="ghost" className="w-full mt-4">
-                      Read All Notifications
-                    </Button>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Notifications */}
+              <NotificationBell />
 
+              {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl hover:bg-white/50 transition-smooth"
-                  >
-                    <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
                       <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="gradient-primary text-white font-semibold">LH</AvatarFallback>
+                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'DR'}</AvatarFallback>
                     </Avatar>
-                    <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">Lê Thị Tuyết Hoa</p>
-                      <p className="text-xs text-gray-500">Doctor</p>
+                    <div className="text-left">
+                      <p className="text-sm font-medium">{userInfo?.fullName || 'Doctor'}</p>
+                      <p className="text-xs text-gray-500">Bác sĩ</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
-                  <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">Lê Thị Tuyết Hoa</p>
-                    <p className="text-xs text-gray-500 font-medium">Doctor</p>
-                  </div>
-                  <Link href="/my-profile">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <User className="w-4 h-4 text-[#16a1bd]" />
-                      <span className="font-medium">My Profile</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/settings">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <Settings className="w-4 h-4 text-[#16a1bd]" />
-                      <span className="font-medium">Settings</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
-                    <span className="font-medium">Logout</span>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => router.push('/my-profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -216,7 +190,7 @@ export default function CalendarPage() {
         </header>
 
         {/* Calendar Controls */}
-        <div className=" border-b border-white/50 px-6 py-4">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button

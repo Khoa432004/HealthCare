@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Bell, User, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { NotificationBell } from "@/components/notification-bell"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,10 +122,7 @@ function AdminDashboardContent() {
             {/* Right Section */}
             <div className="flex items-center gap-4">
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </Button>
+              <NotificationBell />
               
               {/* User Menu */}
               <DropdownMenu>
