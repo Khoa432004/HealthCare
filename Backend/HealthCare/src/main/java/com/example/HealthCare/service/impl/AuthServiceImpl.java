@@ -164,9 +164,6 @@ public class AuthServiceImpl implements AuthService {
 	public void logout(String refreshToken) {
 		try {
 			String email = jwtUtil.extractEmail(refreshToken);
-			log.info("User {} logged out", email);
-
-			// Add token to blacklist
 			tokenBlacklistService.blacklist(refreshToken);
 		} catch (Exception e) {
 			log.error("Error during logout: {}", e.getMessage());
@@ -189,8 +186,6 @@ public class AuthServiceImpl implements AuthService {
 
 		userAccount.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
 		userAccountRepository.save(userAccount);
-
-		log.info("Password changed for user: {}", email);
 	}
 
 	@Override
@@ -217,8 +212,6 @@ public class AuthServiceImpl implements AuthService {
 		// Set first_login_required to false after successful password change
 		userAccount.setFirstLoginRequired(false);
 		userAccountRepository.save(userAccount);
-
-		log.info("First login password changed for user: {}", email);
 	}
 
 	@Override
@@ -243,8 +236,6 @@ public class AuthServiceImpl implements AuthService {
 
 		// Send OTP via email
 		emailService.sendOtpEmail(userAccount.getEmail(), otp);
-
-		log.info("Password reset OTP sent to: {} (valid for 15 minutes)", email);
 	}
 
 	@Override
@@ -270,7 +261,6 @@ public class AuthServiceImpl implements AuthService {
 					otpTokenRepository.save(token);
 					
 					if (token.getAttemptCount() >= token.getMaxAttempts()) {
-						log.warn("Max OTP attempts reached for user: {}", email);
 						throw new BadRequestException("Maximum OTP attempts exceeded. Please request a new OTP.");
 					}
 				}
@@ -286,8 +276,6 @@ public class AuthServiceImpl implements AuthService {
 		// Update password
 		userAccount.setPasswordHash(passwordEncoder.encode(newPassword));
 		userAccountRepository.save(userAccount);
-
-		log.info("Password reset successfully for user: {}", email);
 	}
 
 	@Override
@@ -341,8 +329,6 @@ public class AuthServiceImpl implements AuthService {
 		response.put("email", userAccount.getEmail());
 		response.put("access_token", accessToken);
 		response.put("refresh_token", refreshToken);
-
-		log.info("User registered: {}", userAccount.getEmail());
 		return response;
 	}
 
@@ -389,8 +375,6 @@ public class AuthServiceImpl implements AuthService {
 		response.setAddressLine1(request.getAddressLine1());
 		response.setAddressLine2(request.getAddressLine2());
 		response.setHasExistingAccount(false);
-
-		log.info("Personal info registered for doctor: {}", userAccount.getEmail());
 		return response;
 	}
 
@@ -515,13 +499,6 @@ public class AuthServiceImpl implements AuthService {
 				.submittedAt(OffsetDateTime.now())
 				.build();
 		approvalRequestRepository.save(approvalRequest);
-
-		// Send notification to admin about new doctor registration
-		// This could be implemented to send email notification
-		log.info("Professional info registered for doctor: {} - Approval request created", userAccount.getEmail());
-
-		// TODO: Send notification to admin about new doctor registration request
-		// emailService.sendAdminNotification(userAccount.getEmail(), approvalRequest.getId());
 	}
 
 	@Override
@@ -537,48 +514,26 @@ public class AuthServiceImpl implements AuthService {
 			throw new BadRequestException("User is not a doctor");
 		}
 
-		// Get current admin user
 		UserAccount currentAdmin = getCurrentUser();
-		log.info("Current admin retrieved: {}", currentAdmin != null ? currentAdmin.getEmail() : "null");
-
-		// Generate random password for the doctor
 		String randomPassword = generateRandomPassword();
 
-		// Update ApprovalRequest status to APPROVED
 		approvalRequestRepository.findByUserId(userId).ifPresent(approvalRequest -> {
 			approvalRequest.setStatus(RequestStatus.APPROVED);
 			approvalRequest.setReviewedAt(OffsetDateTime.now());
-			// Set reviewed_by to current admin
 			if (currentAdmin != null) {
 				approvalRequest.setReviewedBy(currentAdmin.getId());
-				log.info("Approval request reviewed by admin: {} (ID: {})", currentAdmin.getEmail(), currentAdmin.getId());
-			} else {
-				log.warn("Cannot set reviewedBy - current admin is null");
 			}
 			approvalRequestRepository.save(approvalRequest);
 		});
 
-		// Update user account status to ACTIVE
 		userAccount.setStatus(AccountStatus.ACTIVE);
-		// Set random password and first_login_required to true for doctors when approved
 		userAccount.setPasswordHash(passwordEncoder.encode(randomPassword));
 		userAccount.setFirstLoginRequired(true);
-		// Set updated_by to current admin
 		if (currentAdmin != null) {
 			userAccount.setUpdatedBy(currentAdmin);
-			log.info("Set updatedBy to admin: {} (ID: {})", currentAdmin.getEmail(), currentAdmin.getId());
-			log.info("UserAccount updatedBy before save: {}", 
-				userAccount.getUpdatedBy() != null ? userAccount.getUpdatedBy().getId() : "null");
-		} else {
-			log.warn("Cannot set updatedBy - current admin is null");
 		}
 		userAccountRepository.save(userAccount);
-		log.info("UserAccount saved successfully");
-
-		// Send approval email with temporary password
 		emailService.sendApprovalEmail(userAccount.getEmail(), userAccount.getFullName(), randomPassword);
-
-		log.info("Doctor account approved: {} (firstLoginRequired set to true, password emailed)", userAccount.getEmail());
 	}
 
 	@Override
@@ -593,56 +548,34 @@ public class AuthServiceImpl implements AuthService {
 
 		userAccount.setStatus(AccountStatus.INACTIVE);
 		userAccountRepository.save(userAccount);
-
-		// Send rejection email
 		emailService.sendRejectionEmail(userAccount.getEmail(), reason);
-
-		log.info("Doctor account rejected: {}", userAccount.getEmail());
 	}
 
-	// Helper methods
 	private UserAccount getCurrentUser() {
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			if (authentication == null) {
-				log.warn("No authentication found in SecurityContext");
 				return null;
 			}
 			
 			Object principal = authentication.getPrincipal();
-			log.debug("Principal type: {}", principal.getClass().getName());
 			
 			String email = null;
 			
-			// Handle UserDetails (from form login)
 			if (principal instanceof UserDetails) {
 				email = ((UserDetails) principal).getUsername();
-				log.debug("Current user email from UserDetails: {}", email);
-			} 
-			// Handle Jwt (from OAuth2 Resource Server)
-			else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt) {
-				org.springframework.security.oauth2.jwt.Jwt jwt = (org.springframework.security.oauth2.jwt.Jwt) principal;
-				email = jwt.getClaimAsString("sub"); // subject is email
-				log.debug("Current user email from JWT: {}", email);
-			} else {
-				log.warn("Principal is neither UserDetails nor Jwt: {}", principal.getClass().getName());
-				return null;
+			} else if (principal instanceof String) {
+				email = (String) principal;
 			}
 			
-			if (email == null || email.isEmpty()) {
-				log.warn("Email is null or empty from principal");
+			if (email == null || email.isBlank()) {
 				return null;
 			}
 			
 			UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
-			if (user != null) {
-				log.debug("Found current user: {} (ID: {})", user.getEmail(), user.getId());
-			} else {
-				log.warn("User not found in database for email: {}", email);
-			}
 			return user;
 		} catch (Exception e) {
-			log.error("Error getting current user: {}", e.getMessage(), e);
+			log.error("Error getting current user: {}", e.getMessage());
 			return null;
 		}
 	}
@@ -653,9 +586,6 @@ public class AuthServiceImpl implements AuthService {
 		return String.valueOf(otp);
 	}
 
-	/**
-	 * Generate a random password (8 characters: uppercase, lowercase, numbers)
-	 */
 	private String generateRandomPassword() {
 		String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		String lowerCase = "abcdefghijklmnopqrstuvwxyz";
@@ -665,17 +595,14 @@ public class AuthServiceImpl implements AuthService {
 		Random random = new Random();
 		StringBuilder password = new StringBuilder();
 		
-		// Ensure at least one character from each type
 		password.append(upperCase.charAt(random.nextInt(upperCase.length())));
 		password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
 		password.append(numbers.charAt(random.nextInt(numbers.length())));
 		
-		// Fill the rest randomly
 		for (int i = 3; i < 8; i++) {
 			password.append(allChars.charAt(random.nextInt(allChars.length())));
 		}
 		
-		// Shuffle the characters
 		char[] chars = password.toString().toCharArray();
 		for (int i = chars.length - 1; i > 0; i--) {
 			int j = random.nextInt(i + 1);

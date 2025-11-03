@@ -1,6 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Backend",
+    "\\Backend\\HealthCare",
+    "\\Frontend"
   ],
+  "SelectedNode": "\\Backend\\HealthCare",
   "PreviewInSolutionExplorer": false
 }

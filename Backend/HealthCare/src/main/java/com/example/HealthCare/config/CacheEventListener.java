@@ -18,15 +18,11 @@ public class CacheEventListener {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        log.info("Application is ready, starting cache warm-up");
         try {
-            // Delay a bit to ensure all beans are initialized
             Thread.sleep(2000);
             cacheService.warmUpCaches();
-            log.info("Cache warm-up completed successfully");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Failed to warm up caches: {}", e.getMessage(), e);
         } catch (RuntimeException e) {
             log.error("Failed to warm up caches: {}", e.getMessage(), e);
         }

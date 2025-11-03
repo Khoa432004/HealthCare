@@ -38,49 +38,24 @@ public class DashboardServiceImpl implements DashboardService {
         OffsetDateTime fromDate = dateRange[0];
         OffsetDateTime toDate = dateRange[1];
 
-        log.info("Getting dashboard stats from {} to {}", fromDate, toDate);
-        log.info("Period filter: {}", filter.getPeriod());
-
-        // Total users (all time, not filtered by date)
         Long totalUsers = userAccountRepository.countByIsDeletedFalse();
-        log.info("Total users: {}", totalUsers);
-
-        // Pending doctors (all time, not filtered by date)
         Long pendingDoctors = approvalRequestRepository.countByStatus(RequestStatus.PENDING);
-
-        // Total appointments in period
         Long totalAppointments = appointmentRepository.countByCreatedAtBetween(fromDate, toDate);
-        log.info("Total appointments in period: {}", totalAppointments);
-
-        // Completed appointments in period
         Long completedAppointments = appointmentRepository.countByStatusAndCreatedAtBetween(
                 AppointmentStatus.COMPLETED, fromDate, toDate);
-        log.info("Completed appointments: {}", completedAppointments);
-
-        // Canceled appointments in period
         Long canceledAppointments = appointmentRepository.countByStatusAndCreatedAtBetween(
                 AppointmentStatus.CANCELED, fromDate, toDate);
-        log.info("Canceled appointments: {}", canceledAppointments);
-
-        // Scheduled appointments in period
         Long scheduledAppointments = appointmentRepository.countByStatusAndCreatedAtBetween(
                 AppointmentStatus.SCHEDULED, fromDate, toDate);
-        log.info("Scheduled appointments: {}", scheduledAppointments);
-
-        // Revenue from completed appointments in period
         BigDecimal revenue = paymentRepository.sumTotalAmountByStatusAndPaymentTimeBetween(
                 PaymentStatus.PAID, fromDate, toDate);
-        log.info("Revenue from payments with status PAID: {}", revenue);
         
         if (revenue == null) {
             revenue = BigDecimal.ZERO;
         }
 
-        // Calculate doctor salaries (85% of revenue)
         BigDecimal doctorSalaries = revenue.multiply(new BigDecimal("0.85"))
                 .setScale(2, RoundingMode.HALF_UP);
-
-        // Calculate platform profit (15% of revenue)
         BigDecimal platformProfit = revenue.multiply(new BigDecimal("0.15"))
                 .setScale(2, RoundingMode.HALF_UP);
 

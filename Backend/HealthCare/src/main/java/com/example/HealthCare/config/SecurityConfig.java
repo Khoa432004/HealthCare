@@ -80,7 +80,10 @@ public class SecurityConfig {
 								"/v3/api-docs/**",
 								"/actuator/**",
 								"/api/doctors/**",
-								"/api/auth/test"
+								"/api/auth/test",
+								"/ws/**",
+								"/app/**",
+								"/topic/**"
 						).permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(rs -> rs

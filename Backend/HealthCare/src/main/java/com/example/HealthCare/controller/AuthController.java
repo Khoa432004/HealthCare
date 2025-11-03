@@ -45,7 +45,6 @@ public class AuthController {
 
 	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
 	public ResponseEntity<Map<String, String>> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
-		log.error("Content-Type not supported: {}", ex.getMessage());
 		return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
 				.body(Map.of(
 					"error", "unsupported_media_type",
@@ -59,8 +58,6 @@ public class AuthController {
 			Map<String, Object> tokenResponse = authService.login(req.getEmail(), req.getPassword());
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Login successfully!", tokenResponse));
 		} catch (com.example.HealthCare.exception.BadRequestException ex) {
-			// Pass through specific error messages from service layer
-			log.warn("Login failed for user {}: {}", req.getEmail(), ex.getMessage());
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
 				"error", "unauthorized",
 				"message", ex.getMessage()
@@ -83,7 +80,6 @@ public class AuthController {
 				return ResponseEntity.status(HttpStatus.CREATED)
 					.body(new ResponseSuccess(HttpStatus.CREATED, "Registration successful!", response));
 			} catch (Exception ex) {
-				log.warn("Registration failed for user {}: {}", req.getEmail(), ex.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 					"error", "registration_failed",
 					"message", ex.getMessage()
@@ -103,7 +99,6 @@ public class AuthController {
 				return ResponseEntity.status(HttpStatus.CREATED)
 					.body(new ResponseSuccess(HttpStatus.CREATED, "Personal information saved successfully!", response));
 			} catch (Exception ex) {
-				log.warn("Personal info registration failed for identity card {}: {}", req.getIdentityCard(), ex.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 					"error", "personal_info_registration_failed",
 					"message", ex.getMessage()
@@ -123,7 +118,6 @@ public class AuthController {
 				return ResponseEntity.status(HttpStatus.CREATED)
 					.body(new ResponseSuccess(HttpStatus.CREATED, "Professional registration completed successfully!"));
 			} catch (Exception ex) {
-				log.warn("Professional info registration failed for user ID {}: {}", req.getUserId(), ex.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 					"error", "professional_info_registration_failed",
 					"message", ex.getMessage()
@@ -160,11 +154,9 @@ public class AuthController {
 	@PostMapping("/forget-password")
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseSuccess forgetPassword(@Valid @RequestBody ForgetPasswordRequest req) {
-		String email = req.getEmail(); // Changed from getUsername to getEmail
-		log.info("Forget password request for email: {}", email);
+		String email = req.getEmail();
 		try {
 			authService.forgetPassword(email);
-			log.info("Forget password request processed successfully for email: {}", email);
 			return new ResponseSuccess(HttpStatus.OK, "Reset password email is being sent. Please check your email for the OTP code.");
 		} catch (Exception e) {
 			log.error("Error in forget password endpoint for email {}: {}", email, e.getMessage());
@@ -200,7 +192,6 @@ public class AuthController {
 			authService.approveDoctorAccount(userId); // Changed to void return
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account approved successfully!"));
 		} catch (Exception ex) {
-			log.warn("Failed to approve doctor account for user ID {}: {}", userId, ex.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 				"error", "approval_failed",
 				"message", ex.getMessage()
@@ -213,10 +204,9 @@ public class AuthController {
 	public ResponseEntity<?> rejectDoctorAccount(@PathVariable UUID userId, @RequestBody Map<String, String> body) {
 		try {
 			String reason = body.getOrDefault("reason", "No reason provided");
-			authService.rejectDoctorAccount(userId, reason); // Changed to void return
+			authService.rejectDoctorAccount(userId, reason);
 			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Doctor account rejected successfully!"));
 		} catch (Exception ex) {
-			log.warn("Failed to reject doctor account for user ID {}: {}", userId, ex.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
 				"error", "rejection_failed",
 				"message", ex.getMessage()
