@@ -19,10 +19,6 @@ public class PerformanceMonitor {
         }
         
         long endTime = System.currentTimeMillis();
-        long executionTime = endTime - startTime;
-        
-        log.info("Operation '{}' completed in {} ms", operationName, executionTime);
-        
-        return executionTime;
+        return endTime - startTime;
     }
 }

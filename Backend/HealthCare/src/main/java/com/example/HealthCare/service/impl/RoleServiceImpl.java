@@ -35,55 +35,36 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	public RoleResponse createRole(CreateRoleRequest createRoleRequest) {
-		log.warn("RoleService.createRole() is not implemented - using stub");
-		throw new UnsupportedOperationException(
-			"Role management is not available. UserAccount uses role ENUM, not roles table."
-		);
+		throw new UnsupportedOperationException("Role management is not available. UserAccount uses role ENUM, not roles table.");
 	}
 
 	@Override
 	public Page<RoleResponse> getAllRoles(Pageable pageable) {
-		log.warn("RoleService.getAllRoles() is not implemented - using stub");
-		// Return empty page
 		return new PageImpl<>(List.of(), pageable, 0);
 	}
 
 	@Override
 	public RoleResponse getRoleById(UUID id) {
-		log.warn("RoleService.getRoleById() is not implemented - using stub");
-		throw new UnsupportedOperationException(
-			"Role management is not available. UserAccount uses role ENUM, not roles table."
-		);
+		throw new UnsupportedOperationException("Role management is not available. UserAccount uses role ENUM, not roles table.");
 	}
 
 	@Override
 	public void updateRole(UpdateRoleRequest updateRoleRequest) {
-		log.warn("RoleService.updateRole() is not implemented - using stub");
-		throw new UnsupportedOperationException(
-			"Role management is not available. UserAccount uses role ENUM, not roles table."
-		);
+		throw new UnsupportedOperationException("Role management is not available. UserAccount uses role ENUM, not roles table.");
 	}
 
 	@Override
 	public void deleteRole(UUID id) {
-		log.warn("RoleService.deleteRole() is not implemented - using stub");
-		throw new UnsupportedOperationException(
-			"Role management is not available. UserAccount uses role ENUM, not roles table."
-		);
+		throw new UnsupportedOperationException("Role management is not available. UserAccount uses role ENUM, not roles table.");
 	}
 
 	@Override
 	public void deleteRoles(List<UUID> ids) {
-		log.warn("RoleService.deleteRoles() is not implemented - using stub");
-		throw new UnsupportedOperationException(
-			"Role management is not available. UserAccount uses role ENUM, not roles table."
-		);
+		throw new UnsupportedOperationException("Role management is not available. UserAccount uses role ENUM, not roles table.");
 	}
 
 	@Override
 	public List<String> getPrivilegesByRole(String roleName) {
-		log.warn("RoleService.getPrivilegesByRole() is not implemented - using stub");
-		// Return empty list
 		return List.of();
 	}
 }

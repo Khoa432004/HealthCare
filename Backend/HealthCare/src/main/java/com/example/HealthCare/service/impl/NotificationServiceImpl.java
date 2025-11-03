@@ -103,34 +103,22 @@ public class NotificationServiceImpl implements NotificationService {
                 notificationUserRepository.save(notificationUser);
             }
             
-            log.info("Recreated {} notification-user records", targetUsers.size());
         }
         
         notification = notificationRepository.save(notification);
-        log.info("Notification updated successfully");
-        
         return mapToResponse(notification);
     }
 
     @Override
     @Transactional
     public void deleteNotification(UUID notificationId) {
-        log.info("Deleting notification: {}", notificationId);
-        
-        // Delete NotificationUser records first (due to foreign key constraint)
         notificationUserRepository.deleteByNotificationId(notificationId);
-        
-        // Delete notification
         notificationRepository.deleteById(notificationId);
-        
-        log.info("Notification deleted successfully");
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getAllNotifications() {
-        log.info("Getting all notifications");
-        
         List<Notification> notifications = notificationRepository.findAllByOrderByCreatedAtDesc();
         
         return notifications.stream()
@@ -141,8 +129,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(UUID notificationId) {
-        log.info("Getting notification by ID: {}", notificationId);
-        
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         
@@ -152,8 +138,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUserNotifications(UUID userId) {
-        log.info("Getting notifications for user: {}", userId);
-        
         List<NotificationUser> notificationUsers = notificationUserRepository.findByUserIdOrderByCreatedAtDesc(userId);
         
         return notificationUsers.stream()
@@ -164,8 +148,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUnreadNotifications(UUID userId) {
-        log.info("Getting unread notifications for user: {}", userId);
-        
         List<NotificationUser> notificationUsers = notificationUserRepository.findUnreadByUserId(userId);
         
         return notificationUsers.stream()
@@ -176,7 +158,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Long getUnreadCount(UUID userId) {
-        log.info("Getting unread count for user: {}", userId);
         
         return notificationUserRepository.countUnreadByUserId(userId);
     }
@@ -184,12 +165,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public NotificationResponse markAsRead(UUID notificationUserId, UUID userId) {
-        log.info("Marking notification as read: {} for user: {}", notificationUserId, userId);
-        
         NotificationUser notificationUser = notificationUserRepository.findById(notificationUserId)
                 .orElseThrow(() -> new RuntimeException("Notification user record not found"));
         
-        // Verify that this notification belongs to the user
         if (!notificationUser.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized: This notification does not belong to the user");
         }
@@ -198,9 +176,6 @@ public class NotificationServiceImpl implements NotificationService {
         notificationUser.setReadAt(OffsetDateTime.now());
         notificationUserRepository.save(notificationUser);
         
-        log.info("Notification marked as read successfully");
-        
-        // Send updated unread count via WebSocket
         try {
             Long unreadCount = notificationUserRepository.countUnreadByUserId(userId);
             webSocketService.sendUnreadCountToUser(userId, unreadCount);
@@ -214,8 +189,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void markAllAsRead(UUID userId) {
-        log.info("Marking all notifications as read for user: {}", userId);
-        
         List<NotificationUser> unreadNotifications = notificationUserRepository.findUnreadByUserId(userId);
         
         for (NotificationUser notificationUser : unreadNotifications) {
@@ -224,9 +197,6 @@ public class NotificationServiceImpl implements NotificationService {
             notificationUserRepository.save(notificationUser);
         }
         
-        log.info("Marked {} notifications as read", unreadNotifications.size());
-        
-        // Send updated unread count via WebSocket
         try {
             Long unreadCount = notificationUserRepository.countUnreadByUserId(userId);
             webSocketService.sendUnreadCountToUser(userId, unreadCount);
@@ -247,20 +217,16 @@ public class NotificationServiceImpl implements NotificationService {
                               targetRoles.contains("ADMIN");
         
         if (targetRoles == null || targetRoles.isEmpty() || hasAllRoles) {
-            // Send to all users (optimized: fetch all users directly instead of combining by roles)
-            log.info("Target roles is null/empty/all three roles, fetching all users");
             return userAccountRepository.findAll().stream()
                     .filter(user -> !user.getIsDeleted())
                     .collect(Collectors.toList());
         }
         
-        // Use Set to avoid duplicate users if they somehow match multiple roles
         Set<UserAccount> targetUsersSet = new HashSet<>();
         
         for (String roleStr : targetRoles) {
             try {
                 UserRole role = UserRole.valueOf(roleStr);
-                log.info("Fetching users with role: {}", role);
                 List<UserAccount> usersWithRole = userAccountRepository.findAllByRoleAndIsDeletedFalse(role);
                 targetUsersSet.addAll(usersWithRole);
             } catch (IllegalArgumentException e) {

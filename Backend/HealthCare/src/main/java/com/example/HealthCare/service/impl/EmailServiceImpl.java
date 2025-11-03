@@ -24,8 +24,6 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailTaskExecutor")
     public void sendResetPasswordEmailAsync(String email, String username, String otp) {
-        log.info("Starting async email sending to: {}", email);
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("HealthCare - Password Reset OTP");
@@ -48,18 +46,14 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent reset password email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send reset password email to {}: {}", email, e.getMessage(), e);
-            // In production, you might want to add retry logic or dead letter queue
         }
     }
     
     @Override
     @Async("emailTaskExecutor")
     public void sendOtpEmail(String email, String otp) {
-        log.info("Sending OTP email to: {}", email);
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("HealthCare - Your OTP Code");
@@ -80,7 +74,6 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent OTP email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
         }
@@ -89,8 +82,6 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailTaskExecutor")
     public void sendRejectionEmail(String email, String reason) {
-        log.info("Sending rejection email to: {}", email);
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("HealthCare - Account Application Status");
@@ -111,7 +102,6 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent rejection email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send rejection email to {}: {}", email, e.getMessage(), e);
         }
@@ -120,8 +110,6 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailTaskExecutor")
     public void sendApprovalEmail(String email, String fullName, String password) {
-        log.info("Sending approval email to: {}", email);
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("HealthCare - Tài khoản đã được phê duyệt");
@@ -144,7 +132,6 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent approval email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send approval email to {}: {}", email, e.getMessage(), e);
         }
@@ -153,12 +140,8 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("emailTaskExecutor")
     public void sendRefundNotificationEmail(String email, String patientName, BigDecimal refundAmount, String refundReason) {
-        log.info("Sending refund notification email to: {}", email);
-        
-        // Format currency as VND
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         String formattedAmount = currencyFormatter.format(refundAmount);
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("YSalus - Thông báo hoàn tiền lịch hẹn");
@@ -187,7 +170,6 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent refund notification email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send refund notification email to {}: {}", email, e.getMessage(), e);
         }
@@ -198,19 +180,14 @@ public class EmailServiceImpl implements EmailService {
     public void sendPayrollSettlementEmail(String email, String doctorName, Integer year, Integer month,
                                            BigDecimal netSalary, BigDecimal grossRevenue, BigDecimal platformFee, 
                                            int appointments) {
-        log.info("Sending payroll settlement email to: {}", email);
-        
-        // Format currency as VND
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         String formattedNetSalary = currencyFormatter.format(netSalary);
         String formattedGrossRevenue = currencyFormatter.format(grossRevenue);
         String formattedPlatformFee = currencyFormatter.format(platformFee);
         
-        // Get month name
         String[] monthNames = {"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
                               "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"};
         String monthName = monthNames[month - 1];
-        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject(String.format("YSalus - Thông báo tất toán lương %s/%d", monthName, year));
@@ -244,7 +221,6 @@ public class EmailServiceImpl implements EmailService {
         
         try {
             mailSender.send(message);
-            log.info("Successfully sent payroll settlement email to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send payroll settlement email to {}: {}", email, e.getMessage(), e);
         }

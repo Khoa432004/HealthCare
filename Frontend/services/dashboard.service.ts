@@ -30,14 +30,10 @@ interface ApiResponse<T> {
 class DashboardService {
   async getDashboardStats(filter?: DashboardFilter): Promise<DashboardStats> {
     const requestBody = filter || { period: 'week' }
-    console.log('📊 Dashboard Request:', requestBody)
-    
     const response = await apiClient.post<ApiResponse<DashboardStats>>(
       API_ENDPOINTS.DASHBOARD.GET_STATS,
       requestBody
     )
-
-    console.log('📊 Dashboard Response:', response)
 
     if (response.error) {
       throw new Error(response.error.message || 'Failed to fetch dashboard stats')

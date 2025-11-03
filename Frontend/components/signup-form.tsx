@@ -301,24 +301,16 @@ export function SignUpForm() {
           addressLine2: "",
         }
 
-        console.log("Submitting personal info:", personalInfoData)
-        
-        // Step 1: Call API to register personal info first
         const response = await authService.registerPersonalInfo(personalInfoData as any)
-        console.log("Personal info registered:", response)
-        
-        // Get userId from response
         const userId = response.data?.userId
         if (!userId) {
           throw new Error("Failed to get user ID from personal info registration")
         }
 
-        // Prepare professional info data with userId from personal info response
         const professionalInfoData = {
           userId: userId,
           email: formData.email,
           cccdNumber: formData.cccdNumber || formData.identityCard,
-          // No password - will be set during first login
           title: formData.title,
           currentProvince: formData.currentProvince,
           clinicHospital: formData.clinicHospital,
@@ -339,9 +331,6 @@ export function SignUpForm() {
           department: formData.department,
         }
 
-        console.log("Submitting professional info:", professionalInfoData)
-        
-        // Step 2: Call API to register professional info
         await authService.registerProfessionalInfo(professionalInfoData as any)
 
         // Show success and redirect

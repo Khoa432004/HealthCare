@@ -28,26 +28,19 @@ public class TokenBlacklistService {
 	public void blacklist(String token) {
 		if (token != null && !token.isBlank()) {
 			if (redisTemplate == null) {
-				log.warn("Redis is not available, token blacklist is disabled");
 				return;
 			}
 			
 			try {
-				// Calculate TTL based on token expiration
 				long ttlSeconds = calculateTokenTtl(token);
-				
 				String key = BLACKLIST_PREFIX + token;
 				redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofSeconds(ttlSeconds));
-				
-				log.debug("Token blacklisted with TTL {} seconds", ttlSeconds);
 			} catch (Exception e) {
-				log.error("Failed to blacklist token: {}", e.getMessage());
-				// Fallback: set with default expiration
 				try {
 					String key = BLACKLIST_PREFIX + token;
 					redisTemplate.opsForValue().set(key, "blacklisted", Duration.ofMillis(jwtExpirationMs));
 				} catch (Exception ex) {
-					log.error("Failed to blacklist token even with fallback: {}", ex.getMessage());
+					log.error("Failed to blacklist token: {}", ex.getMessage());
 				}
 			}
 		}
@@ -60,8 +53,7 @@ public class TokenBlacklistService {
 		}
 		
 		if (redisTemplate == null) {
-			log.debug("Redis is not available, skipping blacklist check");
-			return false; // Cannot check blacklist without Redis
+			return false;
 		}
 		
 		try {
@@ -70,22 +62,18 @@ public class TokenBlacklistService {
 			return Boolean.TRUE.equals(exists);
 		} catch (Exception e) {
 			log.error("Failed to check blacklist status: {}", e.getMessage());
-			return false; // Default to not blacklisted on error
+			return false;
 		}
 	}
 
 	private long calculateTokenTtl(String token) {
 		try {
-			// Get token expiration time from JWT
 			long expirationTimeMs = jwtUtil.getExpirationFromToken(token).getTime();
 			long currentTimeMs = System.currentTimeMillis();
 			long ttlMs = expirationTimeMs - currentTimeMs;
-			
-			// Convert to seconds and add a small buffer
-			return Math.max(ttlMs / 1000 + 60, 60); // At least 1 minute
+			return Math.max(ttlMs / 1000 + 60, 60);
 		} catch (Exception e) {
-			log.warn("Could not extract expiration from token, using default TTL: {}", e.getMessage());
-			return jwtExpirationMs / 1000; // Default to configured expiration
+			return jwtExpirationMs / 1000;
 		}
 	}
 }

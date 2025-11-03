@@ -89,7 +89,6 @@ public class UserServiceImpl implements UserService {
 				.build();
 
 		userAccountRepository.save(userAccount);
-		log.info("Created user with email: {}", req.getEmail());
 	}
 
 	@Override
@@ -133,7 +132,6 @@ public class UserServiceImpl implements UserService {
 		}
 
 		userAccountRepository.save(userAccount);
-		log.info("Updated user: {}", userAccount.getEmail());
 	}
 
 	@Override
@@ -157,18 +155,12 @@ public class UserServiceImpl implements UserService {
 		userAccount.setIsDeleted(true);
 		userAccount.setDeletedAt(java.time.OffsetDateTime.now());
 		userAccountRepository.save(userAccount);
-		log.info("Soft deleted user: {}", userAccount.getEmail());
 	}
 
 	@Override
 	public List<PrivilegeResponse> getPrivilegesByUsername(String username) {
-		// Note: Changed to email-based lookup
-		log.warn("getPrivilegesByUsername is deprecated - use email instead");
-		// Validate user exists
 		userAccountRepository.findByEmailAndIsDeletedFalse(username)
 				.orElseThrow(() -> new NotFoundException("User not found"));
-		
-		// Return empty list since we're using enum roles, not privilege table
 		return List.of();
 	}
 
@@ -204,7 +196,6 @@ public class UserServiceImpl implements UserService {
 		userAccount.setIsDeleted(false);
 		userAccount.setDeletedAt(null);
 		userAccountRepository.save(userAccount);
-		log.info("Restored user: {}", userAccount.getEmail());
 	}
 
 	@Override
@@ -234,35 +225,23 @@ public class UserServiceImpl implements UserService {
 		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
 				.orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 		
-		// Prevent deactivating admin accounts
 		if (!activate && userAccount.getRole() == UserRole.ADMIN) {
 			throw new BadRequestException("Cannot deactivate admin accounts");
 		}
 		
-		// Get current admin user
 		UserAccount currentUser = getCurrentUser();
-		log.info("Current user retrieved: {}", currentUser != null ? currentUser.getEmail() : "null");
 		
 		if (activate) {
 			userAccount.setStatus(AccountStatus.ACTIVE);
-			log.info("Activated user account: {}", userAccount.getEmail());
 		} else {
 			userAccount.setStatus(AccountStatus.INACTIVE);
-			log.info("Deactivated user account: {}", userAccount.getEmail());
 		}
 		
-		// Set updated_by to current admin
 		if (currentUser != null) {
 			userAccount.setUpdatedBy(currentUser);
-			log.info("Set updatedBy to admin: {} (ID: {})", currentUser.getEmail(), currentUser.getId());
-			log.info("UserAccount updatedBy before save: {}", 
-				userAccount.getUpdatedBy() != null ? userAccount.getUpdatedBy().getId() : "null");
-		} else {
-			log.warn("Cannot set updatedBy - current user is null");
 		}
 		
 		userAccountRepository.save(userAccount);
-		log.info("UserAccount saved successfully");
 	}
 
 	// Helper methods
@@ -270,42 +249,26 @@ public class UserServiceImpl implements UserService {
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			if (authentication == null) {
-				log.warn("No authentication found in SecurityContext");
 				return null;
 			}
 			
 			Object principal = authentication.getPrincipal();
-			log.debug("Principal type: {}", principal.getClass().getName());
-			
 			String email = null;
 			
-			// Handle UserDetails (from form login)
 			if (principal instanceof UserDetails) {
 				email = ((UserDetails) principal).getUsername();
-				log.debug("Current user email from UserDetails: {}", email);
-			} 
-			// Handle Jwt (from OAuth2 Resource Server)
-			else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt) {
+			} else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt) {
 				org.springframework.security.oauth2.jwt.Jwt jwt = (org.springframework.security.oauth2.jwt.Jwt) principal;
-				email = jwt.getClaimAsString("sub"); // subject is email
-				log.debug("Current user email from JWT: {}", email);
+				email = jwt.getClaimAsString("sub");
 			} else {
-				log.warn("Principal is neither UserDetails nor Jwt: {}", principal.getClass().getName());
 				return null;
 			}
 			
 			if (email == null || email.isEmpty()) {
-				log.warn("Email is null or empty from principal");
 				return null;
 			}
 			
-			UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
-			if (user != null) {
-				log.debug("Found current user: {} (ID: {})", user.getEmail(), user.getId());
-			} else {
-				log.warn("User not found in database for email: {}", email);
-			}
-			return user;
+			return userAccountRepository.findByEmailAndIsDeletedFalse(email).orElse(null);
 		} catch (Exception e) {
 			log.error("Error getting current user: {}", e.getMessage(), e);
 			return null;
