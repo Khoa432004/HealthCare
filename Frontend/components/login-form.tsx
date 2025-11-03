@@ -75,35 +75,21 @@ export function LoginForm() {
     setError(null)
     
     try {
-      // Call login API
       const response = await authService.login({ email, password })
       
       if (response.data) {
-        console.log("Login successful:", response.message)
-        console.log("User info:", response.data.user)
-        console.log("First login required:", response.data.user.firstLoginRequired)
-        console.log("User role:", response.data.user.role)
-        
-        // Check if first login is required (only for doctors)
         if (response.data.user.firstLoginRequired && response.data.user.role === 'DOCTOR') {
-          console.log("Doctor first login required - showing modal")
           setLoggedInUserEmail(response.data.user.email)
           setShowFirstLoginModal(true)
           setIsLoading(false)
           return
         }
         
-        // Get user role and redirect to appropriate dashboard or redirect URL
         const userRole = response.data.user.role
-        console.log("User role:", userRole)
-        
-        // Check if there's a redirect URL, otherwise use dashboard route
         const redirectUrl = getRedirectUrl()
         const targetRoute = redirectUrl || authService.getDashboardRoute(userRole)
-        console.log("Redirecting to:", targetRoute)
         
         try {
-          // Small delay to ensure localStorage and cookies are updated
           setTimeout(() => {
             router.push(targetRoute)
           }, 100)
@@ -122,16 +108,12 @@ export function LoginForm() {
 
   const handleFirstLoginSuccess = () => {
     setShowFirstLoginModal(false)
-    // Get user info from localStorage
     const userInfo = authService.getUserInfo()
     if (userInfo) {
-      // Check if there's a redirect URL, otherwise use dashboard route
       const redirectUrl = getRedirectUrl()
       const targetRoute = redirectUrl || authService.getDashboardRoute(userInfo.role)
-      console.log("First login password changed, redirecting to:", targetRoute)
       
       try {
-        // Small delay to ensure localStorage and cookies are updated
         setTimeout(() => {
           router.push(targetRoute)
         }, 100)
@@ -143,10 +125,7 @@ export function LoginForm() {
   }
 
   const handleFirstLoginError = (errorMessage: string) => {
-    console.error("First login password change error:", errorMessage)
-    // Keep the modal open so user can try again
   }
-
 
   return (
   <div className="w-full max-w-lg h-full flex flex-col justify-center rounded-xl m-4 p-6 md:p-8 bg-transparent">

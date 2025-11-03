@@ -53,17 +53,14 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
     // Backend returns lowercase: "scheduled", "canceled", "completed", "in_process"
     const mapStatus = (status: AppointmentStatus): "upcoming" | "pending" | "cancelled" | "completed" => {
       if (!status) {
-        console.warn('Appointment status is null or undefined')
         return 'pending'
       }
       
-      // Normalize to uppercase for comparison (backend may return lowercase)
       const statusUpper = String(status).toUpperCase().trim()
       
       switch (statusUpper) {
         case 'SCHEDULED':
           return 'upcoming'
-        case 'IN_PROCESS':
         case 'IN_PROCESS':
           return 'upcoming'
         case 'CANCELED':
@@ -72,8 +69,6 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
         case 'COMPLETED':
           return 'completed'
         default:
-          // Log unknown status for debugging
-          console.warn('Unknown appointment status:', status, '-> normalized to:', statusUpper)
           return 'pending'
       }
     }

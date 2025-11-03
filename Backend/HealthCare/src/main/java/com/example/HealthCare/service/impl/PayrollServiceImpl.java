@@ -53,13 +53,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional(readOnly = true)
     public List<DoctorPayrollResponse> getDoctorPayrolls(PayrollFilterRequest request) {
-        log.info("Getting doctor payrolls for year: {}, month: {}, search: {}", 
-                request.getYear(), request.getMonth(), request.getSearch());
-
-        // Get current date
         LocalDate currentDate = LocalDate.now();
-
-        // Get all doctor profiles
         List<DoctorProfile> doctorProfiles = doctorProfileRepository.findAll();
 
         List<DoctorPayrollResponse> payrolls = new ArrayList<>();
@@ -134,45 +128,32 @@ public class PayrollServiceImpl implements PayrollService {
                     .build());
         }
 
-        log.info("Found {} doctors for payroll", payrolls.size());
         return payrolls;
     }
 
     @Override
     @Transactional
     public void settlePayroll(SettlePayrollRequest request) {
-        log.info("Settling payroll for doctor: {}, year: {}, month: {}", 
-                request.getDoctorId(), request.getYear(), request.getMonth());
-
-        // Get doctor info
         UserAccount doctor = userAccountRepository.findById(request.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        // Check if already settled
         Optional<DoctorPayroll> existingPayrollOpt = doctorPayrollRepository.findByDoctorIdAndPeriodYearAndPeriodMonth(
                 request.getDoctorId(), request.getYear(), request.getMonth());
 
         if (!existingPayrollOpt.isPresent()) {
-            log.error("Cannot settle - no payroll record found for doctor: {}, year: {}, month: {}", 
-                    request.getDoctorId(), request.getYear(), request.getMonth());
             throw new IllegalStateException("No payroll record found. Cannot settle.");
         }
 
         DoctorPayroll existingPayroll = existingPayrollOpt.get();
         
         if (existingPayroll.getStatus() == PayrollStatus.SETTLED) {
-            log.warn("Payroll already settled for doctor: {}, year: {}, month: {}", 
-                    request.getDoctorId(), request.getYear(), request.getMonth());
             throw new IllegalStateException("Payroll already settled for this period");
         }
 
-        // Just update status from UNSETTLED to SETTLED
         existingPayroll.setStatus(PayrollStatus.SETTLED);
         doctorPayrollRepository.save(existingPayroll);
         
-        // Send email notification to doctor
         if (doctor.getEmail() != null) {
-            log.info("Sending payroll settlement email to doctor: {}", doctor.getEmail());
             emailService.sendPayrollSettlementEmail(
                 doctor.getEmail(),
                 doctor.getFullName(),
@@ -181,13 +162,9 @@ public class PayrollServiceImpl implements PayrollService {
                 existingPayroll.getNetAmount(),
                 existingPayroll.getGrossAmount(),
                 existingPayroll.getPlatformFee(),
-                0 // We don't have appointment count here, can be added if needed
+                0
             );
-        } else {
-            log.warn("Cannot send payroll settlement email - doctor email not found");
         }
-        
-        log.info("Payroll settled successfully for doctor: {}", request.getDoctorId());
     }
 
     private List<Appointment> getCompletedAppointmentsForPeriod(UUID doctorId, Integer year, Integer month) {

@@ -71,23 +71,7 @@ export default function VerifyOTPPage() {
         newPassword: newPassword,
       }
 
-      console.log("Resetting password with data:", resetData)
-
-      // Here you would make the API call to /api/auth/reset-password
-      // const response = await fetch('/api/auth/reset-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(resetData)
-      // })
-
-      // if (response.ok) {
-      //   router.push('/login?message=Password reset successfully')
-      // }
-
-      // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // For now, just log and redirect
       alert("Password reset successfully!")
       router.push("/login")
     } catch (error) {
@@ -98,17 +82,6 @@ export default function VerifyOTPPage() {
   }
 
   const handleResendOTP = async () => {
-    try {
-      console.log("Resending OTP for username:", username)
-      // Here you would make an API call to resend OTP
-      // const response = await fetch('/api/auth/resend-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ username })
-      // })
-    } catch (error) {
-      console.error("Error resending OTP:", error)
-    }
   }
 
   const isFormValid = otp.join("").length === 6 && username && newPassword && confirmPassword && !passwordError

@@ -93,7 +93,6 @@ public class UserController {
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('VIEW_USER')")
 	public ResponseSuccess getUserById(@PathVariable UUID id) {
-		log.info("get user by id: {}", id);
 		UserResponse user = userService.getUserById(id);
 		return new ResponseSuccess(HttpStatus.OK, "Get user successfully", user);
 	}

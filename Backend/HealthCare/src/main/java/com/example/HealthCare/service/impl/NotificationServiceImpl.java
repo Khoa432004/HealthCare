@@ -22,6 +22,7 @@ import com.example.HealthCare.repository.NotificationRepository;
 import com.example.HealthCare.repository.NotificationUserRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.NotificationService;
+import com.example.HealthCare.websocket.NotificationWebSocketService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,13 +35,11 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationUserRepository notificationUserRepository;
     private final UserAccountRepository userAccountRepository;
+    private final NotificationWebSocketService webSocketService;
 
     @Override
     @Transactional
     public NotificationResponse createNotification(CreateNotificationRequest request, UUID adminId) {
-        log.info("Creating notification: {}", request.getTitle());
-        
-        // Create notification
         Notification notification = Notification.builder()
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -50,23 +49,30 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
         
         notification = notificationRepository.save(notification);
-        log.info("Notification created with ID: {}", notification.getId());
-        
-        // Get target users based on roles
         List<UserAccount> targetUsers = getTargetUsers(request.getTargetRoles());
-        log.info("Found {} target users for roles: {}", targetUsers.size(), request.getTargetRoles());
         
-        // Create NotificationUser records for each target user
+        List<NotificationUser> notificationUsers = new ArrayList<>();
         for (UserAccount user : targetUsers) {
             NotificationUser notificationUser = NotificationUser.builder()
                     .notification(notification)
                     .user(user)
                     .isRead(false)
                     .build();
-            notificationUserRepository.save(notificationUser);
+            notificationUser = notificationUserRepository.save(notificationUser);
+            notificationUsers.add(notificationUser);
         }
         
-        log.info("Created {} notification-user records", targetUsers.size());
+        for (NotificationUser notificationUser : notificationUsers) {
+            try {
+                NotificationResponse userResponse = mapToResponseWithUserData(notificationUser);
+                webSocketService.sendNotificationToUser(notificationUser.getUser().getId(), userResponse);
+                Long unreadCount = notificationUserRepository.countUnreadByUserId(notificationUser.getUser().getId());
+                webSocketService.sendUnreadCountToUser(notificationUser.getUser().getId(), unreadCount);
+            } catch (Exception e) {
+                log.error("Error broadcasting notification via WebSocket to user {}: {}", 
+                    notificationUser.getUser().getId(), e.getMessage());
+            }
+        }
         
         return mapToResponse(notification);
     }
@@ -74,29 +80,19 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public NotificationResponse updateNotification(UUID notificationId, UpdateNotificationRequest request) {
-        log.info("Updating notification: {}", notificationId);
-        
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         
-        // Update notification fields
         notification.setTitle(request.getTitle());
         notification.setContent(request.getContent());
         notification.setType(request.getType());
         
-        // Check if target roles changed
         boolean rolesChanged = hasRolesChanged(notification.getTargetRoles(), request.getTargetRoles());
         
         if (rolesChanged) {
-            log.info("Target roles changed from {} to {}", notification.getTargetRoles(), request.getTargetRoles());
-            
-            // Delete old NotificationUser records
             notificationUserRepository.deleteByNotificationId(notificationId);
-            
-            // Update target roles
             notification.setTargetRoles(request.getTargetRoles());
             
-            // Create new NotificationUser records
             List<UserAccount> targetUsers = getTargetUsers(request.getTargetRoles());
             for (UserAccount user : targetUsers) {
                 NotificationUser notificationUser = NotificationUser.builder()
@@ -107,34 +103,22 @@ public class NotificationServiceImpl implements NotificationService {
                 notificationUserRepository.save(notificationUser);
             }
             
-            log.info("Recreated {} notification-user records", targetUsers.size());
         }
         
         notification = notificationRepository.save(notification);
-        log.info("Notification updated successfully");
-        
         return mapToResponse(notification);
     }
 
     @Override
     @Transactional
     public void deleteNotification(UUID notificationId) {
-        log.info("Deleting notification: {}", notificationId);
-        
-        // Delete NotificationUser records first (due to foreign key constraint)
         notificationUserRepository.deleteByNotificationId(notificationId);
-        
-        // Delete notification
         notificationRepository.deleteById(notificationId);
-        
-        log.info("Notification deleted successfully");
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getAllNotifications() {
-        log.info("Getting all notifications");
-        
         List<Notification> notifications = notificationRepository.findAllByOrderByCreatedAtDesc();
         
         return notifications.stream()
@@ -145,8 +129,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(UUID notificationId) {
-        log.info("Getting notification by ID: {}", notificationId);
-        
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         
@@ -156,8 +138,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUserNotifications(UUID userId) {
-        log.info("Getting notifications for user: {}", userId);
-        
         List<NotificationUser> notificationUsers = notificationUserRepository.findByUserIdOrderByCreatedAtDesc(userId);
         
         return notificationUsers.stream()
@@ -168,8 +148,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUnreadNotifications(UUID userId) {
-        log.info("Getting unread notifications for user: {}", userId);
-        
         List<NotificationUser> notificationUsers = notificationUserRepository.findUnreadByUserId(userId);
         
         return notificationUsers.stream()
@@ -180,7 +158,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Long getUnreadCount(UUID userId) {
-        log.info("Getting unread count for user: {}", userId);
         
         return notificationUserRepository.countUnreadByUserId(userId);
     }
@@ -188,12 +165,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public NotificationResponse markAsRead(UUID notificationUserId, UUID userId) {
-        log.info("Marking notification as read: {} for user: {}", notificationUserId, userId);
-        
         NotificationUser notificationUser = notificationUserRepository.findById(notificationUserId)
                 .orElseThrow(() -> new RuntimeException("Notification user record not found"));
         
-        // Verify that this notification belongs to the user
         if (!notificationUser.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized: This notification does not belong to the user");
         }
@@ -202,7 +176,12 @@ public class NotificationServiceImpl implements NotificationService {
         notificationUser.setReadAt(OffsetDateTime.now());
         notificationUserRepository.save(notificationUser);
         
-        log.info("Notification marked as read successfully");
+        try {
+            Long unreadCount = notificationUserRepository.countUnreadByUserId(userId);
+            webSocketService.sendUnreadCountToUser(userId, unreadCount);
+        } catch (Exception e) {
+            log.error("Error sending updated unread count via WebSocket: {}", e.getMessage());
+        }
         
         return mapToResponseWithUserData(notificationUser);
     }
@@ -210,8 +189,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void markAllAsRead(UUID userId) {
-        log.info("Marking all notifications as read for user: {}", userId);
-        
         List<NotificationUser> unreadNotifications = notificationUserRepository.findUnreadByUserId(userId);
         
         for (NotificationUser notificationUser : unreadNotifications) {
@@ -220,7 +197,12 @@ public class NotificationServiceImpl implements NotificationService {
             notificationUserRepository.save(notificationUser);
         }
         
-        log.info("Marked {} notifications as read", unreadNotifications.size());
+        try {
+            Long unreadCount = notificationUserRepository.countUnreadByUserId(userId);
+            webSocketService.sendUnreadCountToUser(userId, unreadCount);
+        } catch (Exception e) {
+            log.error("Error sending updated unread count via WebSocket: {}", e.getMessage());
+        }
     }
 
     // Helper methods
@@ -235,20 +217,16 @@ public class NotificationServiceImpl implements NotificationService {
                               targetRoles.contains("ADMIN");
         
         if (targetRoles == null || targetRoles.isEmpty() || hasAllRoles) {
-            // Send to all users (optimized: fetch all users directly instead of combining by roles)
-            log.info("Target roles is null/empty/all three roles, fetching all users");
             return userAccountRepository.findAll().stream()
                     .filter(user -> !user.getIsDeleted())
                     .collect(Collectors.toList());
         }
         
-        // Use Set to avoid duplicate users if they somehow match multiple roles
         Set<UserAccount> targetUsersSet = new HashSet<>();
         
         for (String roleStr : targetRoles) {
             try {
                 UserRole role = UserRole.valueOf(roleStr);
-                log.info("Fetching users with role: {}", role);
                 List<UserAccount> usersWithRole = userAccountRepository.findAllByRoleAndIsDeletedFalse(role);
                 targetUsersSet.addAll(usersWithRole);
             } catch (IllegalArgumentException e) {

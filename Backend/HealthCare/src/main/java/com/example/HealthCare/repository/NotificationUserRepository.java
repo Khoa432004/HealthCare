@@ -27,7 +27,8 @@ public interface NotificationUserRepository extends JpaRepository<NotificationUs
     Long countUnreadByUserId(@Param("userId") UUID userId);
     
     // Find notification user by notification id and user id
-    Optional<NotificationUser> findByNotificationIdAndUserId(UUID notificationId, UUID userId);
+    @Query("SELECT nu FROM NotificationUser nu WHERE nu.notification.id = :notificationId AND nu.user.id = :userId")
+    Optional<NotificationUser> findByNotificationIdAndUserId(@Param("notificationId") UUID notificationId, @Param("userId") UUID userId);
     
     // Find all notification users by notification id
     @Query("SELECT nu FROM NotificationUser nu JOIN FETCH nu.user WHERE nu.notification.id = :notificationId")

@@ -131,13 +131,7 @@ export function PatientSignUpForm() {
         address: formData.address,
       }
 
-      console.log("Submitting patient registration:", registrationData)
-
-      // Call API to register patient
       const response = await authService.register(registrationData as any)
-      console.log("Registration response:", response)
-
-      // Show success message
       setSuccess(true)
 
       // Redirect to login page after 2 seconds

@@ -536,11 +536,15 @@ export function NotificationManagement() {
                 </>
               )}
               
-              <p className="text-xs text-gray-500 mt-2">
+              <p className={`text-xs mt-2 ${
+                !formData.sendToAll && formData.targetRoles.length === 0
+                  ? "text-red-500 font-medium"
+                  : "text-gray-500"
+              }`}>
                 {formData.sendToAll 
                   ? "Thông báo sẽ được gửi đến tất cả người dùng trong hệ thống"
                   : formData.targetRoles.length === 0
-                  ? "Vui lòng chọn ít nhất một đối tượng nhận thông báo"
+                  ? "⚠️ Vui lòng chọn ít nhất một đối tượng nhận thông báo"
                   : `Đã chọn ${formData.targetRoles.length} role(s)`}
               </p>
             </div>
@@ -688,11 +692,15 @@ export function NotificationManagement() {
                 </>
               )}
               
-              <p className="text-xs text-gray-500 mt-2">
+              <p className={`text-xs mt-2 ${
+                !formData.sendToAll && formData.targetRoles.length === 0
+                  ? "text-red-500 font-medium"
+                  : "text-gray-500"
+              }`}>
                 {formData.sendToAll 
                   ? "Thông báo sẽ được gửi đến tất cả người dùng trong hệ thống"
                   : formData.targetRoles.length === 0
-                  ? "Vui lòng chọn ít nhất một đối tượng nhận thông báo"
+                  ? "⚠️ Vui lòng chọn ít nhất một đối tượng nhận thông báo"
                   : `Đã chọn ${formData.targetRoles.length} role(s)`}
               </p>
             </div>
