@@ -66,80 +66,56 @@ public class CacheController {
     @Async("cacheTaskExecutor")
     public CompletableFuture<ResponseEntity<ResponseSuccess>> clearAllCaches() {
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Admin requested to clear all caches");
             cacheService.evictAllCaches();
-            return ResponseEntity.ok(
-                new ResponseSuccess(HttpStatus.OK, "All caches cleared successfully")
-            );
+            return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "All caches cleared successfully"));
         });
     }
 
     @DeleteMapping("/users")
     public ResponseEntity<ResponseSuccess> clearUserCaches() {
-        log.info("Admin requested to clear user caches");
         cacheService.evictUserCaches();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "User caches cleared successfully")
-        );
+        return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "User caches cleared successfully"));
     }
 
     @DeleteMapping("/roles")
     public ResponseEntity<ResponseSuccess> clearRoleCaches() {
-        log.info("Admin requested to clear role caches");
         cacheService.evictRoleCaches();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Role caches cleared successfully")
-        );
+        return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Role caches cleared successfully"));
     }
 
     @DeleteMapping("/privileges")
     public ResponseEntity<ResponseSuccess> clearPrivilegeCaches() {
-        log.info("Admin requested to clear privilege caches");
         cacheService.evictPrivilegeCaches();
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Privilege caches cleared successfully")
-        );
+        return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Privilege caches cleared successfully"));
     }
 
     @DeleteMapping("/{cacheName}")
     @Async("cacheTaskExecutor")
     public CompletableFuture<ResponseEntity<ResponseSuccess>> clearSpecificCache(@PathVariable String cacheName) {
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Admin requested to clear cache: {}", cacheName);
             cacheService.clearSpecificCache(cacheName);
-            return ResponseEntity.ok(
-                new ResponseSuccess(HttpStatus.OK, "Cache '" + cacheName + "' cleared successfully")
-            );
+            return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Cache '" + cacheName + "' cleared successfully"));
         });
     }
 
     @DeleteMapping("/user/{userId}")
     public ResponseEntity<ResponseSuccess> clearUserCache(@PathVariable Long userId) {
-        log.info("Admin requested to clear cache for user ID: {}", userId);
         cacheService.evictUserCache(userId);
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache for user " + userId + " cleared successfully")
-        );
+        return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Cache for user " + userId + " cleared successfully"));
     }
 
     @DeleteMapping("/username/{username}")
     public ResponseEntity<ResponseSuccess> clearUserCacheByUsername(@PathVariable String username) {
-        log.info("Admin requested to clear cache for username: {}", username);
         cacheService.evictUserByUsername(username);
-        return ResponseEntity.ok(
-            new ResponseSuccess(HttpStatus.OK, "Cache for username '" + username + "' cleared successfully")
-        );
+        return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Cache for username '" + username + "' cleared successfully"));
     }
 
     @PostMapping("/warmup")
     @Async("cacheTaskExecutor")
     public CompletableFuture<ResponseEntity<ResponseSuccess>> warmUpCaches() {
         return CompletableFuture.supplyAsync(() -> {
-            log.info("Admin requested cache warm-up");
             cacheService.warmUpCaches();
-            return ResponseEntity.ok(
-                new ResponseSuccess(HttpStatus.OK, "Cache warm-up completed successfully")
-            );
+            return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Cache warm-up completed successfully"));
         });
     }
 

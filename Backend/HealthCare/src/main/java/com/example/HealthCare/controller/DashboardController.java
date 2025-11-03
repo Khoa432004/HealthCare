@@ -33,8 +33,6 @@ public class DashboardController {
                         .period("week")
                         .build();
             }
-            
-            log.info("Getting dashboard stats with filter: {}", filter);
             DashboardStatsResponse stats = dashboardService.getDashboardStats(filter);
             return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Dashboard stats retrieved successfully", stats));
         } catch (Exception ex) {

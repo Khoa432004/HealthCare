@@ -32,10 +32,6 @@ public class PerformanceServiceImpl implements PerformanceService {
             errorCounts.computeIfAbsent(endpoint, k -> new AtomicLong(0)).incrementAndGet();
         }
 
-        // Log slow API calls (> 1 second)
-        if (responseTime > 1000) {
-            log.warn("Slow API call detected: {} took {}ms", endpoint, responseTime);
-        }
     }
 
     @Override
@@ -81,9 +77,8 @@ public class PerformanceServiceImpl implements PerformanceService {
     @Override
     @Async("databaseTaskExecutor")
     public void logSlowQueries(String operation, long executionTime) {
-        if (executionTime > 500) { // Log queries taking more than 500ms
+        if (executionTime > 500) {
             slowQueries.computeIfAbsent(operation, k -> new AtomicLong(0)).incrementAndGet();
-            log.warn("Slow database operation detected: {} took {}ms", operation, executionTime);
         }
     }
 

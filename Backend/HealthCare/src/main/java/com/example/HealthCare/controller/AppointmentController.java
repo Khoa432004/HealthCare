@@ -66,8 +66,6 @@ public class AppointmentController {
                 }
             }
             
-            log.info("Getting appointments for user: {} (role: {}), from {} to {}", userId, userRole, defaultStartDate, defaultEndDate);
-            
             List<AppointmentResponse> appointments = appointmentService.getMyAppointments(
                     userId, 
                     userRole, 

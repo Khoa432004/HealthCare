@@ -77,8 +77,6 @@ public class NotificationController {
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
             
             UUID adminId = admin.getId();
-            log.info("Creating notification by admin: {} ({})", email, adminId);
-
             NotificationResponse notification = notificationService.createNotification(request, adminId);
             return ResponseEntity.ok(Map.of("success", true, "data", notification));
         } catch (Exception e) {

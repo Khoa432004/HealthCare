@@ -26,24 +26,17 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getMyAppointments(UUID userId, String userRole, OffsetDateTime startDate, OffsetDateTime endDate) {
-        log.info("Getting appointments for user: {} (role: {}), from {} to {}", userId, userRole, startDate, endDate);
-        
         List<Appointment> appointments;
         
-        // Get appointments based on user role (compare case-insensitive)
         String roleUpper = userRole != null ? userRole.toUpperCase() : "";
         if ("DOCTOR".equals(roleUpper)) {
             appointments = appointmentRepository.findByDoctorIdAndDateRange(userId, startDate, endDate);
         } else if ("PATIENT".equals(roleUpper)) {
             appointments = appointmentRepository.findByPatientIdAndDateRange(userId, startDate, endDate);
         } else {
-            log.warn("Invalid user role: {}", userRole);
             return List.of();
         }
         
-        log.info("Found {} appointments", appointments.size());
-        
-        // Map to response DTOs
         return appointments.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
