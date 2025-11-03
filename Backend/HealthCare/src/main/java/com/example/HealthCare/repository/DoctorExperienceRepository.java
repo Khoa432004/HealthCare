@@ -11,7 +11,6 @@ import com.example.HealthCare.model.DoctorExperience;
 @Repository
 public interface DoctorExperienceRepository extends JpaRepository<DoctorExperience, UUID> {
     List<DoctorExperience> findByDoctorId(UUID doctorId);
-    
     void deleteByDoctorId(UUID doctorId);
 }
 

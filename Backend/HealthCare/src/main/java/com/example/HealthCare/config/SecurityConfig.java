@@ -78,7 +78,9 @@ public class SecurityConfig {
 								"/api/auth/register/professional-info",
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
-								"/actuator/**"
+								"/actuator/**",
+								"/api/doctors/**",
+								"/api/auth/test"
 						).permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(rs -> rs
