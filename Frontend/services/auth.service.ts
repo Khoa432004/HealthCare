@@ -138,6 +138,14 @@ class AuthService {
         refreshToken,
       })
     } finally {
+      // Disconnect WebSocket if connected
+      try {
+        const { webSocketService } = await import('./websocket.service')
+        webSocketService.disconnect()
+      } catch (error) {
+        console.error('Error disconnecting WebSocket:', error)
+      }
+      
       // Clear local storage regardless of API response
       this.clearAuthData()
     }
