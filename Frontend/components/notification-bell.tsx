@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { notificationService, Notification } from "@/services/notification.service"
+import { webSocketService } from "@/services/websocket.service"
+import { getUserInfo } from "@/lib/user-utils"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 
@@ -45,17 +47,57 @@ export function NotificationBell() {
     }
   }
 
-  // Initial fetch
-  useEffect(() => {
-    fetchNotifications()
-    
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000)
-    
-    return () => clearInterval(interval)
+  const unsubscribersRef = useRef<Array<() => void>>([])
+
+  const setupWebSocket = useCallback(() => {
+    const userInfo = getUserInfo()
+    if (!userInfo?.id) {
+      return
+    }
+
+    try {
+      webSocketService.connect()
+
+      const unsubNotifications = webSocketService.subscribe(
+        `/topic/notifications/${userInfo.id}`,
+        (notification: Notification) => {
+          setNotifications(prev => {
+            const exists = prev.some(n => 
+              n.notificationUserId === notification.notificationUserId || n.id === notification.id
+            )
+            if (exists) return prev
+            return [notification, ...prev]
+          })
+          setUnreadCount(prev => prev + 1)
+        }
+      )
+
+      const unsubCount = webSocketService.subscribe(
+        `/topic/notifications/${userInfo.id}/count`,
+        (count: number) => {
+          setUnreadCount(Number(count))
+        }
+      )
+
+      unsubscribersRef.current = [unsubNotifications, unsubCount]
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error)
+    }
   }, [])
 
-  // Refresh when dropdown opens
+  useEffect(() => {
+    fetchNotifications()
+    const timer = setTimeout(() => {
+      setupWebSocket()
+    }, 500)
+    
+    return () => {
+      clearTimeout(timer)
+      unsubscribersRef.current.forEach(unsub => unsub())
+      unsubscribersRef.current = []
+    }
+  }, [setupWebSocket])
+
   useEffect(() => {
     if (isOpen) {
       fetchNotifications()
