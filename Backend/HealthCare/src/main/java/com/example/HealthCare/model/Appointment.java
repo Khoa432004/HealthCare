@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -113,4 +114,7 @@ public class Appointment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by", insertable = false, updatable = false)
     private UserAccount updatedByUser;
+
+    @OneToOne(mappedBy = "appointment", fetch = FetchType.LAZY)
+    private MedicalReport medicalReport;
 }

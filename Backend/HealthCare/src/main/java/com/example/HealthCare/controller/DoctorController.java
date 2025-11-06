@@ -4,16 +4,17 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.example.HealthCare.dto.DoctorDetailDto;
 import com.example.HealthCare.dto.DoctorSummaryDto;
+import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
+import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
 import com.example.HealthCare.service.DoctorService;
+import com.example.HealthCare.service.MedicalExaminationHistoryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,5 +38,27 @@ public class DoctorController {
     public ResponseEntity<DoctorDetailDto> getDoctorDetail(@PathVariable String id) {
         DoctorDetailDto doctor = doctorService.getDoctorDetail(UUID.fromString(id));
         return ResponseEntity.ok(doctor);
+    }
+
+
+
+
+
+
+/////////////////////////////---------------------------
+    private final MedicalExaminationHistoryService historyService;
+    @GetMapping("/medicalexaminationhistory/{patientId}")
+    public ResponseEntity<List<MedicalExaminationHistorySummaryDto>> getHistory(
+            @PathVariable UUID patientId) {
+
+        List<MedicalExaminationHistorySummaryDto> history = historyService.getHistoryByPatientId(patientId);
+        return ResponseEntity.ok(history);
+    }
+    @GetMapping("/medicalexaminationhistory/detail/{appointmentId}")
+    public ResponseEntity<List<MedicalExaminationHistoryDetailDto>> getDetailHistory(
+            @PathVariable UUID appointmentId) {
+
+        List<MedicalExaminationHistoryDetailDto> detailHistory = historyService.getDetailHistoryByAppointmentId(appointmentId);
+        return ResponseEntity.ok(detailHistory);
     }
 }

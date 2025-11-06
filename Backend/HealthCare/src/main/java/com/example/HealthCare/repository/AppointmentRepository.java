@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import com.example.HealthCare.enums.AppointmentStatus;
 import com.example.HealthCare.model.Appointment;
+import com.example.HealthCare.model.MedicalReportMedication;
+import com.example.HealthCare.model.UserAccount;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
@@ -45,5 +47,49 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         @Param("startDate") OffsetDateTime startDate,
         @Param("endDate") OffsetDateTime endDate
     );
+
+
+
+
+
+    // For Medical Examination History
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.doctorProfile dp 
+        JOIN FETCH a.medicalReport mr
+        WHERE a.patientId = :patientId
+        AND a.status = 'completed' 
+        AND mr.status = 'completed' 
+        ORDER BY a.scheduledStart DESC
+        """)
+    List<Appointment> findCompletedByPatientId(@Param("patientId") UUID patientId);
+
+
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.doctorProfile dp 
+        JOIN FETCH a.medicalReport mr
+        WHERE a.id = :appointmentId
+        ORDER BY a.scheduledStart DESC
+        """)
+     List<Appointment> detailAppointmentsHistory(@Param("appointmentId") UUID appointmentId);
+
+    
+     @Query("""
+        SELECT a FROM MedicalReportMedication a
+        JOIN FETCH a.medicalReport d
+        WHERE a.medicalReport.id = :medicalReportId
+        """)
+     List<MedicalReportMedication> detailMedicationHistoryByAppointments(@Param("medicalReportId") UUID medicalReportId);
+     
+
+    @Query("""
+        SELECT a.patient FROM Appointment a 
+        WHERE a.id = :appointmentId
+        """)
+    UserAccount inforPatientByAppointmentId(@Param("appointmentId") UUID appointmentId);
+
 }
 

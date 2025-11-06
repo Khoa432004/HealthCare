@@ -83,8 +83,9 @@ public class SecurityConfig {
 								"/api/auth/test",
 								"/ws/**",
 								"/app/**",
-								"/topic/**"
-						).permitAll()
+								"/topic/**",
+								"/api/medicalExaminationHistory/**"
+								).permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(rs -> rs
 						.jwt(jwt -> jwt

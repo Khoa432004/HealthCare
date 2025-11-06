@@ -74,6 +74,9 @@ interface DoctorDetailDto {
 type Step = 1 | 2 | 3
 
 export default function BookingPage() {
+  const [isLoadingSpecialists, setIsLoadingSpecialists] = useState(false)////////////
+
+
   const [showNotifications, setShowNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
@@ -134,9 +137,26 @@ export default function BookingPage() {
     },
   ]
 
-  useEffect(() => {
-    const loadData = async () => {
+  useEffect(() => {/////////////////////
+    const loadInitialData = async () => {
       setIsLoading(true)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 800))
+      } catch (error) {
+        console.error("Error loading booking data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialData()
+  }, [])
+
+
+
+  useEffect(() => {
+    const loadDoctors = async () => {
+      setIsLoadingSpecialists(true) // Chỉ loading phần specialists
       try {
         const token = localStorage.getItem("accessToken")
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
@@ -149,7 +169,6 @@ export default function BookingPage() {
           if (summaryResp.status === 401) {
             console.warn("Unauthorized: Token không hợp lệ hoặc thiếu.")
             setDoctors([])
-            setIsLoading(false)
             return
           }
           throw new Error(`Lỗi API: ${summaryResp.status} ${summaryResp.statusText}`)
@@ -158,38 +177,44 @@ export default function BookingPage() {
         const summaryRes: DoctorSummaryDto[] = await summaryResp.json()
         setDoctors(Array.isArray(summaryRes) ? summaryRes : [])
 
-        let detailRes: DoctorDetailDto | null = null
-        if (selectedDoctor) {
-          const detailResp = await fetch(`http://localhost:8080/api/doctors/${selectedDoctor}`, { headers })
-
-          if (detailResp.ok) {
-            detailRes = await detailResp.json()
-          } else if (detailResp.status === 404) {
-            console.warn("Không tìm thấy bác sĩ với ID:", selectedDoctor)
-            setSelectedDoctor(null)
-          } else if (detailResp.status === 401) {
-            console.warn("Unauthorized khi lấy chi tiết bác sĩ")
-          } else {
-            console.error(`Lỗi chi tiết: ${detailResp.status}`)
-          }
-        }
-
-        setSelectedDoctorData(detailRes)
-
         if (summaryRes.length > 0 && !selectedDoctor) {
           setSelectedDoctor(summaryRes[0].id)
         }
       } catch (error) {
         console.error("Lỗi kết nối đến backend:", error)
         setDoctors([])
-        setSelectedDoctorData(null)
       } finally {
-        setIsLoading(false)
+        setIsLoadingSpecialists(false)
       }
     }
 
-    loadData()
-  }, [searchQuery, selectedDoctor])
+    loadDoctors()
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (!selectedDoctor) {
+      setSelectedDoctorData(null)
+      return
+    }
+
+    const fetchDoctorDetail = async () => {
+      try {
+        const token = localStorage.getItem("accessToken")
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+
+        const resp = await fetch(`http://localhost:8080/api/doctors/${selectedDoctor}`, { headers })
+        if (!resp.ok) throw new Error("Lỗi load chi tiết bác sĩ")
+
+        const data: DoctorDetailDto = await resp.json()
+        setSelectedDoctorData(data)
+      } catch (err) {
+        console.error(err)
+        setSelectedDoctorData(null)
+      }
+    }
+
+    fetchDoctorDetail()
+  }, [selectedDoctor])
 
   const handleNextStep = () => {
     if (currentStep === 1 && (!selectedDoctor || !selectedTime)) return
@@ -221,6 +246,7 @@ export default function BookingPage() {
     })
     // TODO: Send confirmation to backend
   }
+
   const filteredDoctors = doctors
   .filter((doc) => {
     const matchesSearch =
@@ -770,13 +796,22 @@ export default function BookingPage() {
                   </div>
 
                   {/* Navigation Buttons */}
-                  <div className="flex gap-4 justify-center pt-4">
-                    <Button onClick={handlePreviousStep} variant="outline" className="px-8 py-2 bg-transparent">
-                      Back
-                    </Button>
-                    <Button onClick={handleNextStep} className="px-8 py-2 bg-[#16a1bd] hover:bg-[#0d6171] text-white">
-                      Next
-                    </Button>
+                  <div className=" bottom-4 left-0 right-0 bg-white border-t-2 border-cyan-200 p-5 pb-8 -mx-3 mt-10 shadow-2xl z-50 rounded-t-3xl">
+                    <div className="flex gap-6 justify-center max-w-2xl mx-auto">
+                      <Button 
+                        onClick={handlePreviousStep}
+                        variant="outline"
+                        className="px-12 py-4 text-lg font-bold border-2 border-[#16a1bd] text-[#16a1bd] hover:bg-[#16a1bd] hover:text-white transition-all rounded-xl"
+                      >
+                        ← Back
+                      </Button>
+                      <Button
+                        onClick={handleNextStep}
+                        disabled={!selectedDate || !selectedTime[selectedDoctor!]}
+                        className="px-12 py-4 text-lg font-bold bg-[#16a1bd] hover:bg-[#0d6171] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all **rounded-xl**"                      >
+                        Next →
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
