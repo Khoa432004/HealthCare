@@ -18,6 +18,7 @@ const sidebarItems = [
   { icon: FileText, label: "Medical Records", href: "/medical-records" },
   { icon: MessageSquare, label: "Chats", href: "/chats" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },
+  { icon: FileText, label: "EMR", href: "/patient-emr" },
 ]
 
 export function PatientSidebar() {
@@ -57,7 +58,7 @@ export function PatientSidebar() {
               <Icon className="w-5 h-5" />
               <span>{item.label}</span>
             </button>
-          )
+            )
         })}
       </nav>
 

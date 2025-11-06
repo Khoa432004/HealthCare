@@ -1,9 +1,9 @@
 package com.example.HealthCare.enums;
 
 public enum MealRelation {
-    BEFORE("before"),
-    AFTER("after"),
-    WITH("with");
+    before("before"),
+    after("after"),
+    with("with");
 
     private final String value;
 

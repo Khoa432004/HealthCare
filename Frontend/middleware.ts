@@ -25,6 +25,8 @@ const roleBasedRoutes = {
     '/patient-profile',
     '/my-profile',
     '/settings',
+    '/patient-emr',
+    '/patient-medical-examination-history'
   ],
 }
 
