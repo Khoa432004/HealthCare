@@ -40,7 +40,7 @@ public class AppointmentController {
      * @return List of appointments
      */
     @GetMapping("/my-appointments")
-    @PreAuthorize("hasAnyAuthority('VIEW_APPOINTMENTS', 'ROLE_DOCTOR', 'ROLE_PATIENT')")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
     public ResponseEntity<?> getMyAppointments(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate) {

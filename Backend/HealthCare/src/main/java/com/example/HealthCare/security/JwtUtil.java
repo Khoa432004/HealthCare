@@ -72,14 +72,17 @@ public class JwtUtil {
 					"APPROVE_DOCTOR", "REJECT_DOCTOR",
 					"VIEW_DASHBOARD", "MANAGE_NOTIFICATIONS", "VIEW_APPOINTMENTS",
 					"PROCESS_REFUNDS", "VIEW_PAYROLL", "SETTLE_PAYROLL",
+					"VIEW_DOCTORS", "VIEW_MEDICAL_EXAMINATION_HISTORY",
 					"ADMIN_PRIVILEGES"
 				);
 			case DOCTOR:
 				return List.of(
-					"VIEW_USER"
+					"VIEW_USER", "VIEW_DOCTORS", "VIEW_MEDICAL_EXAMINATION_HISTORY", "VIEW_APPOINTMENTS"
 				);
 			case PATIENT:
-				return List.of();
+				return List.of(
+					"VIEW_DOCTORS", "VIEW_MEDICAL_EXAMINATION_HISTORY", "VIEW_APPOINTMENTS"
+				);
 			default:
 				return List.of();
 		}
