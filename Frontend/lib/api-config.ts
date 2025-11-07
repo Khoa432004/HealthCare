@@ -44,6 +44,17 @@ export const API_ENDPOINTS = {
     MY_APPOINTMENTS: '/api/v1/appointments/my-appointments',
     BY_ID: (id: string) => `/api/v1/appointments/${id}`,
   },
+  DOCTORS: {
+    GET_ALL: '/api/doctors',
+    GET_BY_ID: (id: string) => `/api/doctors/${id}`,
+  },
+  PATIENTS:{
+    GET_MEDICAL_HISTORY: (patientId: string) => `/api/doctors/medicalexaminationhistory/${patientId}`,
+    GET_MEDICAL_HISTORY_DETAIL: (appointmentId: string) => `/api/doctors/medicalexaminationhistory/detail/${appointmentId}`,
+  },
+  MEDICAL_EXAMINATION_HISTORY: {
+    GET_BY_PATIENT: (patientId: string) => `/api/medicalExaminationHistory/medicalexaminationhistory/${patientId}`,
+  },
 } as const
 
 // Token storage keys

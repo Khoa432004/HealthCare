@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { PageLoadingSpinner } from "@/components/loading-spinner"
+import { apiClient } from "@/lib/api-client"
+import { API_ENDPOINTS } from "@/lib/api-config"
 
 interface DoctorSummaryDto {
   id: string
@@ -158,30 +160,21 @@ export default function BookingPage() {
     const loadDoctors = async () => {
       setIsLoadingSpecialists(true) // Chỉ loading phần specialists
       try {
-        const token = localStorage.getItem("accessToken")
-        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
-
-        const summaryResp = await fetch(`http://localhost:8080/api/doctors?search=${encodeURIComponent(searchQuery)}`, {
-          headers,
-        })
-
-        if (!summaryResp.ok) {
-          if (summaryResp.status === 401) {
-            console.warn("Unauthorized: Token không hợp lệ hoặc thiếu.")
-            setDoctors([])
-            return
-          }
-          throw new Error(`Lỗi API: ${summaryResp.status} ${summaryResp.statusText}`)
-        }
-
-        const summaryRes: DoctorSummaryDto[] = await summaryResp.json()
+        const endpoint = searchQuery 
+          ? `${API_ENDPOINTS.DOCTORS.GET_ALL}?search=${encodeURIComponent(searchQuery)}`
+          : API_ENDPOINTS.DOCTORS.GET_ALL
+        
+        const summaryRes: DoctorSummaryDto[] = await apiClient.get(endpoint)
         setDoctors(Array.isArray(summaryRes) ? summaryRes : [])
 
         if (summaryRes.length > 0 && !selectedDoctor) {
           setSelectedDoctor(summaryRes[0].id)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Lỗi kết nối đến backend:", error)
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          console.warn("Unauthorized: Token không hợp lệ hoặc thiếu.")
+        }
         setDoctors([])
       } finally {
         setIsLoadingSpecialists(false)
@@ -199,13 +192,7 @@ export default function BookingPage() {
 
     const fetchDoctorDetail = async () => {
       try {
-        const token = localStorage.getItem("accessToken")
-        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
-
-        const resp = await fetch(`http://localhost:8080/api/doctors/${selectedDoctor}`, { headers })
-        if (!resp.ok) throw new Error("Lỗi load chi tiết bác sĩ")
-
-        const data: DoctorDetailDto = await resp.json()
+        const data: DoctorDetailDto = await apiClient.get(API_ENDPOINTS.DOCTORS.GET_BY_ID(selectedDoctor))
         setSelectedDoctorData(data)
       } catch (err) {
         console.error(err)
