@@ -122,7 +122,7 @@ export default function MedicalHistory() {
         }
 
         const data: Appointment[] = await apiClient.get(
-          API_ENDPOINTS.DOCTORS.GET_MEDICAL_HISTORY(user.id)
+          API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY(user.id)
         )
         
         // Convert date strings to Date objects

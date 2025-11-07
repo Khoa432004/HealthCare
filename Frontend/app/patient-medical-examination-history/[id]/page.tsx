@@ -60,7 +60,7 @@ export default function MedicalReportDetail() {
         setError(null)
 
         const data: MedicalReport[] = await apiClient.get(
-          API_ENDPOINTS.DOCTORS.GET_MEDICAL_HISTORY_DETAIL(appointmentId)
+          API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY_DETAIL(appointmentId)
         )
 
         if (data.length === 0) throw new Error("Không tìm thấy báo cáo")
