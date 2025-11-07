@@ -22,7 +22,7 @@ public class MedicalExaminationHistoryController {
     
     private final MedicalExaminationHistoryService historyService;
     
-    @GetMapping("/medicalexaminationhistory/{patientId}")
+    @GetMapping("/{patientId}")
     @PreAuthorize("hasAuthority('VIEW_MEDICAL_EXAMINATION_HISTORY')")
     public ResponseEntity<List<MedicalExaminationHistorySummaryDto>> getHistory(
             @PathVariable UUID patientId) {
