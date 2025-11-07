@@ -3,9 +3,6 @@ package com.example.HealthCare.dto;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
-
-import com.example.HealthCare.enums.MealRelation;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -25,7 +22,7 @@ public class MedicalExaminationHistoryDetailDto {
     private LocalDate birthDateTime;
     private String reason;
     private String diagnosis;
-    private String clinicalDiagnosis;
+    private List<MedicalReportVitalSignDto> clinicalDiagnosis;
     private String treatment;
     private String notes;
     private List<Prescription> prescriptions; 
