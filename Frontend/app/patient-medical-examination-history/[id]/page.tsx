@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
+import Link from "next/link"
 
 interface PrescriptionItem {
   name: string
@@ -20,6 +21,11 @@ interface PrescriptionItem {
   duration: number
   startDay: string
   note: string
+}
+interface ClinicalDiagnosis {
+  signType: string
+  signValue: string 
+  unit: string
 }
 
 interface MedicalReport {
@@ -36,7 +42,7 @@ interface MedicalReport {
   birthDateTime: string | null
   reason: string
   diagnosis: string
-  clinicalDiagnosis: string | null
+  clinicalDiagnosis: ClinicalDiagnosis[]
   treatment: string
   notes: string
   prescriptions: PrescriptionItem[]
@@ -82,10 +88,10 @@ export default function MedicalReportDetail() {
     alert(`Tải PDF báo cáo ${appointmentId}`)
   }
 
-  const handleViewPrescription = () => {
-    alert(`Chuyển đến UC-20: Đơn thuốc ${appointmentId}`)
-    // router.push(`/prescription/${appointmentId}`)
-  }
+  // const handleViewPrescription = () => {
+  //   router.push(`/prescription/${appointmentId}`)
+  
+  // }
 
   if (loading) return <ReportSkeleton />
   if (error) return <ErrorState message={error} />
@@ -220,7 +226,11 @@ export default function MedicalReportDetail() {
 
             <div>
               <p className="text-sm font-medium text-gray-700 mb-1">Kết quả khám lâm sàng</p>
-              <p className="text-gray-800 whitespace-pre-wrap">{report.clinicalDiagnosis || "Không có"}</p>
+              <p className="text-gray-800 whitespace-pre-wrap">
+                {report.clinicalDiagnosis.map(
+                  cd => `${cd.signType}: ${cd.signValue} ${cd.unit}`)
+                    .join(", ") || "Không có"}
+              </p>
             </div>
  
             <div>
@@ -243,9 +253,16 @@ export default function MedicalReportDetail() {
                 <Pill className="w-5 h-5" />
                 Đơn thuốc
               </div>
-              <Button size="sm" onClick={handleViewPrescription}>
+              {/* <Button size="sm" onClick={handleViewPrescription}>
                 <Eye className="w-4 h-4 mr-1" />
                 Xem chi tiết
+              </Button> */}
+
+              <Button size="sm" asChild>
+                <Link href={`/prescription/${appointmentId}`}>
+                  <Eye className="w-4 h-4 mr-1" />
+                  Xem chi tiết
+                </Link>
               </Button>
             </CardTitle>
           </CardHeader>

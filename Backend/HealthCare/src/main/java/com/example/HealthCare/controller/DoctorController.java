@@ -45,6 +45,7 @@ public class DoctorController {
 
 
 
+
 /////////////////////////////---------------------------
     private final MedicalExaminationHistoryService historyService;
     @GetMapping("/medicalexaminationhistory/{patientId}")

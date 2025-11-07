@@ -5,9 +5,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
 import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
+import com.example.HealthCare.dto.MedicalReportVitalSignDto;
 import com.example.HealthCare.model.Appointment;
+import com.example.HealthCare.model.MedicalReportVitalSign;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.AppointmentRepository;
+import com.example.HealthCare.repository.MedicalReportVitalSignRepository;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationHistoryService {
     
     private final AppointmentRepository appointmentRepository;
+    private final MedicalReportVitalSignRepository medicalReportVitalSignRepository;
+
 
 
     @Override
@@ -38,13 +43,25 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
 
     @Override
     public List<MedicalExaminationHistoryDetailDto> getDetailHistoryByAppointmentId(UUID appointmentUuid) {
+        
         List<Appointment> appointments = appointmentRepository.detailAppointmentsHistory(appointmentUuid);
 
         UserAccount patient = appointmentRepository.inforPatientByAppointmentId(appointmentUuid);
 
         UUID medicalReportId = appointments.get(0).getMedicalReport().getId();
-        List<MedicalExaminationHistoryDetailDto.Prescription> prescriptions = appointmentRepository
-                        .detailMedicationHistoryByAppointments(medicalReportId)
+
+        //Lấy các chỉ số y tế
+        List<MedicalReportVitalSign> vitalSigns = medicalReportVitalSignRepository.findByMedicalReportId(medicalReportId);
+        List<MedicalReportVitalSignDto> vitalSignDtos = vitalSigns.stream()
+            .map(vs -> MedicalReportVitalSignDto.builder()
+                .signType(vs.getSignType())
+                .signValue(vs.getValue())
+                .unit(vs.getUnit())
+                .build()
+            )
+            .collect(Collectors.toList());
+        //Đơn thuốc
+        List<MedicalExaminationHistoryDetailDto.Prescription> prescriptions = appointmentRepository.detailMedicationHistoryByAppointments(medicalReportId)
                         .stream()
                         .map(exp -> MedicalExaminationHistoryDetailDto.Prescription.builder()
                                 
@@ -74,7 +91,7 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
                 .birthDateTime(patient.getDateOfBirth())
                 .reason(apt.getReason())
                 .diagnosis(apt.getMedicalReport().getDiagnosis())
-                .clinicalDiagnosis(null)/// To be filled with clinical diagnosis
+                .clinicalDiagnosis(vitalSignDtos)
                 .treatment(apt.getMedicalReport().getRecommendation())
                 .notes(apt.getMedicalReport().getNote())
                 .prescriptions(prescriptions)

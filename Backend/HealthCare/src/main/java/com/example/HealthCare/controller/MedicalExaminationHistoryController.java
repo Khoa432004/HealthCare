@@ -11,20 +11,19 @@ import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
 import lombok.RequiredArgsConstructor;
 
-
 @RestController
-@RequestMapping("/api/medicalExaminationHistory")
+@RequestMapping("/api/medicalexaminationhistory")
 @RequiredArgsConstructor
 public class MedicalExaminationHistoryController {
     
     private final MedicalExaminationHistoryService historyService;
     
-    @GetMapping("/medicalexaminationhistory/{patientId}")
+    @GetMapping("/{patientId}")
     public ResponseEntity<List<MedicalExaminationHistorySummaryDto>> getHistory(
             @PathVariable UUID patientId) {
 
-        List<MedicalExaminationHistorySummaryDto> history = historyService.getHistoryByPatientId(patientId);
-        return ResponseEntity.ok(history);
+    List<MedicalExaminationHistorySummaryDto> history = historyService.getHistoryByPatientId(patientId);
+    return ResponseEntity.ok(history);
     }
     
 }
