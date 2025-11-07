@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
+import { apiClient } from "@/lib/api-client"
+import { API_ENDPOINTS } from "@/lib/api-config"
 
 interface PrescriptionItem {
   name: string
@@ -57,13 +59,10 @@ export default function MedicalReportDetail() {
         setLoading(true)
         setError(null)
 
-        const res = await fetch(
-          `http://localhost:8080/api/doctors/medicalexaminationhistory/detail/${appointmentId}`
+        const data: MedicalReport[] = await apiClient.get(
+          API_ENDPOINTS.DOCTORS.GET_MEDICAL_HISTORY_DETAIL(appointmentId)
         )
 
-        if (!res.ok) throw new Error("Không thể tải báo cáo")
-
-        const data: MedicalReport[] = await res.json()
         if (data.length === 0) throw new Error("Không tìm thấy báo cáo")
 
         setReport(data[0])
