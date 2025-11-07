@@ -47,6 +47,8 @@ export const API_ENDPOINTS = {
   DOCTORS: {
     GET_ALL: '/api/doctors',
     GET_BY_ID: (id: string) => `/api/doctors/${id}`,
+  },
+  PATIENTS:{
     GET_MEDICAL_HISTORY: (patientId: string) => `/api/doctors/medicalexaminationhistory/${patientId}`,
     GET_MEDICAL_HISTORY_DETAIL: (appointmentId: string) => `/api/doctors/medicalexaminationhistory/detail/${appointmentId}`,
   },
