@@ -17,7 +17,9 @@ public enum Privilege {
 	VIEW_APPOINTMENTS("View appointments Have right to view all appointments."),
 	PROCESS_REFUNDS("Process refunds Have right to process refunds for appointments."),
 	VIEW_PAYROLL("View payroll Have right to view doctor payroll information."),
-	SETTLE_PAYROLL("Settle payroll Have right to settle doctor payrolls.");
+	SETTLE_PAYROLL("Settle payroll Have right to settle doctor payrolls."),
+	VIEW_DOCTORS("View doctors Have right to view doctor profiles and information."),
+	VIEW_MEDICAL_EXAMINATION_HISTORY("View medical examination history Have right to view medical examination history.");
 
 	private final String description;
 
