@@ -226,9 +226,11 @@ export default function MedicalReportDetail() {
             <div>
               <p className="text-sm font-medium text-gray-700 mb-1">Kết quả khám lâm sàng</p>
               <p className="text-gray-800 whitespace-pre-wrap">
-                {report.clinicalDiagnosis.map(
-                  cd => `${cd.signType}: ${cd.signValue} ${cd.unit}`)
-                    .join(", ") || "Không có"}
+                {report.clinicalDiagnosis && report.clinicalDiagnosis.length > 0
+                  ? report.clinicalDiagnosis.map(
+                      cd => `${cd.signType}: ${cd.signValue} ${cd.unit}`)
+                      .join(", ")
+                  : "Không có"}
               </p>
             </div>
  
@@ -247,23 +249,18 @@ export default function MedicalReportDetail() {
         {/* Prescription */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
                 <Pill className="w-5 h-5" />
                 Đơn thuốc
-              </div>
-              {/* <Button size="sm" onClick={handleViewPrescription}>
-                <Eye className="w-4 h-4 mr-1" />
-                Xem chi tiết
-              </Button> */}
-
+              </CardTitle>
               <Button size="sm" asChild>
                 <Link href={`/prescription/${appointmentId}`}>
                   <Eye className="w-4 h-4 mr-1" />
                   Xem chi tiết
                 </Link>
               </Button>
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

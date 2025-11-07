@@ -1,7 +1,7 @@
 // app/prescription/[id]/page.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ArrowLeft, Pill, Eye, X, Info, Clock, AlertCircle } from "lucide-react"
@@ -78,36 +78,52 @@ interface MedicalReport {
   patientName: string | null
 }
 
+// Dữ liệu mẫu cho đơn thuốc
+const mockPrescriptionData: MedicalReport = {
+  id: "sample-id",
+  doctor: "Nguyễn Văn A",
+  clinic: "Phòng khám Đa khoa ABC",
+  date: new Date().toISOString(),
+  patientName: "Trần Thị B",
+  prescriptions: [
+    {
+      name: "Paracetamol",
+      dosage: "500mg",
+      medicationType: "tablet",
+      mealRelation: "after",
+      duration: 5,
+      startDay: new Date().toISOString(),
+      note: "Uống sau khi ăn để tránh kích ứng dạ dày"
+    },
+    {
+      name: "Amoxicillin",
+      dosage: "500mg",
+      medicationType: "capsule",
+      mealRelation: "before",
+      duration: 7,
+      startDay: new Date().toISOString(),
+      note: "Hoàn thành liệu trình, không bỏ liều"
+    },
+    {
+      name: "Omeprazole",
+      dosage: "20mg",
+      medicationType: "capsule",
+      mealRelation: "before",
+      duration: 14,
+      startDay: new Date().toISOString(),
+      note: "Uống trước bữa sáng 30 phút"
+    }
+  ]
+}
+
 export default function PrescriptionDetail() {
   const params = useParams()
   const router = useRouter()
-  const [report, setReport] = useState<MedicalReport | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [report] = useState<MedicalReport>(mockPrescriptionData)
   const [selectedDrug, setSelectedDrug] = useState<any>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const appointmentId = params.id as string
-
-  useEffect(() => {
-    const fetchPrescription = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(
-          `http://localhost:8080/api/doctors/medicalexaminationhistory/detail/${appointmentId}`
-        )
-        if (!res.ok) throw new Error("Không thể tải đơn thuốc")
-        const data: MedicalReport[] = await res.json()
-        if (data.length === 0) throw new Error("Không tìm thấy đơn thuốc")
-        setReport(data[0])
-      } catch (err: any) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (appointmentId) fetchPrescription()
-  }, [appointmentId])
 
   const handleDrugClick = (drugName: string) => {
     const details = mockDrugDetails[drugName] || {
@@ -121,10 +137,6 @@ export default function PrescriptionDetail() {
     setSelectedDrug(details)
     setSidebarOpen(true)
   }
-
-  if (loading) return <PrescriptionSkeleton />
-  if (error) return <ErrorState message={error} />
-  if (!report) return <ErrorState message="Không tìm thấy dữ liệu" />
 
   return (
     <>
