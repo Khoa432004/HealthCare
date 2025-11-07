@@ -79,12 +79,10 @@ public class SecurityConfig {
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
 								"/actuator/**",
-								"/api/doctors/**",
 								"/api/auth/test",
 								"/ws/**",
 								"/app/**",
-								"/topic/**",
-								"/api/medicalExaminationHistory/**"
+								"/topic/**"
 								).permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(rs -> rs
