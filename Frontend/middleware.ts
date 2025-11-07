@@ -26,7 +26,8 @@ const roleBasedRoutes = {
     '/my-profile',
     '/settings',
     '/patient-emr',
-    '/patient-medical-examination-history'
+    '/patient-medical-examination-history',
+    '/prescription/:id'
   ],
 }
 
@@ -35,6 +36,14 @@ function matchesRoute(path: string, routes: string[]): boolean {
   return routes.some(route => {
     // Exact match
     if (path === route) return true
+    
+    // Handle dynamic routes (e.g., /prescription/:id)
+    if (route.includes(':id')) {
+      const baseRoute = route.replace('/:id', '')
+      // Match /prescription/anything
+      if (path.startsWith(baseRoute + '/')) return true
+    }
+    
     // Prefix match for nested routes (e.g., /patient-calendar/booking matches /patient-calendar)
     if (path.startsWith(route + '/')) return true
     return false
