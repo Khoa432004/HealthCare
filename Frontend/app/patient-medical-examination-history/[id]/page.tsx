@@ -14,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { API_ENDPOINTS } from "@/lib/api-config"
-
 interface PrescriptionItem {
   name: string
   dosage: string
@@ -102,7 +101,7 @@ export default function MedicalReportDetail() {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => router.back()}
+          onClick={() => router.push("/patient-medical-examination-history")}
           className="mb-6 text-[#16a1bd] hover:text-[#0d6171]"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
