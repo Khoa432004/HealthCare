@@ -77,26 +77,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[url('https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQ6ftjDHMlNJtTSwjvNsy9RY_8tOmPhiLCphPfGLmXGAtvoqhsB')] bg-cover bg-center relative overflow-hidden">
+    <div className="h-screen bg-[url('/login-background.png')] bg-cover bg-center relative overflow-hidden">
       <div className="absolute top-4 bottom-4 left-4 right-1/2 bg-white/70 rounded-3xl sm:rounded-[2.5rem]"></div>
 
-      <div className="absolute top-10 right-10 w-32 h-32 bg-blue-200/30 rounded-full blur-3xl hidden md:block animate-pulse"></div>
-      <div
-        className="absolute top-32 right-32 w-20 h-20 bg-cyan-200/40 rounded-full blur-2xl hidden lg:block animate-pulse"
-        style={{ animationDelay: "1s" }}
-      ></div>
-      <div
-        className="absolute bottom-20 right-20 w-24 h-24 bg-teal-200/35 rounded-full blur-3xl hidden md:block animate-pulse"
-        style={{ animationDelay: "2s" }}
-      ></div>
-      <div
-        className="absolute bottom-10 left-20 w-28 h-28 bg-slate-200/20 rounded-full blur-2xl animate-pulse"
-        style={{ animationDelay: "3s" }}
-      ></div>
-
-      <div className="container mx-auto px-4 sm:px-6 py-3 lg:py-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-4 lg:gap-6 items-center min-h-[calc(100vh-1.5rem)] lg:min-h-[calc(100vh-2rem)]">
-          <div className="space-y-5 sm:space-y-6 max-w-xl mx-auto lg:mx-0 order-2 lg:order-1">
+      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 relative z-10 h-full">
+        <div className="grid lg:grid-cols-2 gap-4 lg:gap-6 items-center h-full">
+          {/* Left Content - Forgot Password Form */}
+          <div className="space-y-5 sm:space-y-6 max-w-xl mx-auto lg:mx-0 order-2 lg:order-1 w-full">
             {/* Logo */}
             <div className="flex items-center space-x-2 mb-4 sm:mb-5">
               <span className="text-2xl sm:text-3xl font-bold text-[#16a1bd]">Bác sỹ</span>
@@ -161,7 +148,7 @@ export default function ForgotPasswordPage() {
                 <Button
                   onClick={handleForgotPassword}
                   disabled={isLoading || !email}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none px-4 py-3 text-sm bg-[#16a1bd] text-white shadow-md hover:bg-[#0d6171] disabled:bg-gray-300 h-auto"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none px-4 py-3 text-sm bg-[#0d6171] text-white shadow-md hover:bg-[#0a4d5a] disabled:bg-gray-300 h-auto"
                 >
                   {isLoading ? (
                     <>
@@ -176,28 +163,22 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
-        <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
-          <div className="relative z-10 w-full max-w-md lg:max-w-full">
-            <div className="relative">
-              <img
-                src="/clean-female-doctor.png"
-                alt="Bác sĩ chuyên nghiệp"
-                className="w-full h-auto object-contain max-h-[400px] sm:max-h-[500px] lg:max-h-none rounded-3xl sm:rounded-[2.5rem] shadow-soft-xl hover:shadow-soft-2xl transition-all duration-500 hover:scale-[1.05]"
-              />
-              {/* Image overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent rounded-3xl sm:rounded-[2.5rem]"></div>
+          {/* Right Image */}
+          <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end h-full">
+            <div className="relative z-10 w-full max-w-md lg:max-w-full h-full">
+              <div className="relative h-full flex items-end">
+                <img
+                  src="/clean-female-doctor.png"
+                  alt="Bác sĩ chuyên nghiệp"
+                  className="w-full h-auto object-contain max-h-[500px] sm:max-h-[700px] lg:max-h-[100vh] scale-125 lg:scale-150 transition-all duration-500 hover:scale-[1.3] lg:hover:scale-[1.6]"
+                />
+                {/* Image overlay gradient to blend with background */}
+                <div className="absolute inset-0 bg-transparent pointer-events-none"></div>
+              </div>
             </div>
           </div>
-          {/* Background decorative circles */}
-          <div className="absolute -top-8 -right-8 lg:-top-12 lg:-right-12 w-32 h-32 lg:w-40 lg:h-40 bg-blue-200/30 rounded-full blur-3xl -z-10 animate-pulse"></div>
-          <div
-            className="absolute -bottom-6 -left-6 w-24 h-24 bg-cyan-200/25 rounded-full blur-2xl -z-10 animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
-          <div className="absolute top-1/2 -left-4 w-20 h-20 sm:w-28 sm:h-28 bg-slate-200/20 rounded-full blur-xl -z-10"></div>
         </div>
       </div>
     </div>
-  </div>
-)
+  )
 }

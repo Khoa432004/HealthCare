@@ -350,16 +350,16 @@ export function SignUpForm() {
   }
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
+    <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
       <CardContent className="p-6 sm:p-8 lg:p-10">
         {/* Step Indicator */}
         <div className="flex items-center justify-center mb-8 sm:mb-10">
           <div className="flex items-center space-x-4 sm:space-x-6">
-            <div className={`flex items-center space-x-3 ${currentStep === 1 ? "text-blue-600" : "text-slate-400"}`}>
+            <div className={`flex items-center space-x-3 ${currentStep === 1 ? "text-[#0D6171]" : "text-slate-400"}`}>
               <div
                 className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                   currentStep === 1 
-                    ? "border-blue-600 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-soft-md" 
+                    ? "border-[#0D6171] bg-[#0D6171] text-white shadow-soft-md" 
                     : "border-slate-300 bg-slate-100"
                 }`}
               >
@@ -368,18 +368,18 @@ export function SignUpForm() {
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-bold">STEP 1</div>
-                <div className="text-sm">Personal Information</div>
+                <div className="text-sm font-bold text-[#A6ACAD]">STEP 1</div>
+                <div className="text-sm text-[#0B0C0C]">Personal Information</div>
               </div>
             </div>
 
             <div className="w-6 sm:w-12 h-px bg-slate-300"></div>
 
-            <div className={`flex items-center space-x-3 ${currentStep === 2 ? "text-blue-600" : "text-slate-400"}`}>
+            <div className={`flex items-center space-x-3 ${currentStep === 2 ? "text-[#0D6171]" : "text-slate-400"}`}>
               <div
                 className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                   currentStep === 2 
-                    ? "border-blue-600 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-soft-md" 
+                    ? "border-[#0D6171] bg-[#0D6171] text-white shadow-soft-md" 
                     : "border-slate-300 bg-slate-100"
                 }`}
               >
@@ -393,8 +393,8 @@ export function SignUpForm() {
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-bold">STEP 2</div>
-                <div className="text-sm">Professional Information</div>
+                <div className="text-sm font-bold text-[#A6ACAD]">STEP 2</div>
+                <div className="text-sm text-[#0B0C0C]">Professional Information</div>
               </div>
             </div>
           </div>
@@ -486,7 +486,7 @@ export function SignUpForm() {
                     Phone number <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex mt-1">
-                    <div className="flex items-center justify-center w-16 sm:w-20 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md px-3">
+                    <div className="flex items-center justify-center w-16 sm:w-20 bg-gradient-to-r from-[#01D2D5] via-[#06B4CC] to-[#16A1BD] border border-r-0 border-gray-300 rounded-l-md px-3">
                       <span className="text-xl">🇻🇳</span>
                     </div>
                     <Input
@@ -588,7 +588,7 @@ export function SignUpForm() {
               <Button
                 onClick={handleContinue}
                 disabled={false}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#0d6171] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </Button>
@@ -904,7 +904,7 @@ export function SignUpForm() {
               <Button
                 onClick={handleContinue}
                 disabled={!formData.termsAccepted || !formData.dataProtectionAccepted || isLoading}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#0D6171] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
