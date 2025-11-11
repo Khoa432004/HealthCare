@@ -89,3 +89,7 @@ Backend/HealthCare/monitoring/prometheus/data/
 *.cache
 **/.cache/
 
+# Sensitive config
+Backend/HealthCare/src/main/resources/application.properties
+**/application.properties
+
