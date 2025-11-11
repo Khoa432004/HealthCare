@@ -147,15 +147,11 @@ export function PatientSignUpForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#b7e2eb] relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-10 right-10 w-20 h-20 bg-white/20 rounded-full hidden lg:block"></div>
-      <div className="absolute top-32 right-32 w-12 h-12 bg-white/30 rounded-full hidden lg:block"></div>
-
+    <div className="min-h-screen bg-[url('/background.png')] bg-cover bg-center relative overflow-hidden">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
           <div className="w-full max-w-2xl">
-            <Card className="bg-white/95 backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
+            <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
               <CardContent className="p-6 sm:p-8 lg:p-10">
                 {/* Back link */}
                 <div className="mb-6">
@@ -224,7 +220,7 @@ export function PatientSignUpForm() {
                         Số điện thoại <span className="text-red-500">*</span>
                       </Label>
                       <div className="flex mt-1">
-                        <div className="flex items-center justify-center w-16 sm:w-20 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md px-3">
+                        <div className="flex items-center justify-center w-16 sm:w-20 bg-gradient-to-r from-[#01D2D5] via-[#06B4CC] to-[#16A1BD] border border-r-0 border-gray-300 rounded-l-md px-3">
                           <span className="text-xl">🇻🇳</span>
                         </div>
                         <Input
@@ -365,7 +361,7 @@ export function PatientSignUpForm() {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="bg-[#16a1bd] hover:bg-[#0d6171] text-white px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-[#0D6171] hover:bg-[#0a4d5a] text-white px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? (
                         <div className="flex items-center space-x-2">

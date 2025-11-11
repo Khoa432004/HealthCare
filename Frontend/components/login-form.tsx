@@ -128,7 +128,7 @@ export function LoginForm() {
   }
 
   return (
-  <div className="w-full max-w-lg h-full flex flex-col justify-center rounded-xl m-4 p-6 md:p-8 bg-transparent">
+  <div className="w-full max-w-4xl h-full flex flex-col justify-center rounded-xl -mx-[15%] px-6 md:px-8 py-6 md:py-8 bg-transparent">
     <div className="space-y-6 sm:space-y-8 mx-auto">
       {/* Logo and Header */}
       <div className="space-y-4 sm:space-y-5">
@@ -223,7 +223,7 @@ export function LoginForm() {
           type="submit"
           size="lg"
           disabled={isLoading}
-          className="w-full bg-[#16a1bd] hover:bg-[#0d6171] text-white font-bold text-base h-11 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#0d6171] hover:bg-[#16a1bd] text-white font-bold text-base h-11 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
