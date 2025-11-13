@@ -21,22 +21,22 @@ const appointments = [
 
 export default function TodayAppointmentsSidebar() {
   return (
-    <div className="w-96 bg-white overflow-y-auto" style={{ marginRight: '16px', marginTop: '16px', borderRadius: '16px', height: 'calc(100vh - 32px)' }}>
-      <div className="p-6">
+    <div className="w-80 bg-white overflow-y-auto" style={{ marginRight: '12px', marginTop: '12px', borderRadius: '14px', height: 'calc(100vh - 24px)' }}>
+      <div className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-500 uppercase tracking-wide">THURSDAY</span>
-          <Avatar className="w-10 h-10 ring-2 ring-gray-100">
-            <AvatarFallback className="bg-gray-200 text-gray-700 font-semibold">LE</AvatarFallback>
+          <span className="text-xs text-gray-500 uppercase tracking-wide">THURSDAY</span>
+          <Avatar className="w-8 h-8 ring-2 ring-gray-100">
+            <AvatarFallback className="bg-gray-200 text-gray-700 font-semibold text-xs">LE</AvatarFallback>
           </Avatar>
         </div>
 
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">Today Appointments (9)</h3>
+        <h3 className="text-base font-semibold text-gray-800 mb-4">Today Appointments (9)</h3>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {appointments.map((appointment, index) => (
             <div
               key={index}
-              className={`p-4 rounded-xl border-2 transition-all ${
+              className={`p-3 rounded-lg border-2 transition-all ${
                 appointment.status === "active"
                   ? "bg-[#16a1bd] border-[#16a1bd] text-white"
                   : appointment.status === "multiple"
@@ -47,20 +47,20 @@ export default function TodayAppointmentsSidebar() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div
-                    className={`text-xs font-medium mb-1 ${appointment.status === "active" ? "text-white/80" : "text-gray-500"}`}
+                    className={`text-[10px] font-medium mb-0.5 ${appointment.status === "active" ? "text-white/80" : "text-gray-500"}`}
                   >
                     {appointment.time}
                   </div>
                   <div
-                    className={`text-sm font-semibold mb-1 ${appointment.status === "active" ? "text-white" : "text-gray-900"}`}
+                    className={`text-xs font-semibold mb-0.5 ${appointment.status === "active" ? "text-white" : "text-gray-900"}`}
                   >
                     {appointment.title}
                   </div>
-                  <div className={`text-xs ${appointment.status === "active" ? "text-white/70" : "text-gray-500"}`}>
+                  <div className={`text-[10px] ${appointment.status === "active" ? "text-white/70" : "text-gray-500"}`}>
                     {appointment.subtitle}
                   </div>
                 </div>
-                {appointment.status === "active" && <Circle className="w-2 h-2 fill-white text-white mt-1" />}
+                {appointment.status === "active" && <Circle className="w-1.5 h-1.5 fill-white text-white mt-1" />}
               </div>
             </div>
           ))}
