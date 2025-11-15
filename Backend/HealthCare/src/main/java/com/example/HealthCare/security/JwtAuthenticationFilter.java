@@ -78,8 +78,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				|| path.equals("/api/auth/test-forget-password")
 				|| path.equals("/api/auth/register")
 				|| path.startsWith("/api/auth/register/personal-info")
-				|| path.startsWith("/api/doctors")
 				|| path.equals("/api/auth/register/professional-info");
+		// Note: /api/doctors endpoints now require authentication
+		// Public search can be handled via permitAll in SecurityConfig if needed
 		return shouldNotFilter;
 	}
 }
