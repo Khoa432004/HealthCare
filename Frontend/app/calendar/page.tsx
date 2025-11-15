@@ -37,7 +37,6 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date()) // Current month
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
-  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [filterError, setFilterError] = useState<string | null>(null)
   const [filterDropdownError, setFilterDropdownError] = useState(false)
@@ -73,19 +72,9 @@ export default function CalendarPage() {
     }
   }
 
-  const handleCreateAppointment = async () => {
-    setIsCreatingAppointment(true)
-    try {
-      // Simulate creating appointment
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      setShowAppointmentModal(true)
-      // Show success message
-      alert("Appointment created successfully!")
-    } catch (error) {
-      console.error("Error creating appointment:", error)
-    } finally {
-      setIsCreatingAppointment(false)
-    }
+  const handleCreateAppointment = () => {
+    // Simply open the modal - the actual creation will happen inside the modal
+    setShowAppointmentModal(true)
   }
   // Initialize filters with fallback: all statuses selected (show all)
   const [filters, setFilters] = useState({
@@ -607,21 +596,11 @@ export default function CalendarPage() {
               </Select>
 
               <Button
-                className="gradient-primary hover:opacity-90 text-white rounded-xl shadow-soft-lg hover:shadow-soft-xl transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gradient-primary hover:opacity-90 text-white rounded-xl shadow-soft-lg hover:shadow-soft-xl transition-smooth"
                 onClick={handleCreateAppointment}
-                disabled={isCreatingAppointment}
               >
-                {isCreatingAppointment ? (
-                  <div className="flex items-center space-x-2">
-                    <LoadingSpinner size="sm" className="text-white" />
-                    <span>Creating...</span>
-                  </div>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create
-                  </>
-                )}
+                <Plus className="w-4 h-4 mr-2" />
+                Create
               </Button>
             </div>
           </div>
@@ -701,7 +680,52 @@ export default function CalendarPage() {
       </div>
 
       {/* New Appointment Modal */}
-      {showAppointmentModal && <NewAppointmentModal onClose={() => setShowAppointmentModal(false)} />}
+      {showAppointmentModal && (
+        <NewAppointmentModal 
+          onClose={() => setShowAppointmentModal(false)}
+          onSuccess={() => {
+            setShowAppointmentModal(false)
+            // Refresh appointments after successful creation
+            const fetchAppointments = async () => {
+              try {
+                setIsLoadingAppointments(true)
+                const startDate = new Date(currentDate)
+                const endDate = new Date(currentDate)
+                
+                if (viewMode === "month") {
+                  startDate.setDate(1)
+                  startDate.setHours(0, 0, 0, 0)
+                  const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+                  endDate.setDate(lastDay.getDate())
+                  endDate.setHours(23, 59, 59, 999)
+                } else if (viewMode === "week") {
+                  const dayOfWeek = startDate.getDay()
+                  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+                  startDate.setDate(startDate.getDate() + diff)
+                  startDate.setHours(0, 0, 0, 0)
+                  endDate.setDate(startDate.getDate() + 6)
+                  endDate.setHours(23, 59, 59, 999)
+                } else {
+                  startDate.setHours(0, 0, 0, 0)
+                  endDate.setHours(23, 59, 59, 999)
+                }
+                
+                const fetchedAppointments = await appointmentService.getAppointmentsByDateRange(
+                  startDate.toISOString(),
+                  endDate.toISOString()
+                )
+                
+                setAppointments(fetchedAppointments)
+              } catch (error) {
+                console.error("Error refreshing appointments:", error)
+              } finally {
+                setIsLoadingAppointments(false)
+              }
+            }
+            fetchAppointments()
+          }}
+        />
+      )}
     </div>
   )
 }
