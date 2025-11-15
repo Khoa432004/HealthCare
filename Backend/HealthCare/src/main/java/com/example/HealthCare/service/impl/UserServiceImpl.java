@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.HealthCare.dto.request.CreateUserRequest;
+import com.example.HealthCare.dto.request.UpdatePersonalInfoRequest;
 import com.example.HealthCare.dto.request.UpdateUserRequest;
 import com.example.HealthCare.dto.request.UserCriteria;
+import com.example.HealthCare.dto.response.PersonalInfoDetailResponse;
 import com.example.HealthCare.dto.response.PrivilegeResponse;
 import com.example.HealthCare.dto.response.UserResponse;
 import com.example.HealthCare.enums.AccountStatus;
@@ -26,8 +28,12 @@ import com.example.HealthCare.enums.Gender;
 import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
+import com.example.HealthCare.model.DoctorProfile;
+import com.example.HealthCare.model.PatientProfile;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.ApprovalRequestRepository;
+import com.example.HealthCare.repository.DoctorProfileRepository;
+import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.UserService;
 
@@ -41,6 +47,8 @@ public class UserServiceImpl implements UserService {
 
 	private final UserAccountRepository userAccountRepository;
 	private final ApprovalRequestRepository approvalRequestRepository;
+	private final DoctorProfileRepository doctorProfileRepository;
+	private final PatientProfileRepository patientProfileRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
@@ -296,6 +304,119 @@ public class UserServiceImpl implements UserService {
 		}
 		
 		return response;
+	}
+
+	@Override
+	public PersonalInfoDetailResponse getPersonalInfo(UUID userId) {
+		log.info("Getting personal info for user: {}", userId);
+		
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		
+		PersonalInfoDetailResponse.PersonalInfoDetailResponseBuilder responseBuilder = PersonalInfoDetailResponse.builder()
+				.userId(userAccount.getId())
+				.email(userAccount.getEmail())
+				.fullName(userAccount.getFullName())
+				.phoneNumber(userAccount.getPhoneNumber())
+				.dateOfBirth(userAccount.getDateOfBirth())
+				.gender(userAccount.getGender());
+		
+		// Get doctor profile if exists (for CCCD number and address)
+		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
+			responseBuilder.cccdNumber(doctorProfile.getCccdNumber());
+			// For doctor, parse address from doctor_profile.address
+			// Format: "addressLine1, districtWard, stateProvince, country"
+			String address = doctorProfile.getAddress();
+			if (address != null && !address.isEmpty()) {
+				String[] addressParts = address.split(",");
+				if (addressParts.length >= 1) {
+					responseBuilder.address(addressParts[0].trim());
+				} else {
+					responseBuilder.address(address);
+				}
+			}
+		});
+		
+		// Get patient profile if exists (for address)
+		patientProfileRepository.findByUserId(userId).ifPresent(patientProfile -> {
+			// For patient, get address directly from patient_profile.address
+			String address = patientProfile.getAddress();
+			if (address != null && !address.isEmpty()) {
+				responseBuilder.address(address);
+			}
+		});
+		
+		return responseBuilder.build();
+	}
+
+	@Override
+	@Transactional
+	public PersonalInfoDetailResponse updatePersonalInfo(UUID userId, UpdatePersonalInfoRequest request) {
+		log.info("Updating personal info for user: {}", userId);
+		
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		
+		// Check if email is already used by another user
+		if (userAccountRepository.existsByEmailAndIdNot(request.getEmail(), userId)) {
+			throw new BadRequestException("Email already exists");
+		}
+		
+		// Check if phone number is already used by another user
+		if (userAccountRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), userId)) {
+			throw new BadRequestException("Phone number already exists");
+		}
+		
+		// Update user account
+		userAccount.setFullName(request.getFullName());
+		userAccount.setEmail(request.getEmail());
+		userAccount.setPhoneNumber(request.getPhoneNumber());
+		userAccount.setDateOfBirth(request.getDateOfBirth());
+		userAccount.setGender(request.getGender());
+		
+		UserAccount currentUser = getCurrentUser();
+		if (currentUser != null) {
+			userAccount.setUpdatedBy(currentUser);
+		}
+		
+		userAccount = userAccountRepository.save(userAccount);
+		
+		// Update doctor profile if exists (for address)
+		// Note: For doctor, we still need to handle address parsing if needed
+		// But for now, if address is provided directly, use it
+		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
+			if (request.getAddress() != null) {
+				doctorProfile.setAddress(request.getAddress());
+			}
+			doctorProfileRepository.save(doctorProfile);
+		});
+		
+		// Update patient profile if exists (for address)
+		patientProfileRepository.findByUserId(userId).ifPresent(patientProfile -> {
+			// For patient, set address directly from request
+			if (request.getAddress() != null) {
+				patientProfile.setAddress(request.getAddress());
+			}
+			patientProfileRepository.save(patientProfile);
+		});
+		
+		// If patient profile doesn't exist but user is a patient, create it
+		UserAccount userAccountCheck = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		if (userAccountCheck.getRole() == UserRole.PATIENT && 
+			!patientProfileRepository.findByUserId(userId).isPresent() &&
+			request.getAddress() != null && !request.getAddress().isEmpty()) {
+			PatientProfile newPatientProfile = PatientProfile.builder()
+					.userId(userId)
+					.address(request.getAddress())
+					.build();
+			patientProfileRepository.save(newPatientProfile);
+		}
+		
+		log.info("Personal info updated successfully for user: {}", userId);
+		
+		// Return updated info
+		return getPersonalInfo(userId);
 	}
 }
 

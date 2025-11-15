@@ -62,18 +62,104 @@ class ApiClient {
     }
 
     try {
+      console.log('API Request:', { method: options.method || 'GET', url, headers: config.headers })
       const response = await fetch(url, config)
+      console.log('API Response:', { status: response.status, statusText: response.statusText, url })
       
       // Handle different response statuses
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: 'unknown_error',
-          message: 'Mất kết nối. Vui lòng thử lại.',
-        }))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        let errorData: any = {}
+        let responseText = ''
+        try {
+          responseText = await response.text()
+          console.error('API Error Response Text:', responseText)
+          console.error('API Error Response Status:', response.status)
+          console.error('API Error Response Headers:', Object.fromEntries(response.headers.entries()))
+          
+          if (responseText && responseText.trim()) {
+            try {
+              errorData = JSON.parse(responseText)
+              // Spring Boot default error format: {"timestamp":"...","status":405,"error":"Method Not Allowed","path":"/api/..."}
+              // Extract message from Spring Boot error format
+              if (errorData.status && errorData.error && !errorData.message) {
+                errorData.message = `${errorData.error} for path ${errorData.path || 'unknown'}`
+              }
+            } catch (parseError) {
+              // If JSON parse fails, use text as message
+              errorData = {
+                error: 'parse_error',
+                message: responseText,
+                rawText: responseText
+              }
+            }
+          } else {
+            // Empty response body
+            errorData = {
+              error: 'empty_response',
+              message: `Server returned empty response with status ${response.status}`
+            }
+          }
+        } catch (e) {
+          // If reading response fails
+          console.error('Error reading response:', e)
+          errorData = {
+            error: 'read_error',
+            message: `Failed to read response: ${e instanceof Error ? e.message : 'Unknown error'}`,
+            status: response.status
+          }
+        }
+        
+        // If errorData is empty object, provide default message
+        if (Object.keys(errorData).length === 0) {
+          errorData = {
+            error: 'unknown_error',
+            message: `HTTP error! status: ${response.status}. Response was empty.`,
+            status: response.status
+          }
+        }
+        
+        console.error('API Error Response (parsed):', errorData)
+        
+        // Handle validation errors with details
+        if (errorData.errors && typeof errorData.errors === 'object') {
+          const validationMessages = Object.entries(errorData.errors)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join(', ')
+          throw new Error(errorData.details || validationMessages || errorData.message || `Validation failed: ${validationMessages}`)
+        }
+        
+        // Provide more specific error messages for common status codes
+        let errorMessage = errorData.message || errorData.details
+        if (!errorMessage) {
+          switch (response.status) {
+            case 400:
+              errorMessage = 'Bad request. Please check your input data.'
+              break
+            case 401:
+              errorMessage = 'Unauthorized. Please login again.'
+              break
+            case 403:
+              errorMessage = 'Forbidden. You do not have permission to perform this action.'
+              break
+            case 404:
+              errorMessage = 'Resource not found.'
+              break
+            case 405:
+              errorMessage = 'Method not allowed. The server does not support this HTTP method. Please check if the endpoint is correct.'
+              break
+            case 500:
+              errorMessage = 'Internal server error. Please try again later.'
+              break
+            default:
+              errorMessage = `HTTP error! status: ${response.status}`
+          }
+        }
+        throw new Error(errorMessage)
       }
 
-      return await response.json()
+      const jsonData = await response.json()
+      console.log('API Response Data:', jsonData)
+      return jsonData
     } catch (error: any) {
       console.error('API Request Error:', error)
       
