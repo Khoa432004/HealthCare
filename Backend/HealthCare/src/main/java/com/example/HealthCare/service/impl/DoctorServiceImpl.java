@@ -2,6 +2,8 @@
 package com.example.HealthCare.service.impl;
 import com.example.HealthCare.dto.DoctorDetailDto;
 import com.example.HealthCare.dto.DoctorSummaryDto;
+import com.example.HealthCare.dto.response.ProfessionalInfoResponse;
+import com.example.HealthCare.model.DoctorExperience;
 import com.example.HealthCare.model.DoctorProfile;
 import com.example.HealthCare.repository.DoctorExperienceRepository;
 import com.example.HealthCare.repository.DoctorProfileRepository;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.Year;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -139,7 +142,112 @@ public class DoctorServiceImpl implements DoctorService {
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
         }
 
+        @Override
+        public ProfessionalInfoResponse getProfessionalInfo(UUID doctorId) {
+            DoctorProfile profile = doctorProfileRepository.findByUserId(doctorId)
+                    .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
 
-
+            // Parse care_target (can be JSON array or comma-separated)
+            List<String> careTarget = parseArrayField(profile.getCareTarget());
+            
+            // Parse specialties (comma-separated)
+            List<String> specialties = parseArrayField(profile.getSpecialties());
+            
+            // Parse diseases_treated (comma-separated)
+            List<String> diseasesTreated = parseArrayField(profile.getDiseasesTreated());
+            
+            // Languages - not in DB yet, return empty list
+            List<String> languages = new ArrayList<>();
+            
+            // Get work experiences
+            List<ProfessionalInfoResponse.WorkExperienceDto> workExperiences = doctorExperienceRepository
+                    .findByDoctorId(doctorId)
+                    .stream()
+                    .map(exp -> {
+                        boolean isCurrentJob = exp.getToDate() == null || 
+                                exp.getToDate().isAfter(LocalDate.now()) || 
+                                exp.getToDate().equals(LocalDate.now());
+                        
+                        List<String> expSpecialties = parseArrayField(exp.getSpecialty());
+                        
+                        return ProfessionalInfoResponse.WorkExperienceDto.builder()
+                                .id(exp.getId())
+                                .position(exp.getSpecialty()) // Using specialty as position
+                                .specialties(expSpecialties)
+                                .clinicHospital(exp.getOrganization())
+                                .location(exp.getLocation())
+                                .fromDate(exp.getFromDate())
+                                .toDate(exp.getToDate())
+                                .isCurrentJob(isCurrentJob)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+            
+            // Get education (currently single from doctor_profile)
+            List<ProfessionalInfoResponse.EducationDto> educations = new ArrayList<>();
+            if (profile.getGraduationYear() != null && profile.getTrainingInstitution() != null) {
+                ProfessionalInfoResponse.EducationDto education = ProfessionalInfoResponse.EducationDto.builder()
+                        .specialty(profile.getMajor())
+                        .qualification(profile.getEducationSummary())
+                        .school(profile.getTrainingInstitution())
+                        .fromYear(profile.getGraduationYear() - 4) // Assume 4-year program
+                        .toYear(profile.getGraduationYear())
+                        .build();
+                educations.add(education);
+            }
+            
+            // Get certifications (using practice_license_no as main certification)
+            List<ProfessionalInfoResponse.CertificationDto> certifications = new ArrayList<>();
+            if (profile.getPracticeLicenseNo() != null) {
+                ProfessionalInfoResponse.CertificationDto cert = ProfessionalInfoResponse.CertificationDto.builder()
+                        .name("Practicing License")
+                        .issuingOrganization("Ministry of Health") // Default, can be updated later
+                        .issueDate(null) // Not stored in DB yet
+                        .attachmentUrl(null)
+                        .build();
+                certifications.add(cert);
+            }
+            
+            return ProfessionalInfoResponse.builder()
+                    .title(profile.getTitle())
+                    .province(profile.getProvince())
+                    .facilityName(profile.getFacilityName())
+                    .careTarget(careTarget)
+                    .specialties(specialties)
+                    .diseasesTreated(diseasesTreated)
+                    .languages(languages)
+                    .practicingCertificationId(profile.getPracticeLicenseNo())
+                    .workExperiences(workExperiences)
+                    .educations(educations)
+                    .certifications(certifications)
+                    .build();
+        }
+        
+        /**
+         * Parse array field from database (can be JSON array format or comma-separated)
+         */
+        private List<String> parseArrayField(String field) {
+            if (field == null || field.trim().isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // Try to parse as JSON array first (format: {"value1","value2"})
+            if (field.trim().startsWith("{") && field.trim().endsWith("}")) {
+                String content = field.trim().substring(1, field.trim().length() - 1);
+                if (content.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                return Arrays.stream(content.split(","))
+                        .map(s -> s.trim().replaceAll("^\"|\"$", "")) // Remove quotes
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+            }
+            
+            // Otherwise, treat as comma-separated
+            return Arrays.stream(field.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        }
 
 }

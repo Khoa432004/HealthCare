@@ -62,7 +62,9 @@ class ApiClient {
     }
 
     try {
+      console.log('API Request:', { method: options.method || 'GET', url, headers: config.headers })
       const response = await fetch(url, config)
+      console.log('API Response:', { status: response.status, statusText: response.statusText, url })
       
       // Handle different response statuses
       if (!response.ok) {
@@ -70,10 +72,13 @@ class ApiClient {
           error: 'unknown_error',
           message: 'Mất kết nối. Vui lòng thử lại.',
         }))
+        console.error('API Error Response:', errorData)
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      const jsonData = await response.json()
+      console.log('API Response Data:', jsonData)
+      return jsonData
     } catch (error: any) {
       console.error('API Request Error:', error)
       
