@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-import { CalendarIcon, XIcon, AlertCircle } from "lucide-react"
+import { CalendarIcon, XIcon, AlertCircle, CheckCircle2 } from "lucide-react"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export function SignUpForm() {
   const router = useRouter()
@@ -350,7 +351,27 @@ export function SignUpForm() {
   }
 
   return (
-    <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
+    <React.Fragment>
+      {/* Success Modal */}
+      <Dialog open={success} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <div className="flex flex-col items-center justify-center space-y-4 py-4">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-center text-gray-900">
+                Đăng ký thành công!
+              </DialogTitle>
+              <DialogDescription className="text-center text-base text-gray-600">
+                Vui lòng chờ phê duyệt. Mật khẩu sẽ được gửi qua email khi Quản trị viên phê duyệt. Đang chuyển hướng đến trang đăng nhập...
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
       <CardContent className="p-6 sm:p-8 lg:p-10">
         {/* Step Indicator */}
         <div className="flex items-center justify-center mb-8 sm:mb-10">
@@ -405,16 +426,6 @@ export function SignUpForm() {
             Step {currentStep} of 2: {currentStep === 1 ? "Personal Profile" : "Professional Profile"}
           </div>
         </div>
-
-        {/* Success Alert */}
-        {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-sm text-green-800">
-              Đăng kí thành công! Vui lòng chờ phê duyệt. Mật khẩu sẽ được gửi qua email khi Quản trị viên phê duyệt.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Error Alert */}
         {error && (
@@ -920,5 +931,6 @@ export function SignUpForm() {
         )}
       </CardContent>
     </Card>
+    </React.Fragment>
   )
 }

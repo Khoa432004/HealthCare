@@ -31,11 +31,13 @@ import com.example.HealthCare.model.ApprovalRequest;
 import com.example.HealthCare.model.DoctorExperience;
 import com.example.HealthCare.model.DoctorProfile;
 import com.example.HealthCare.model.OtpToken;
+import com.example.HealthCare.model.PatientProfile;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.ApprovalRequestRepository;
 import com.example.HealthCare.repository.DoctorExperienceRepository;
 import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.repository.OtpTokenRepository;
+import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.security.JwtUtil;
 import com.example.HealthCare.security.TokenBlacklistService;
@@ -58,12 +60,14 @@ public class AuthServiceImpl implements AuthService {
 	private final DoctorProfileRepository doctorProfileRepository;
 	private final DoctorExperienceRepository doctorExperienceRepository;
 	private final ApprovalRequestRepository approvalRequestRepository;
+	private final PatientProfileRepository patientProfileRepository;
 
 	public AuthServiceImpl(AuthenticationManager authenticationManager, JwtUtil jwtUtil,
 						  UserAccountRepository userAccountRepository, OtpTokenRepository otpTokenRepository,
 						  PasswordEncoder passwordEncoder, TokenBlacklistService tokenBlacklistService,
 						  EmailService emailService, DoctorProfileRepository doctorProfileRepository,
-						  DoctorExperienceRepository doctorExperienceRepository, ApprovalRequestRepository approvalRequestRepository) {
+						  DoctorExperienceRepository doctorExperienceRepository, ApprovalRequestRepository approvalRequestRepository,
+						  PatientProfileRepository patientProfileRepository) {
 		this.authenticationManager = authenticationManager;
 		this.jwtUtil = jwtUtil;
 		this.userAccountRepository = userAccountRepository;
@@ -74,6 +78,7 @@ public class AuthServiceImpl implements AuthService {
 		this.doctorProfileRepository = doctorProfileRepository;
 		this.doctorExperienceRepository = doctorExperienceRepository;
 		this.approvalRequestRepository = approvalRequestRepository;
+		this.patientProfileRepository = patientProfileRepository;
 	}
 
 	@Override
@@ -319,6 +324,15 @@ public class AuthServiceImpl implements AuthService {
 				.build();
 
 		userAccount = userAccountRepository.save(userAccount);
+
+		// Create PatientProfile if role is PATIENT
+		if (role == UserRole.PATIENT) {
+			PatientProfile patientProfile = PatientProfile.builder()
+					.userId(userAccount.getId())
+					.address(request.getAddress() != null ? request.getAddress() : "")
+					.build();
+			patientProfileRepository.save(patientProfile);
+		}
 
 		// Generate tokens
 		String accessToken = jwtUtil.generateToken(userAccount);
