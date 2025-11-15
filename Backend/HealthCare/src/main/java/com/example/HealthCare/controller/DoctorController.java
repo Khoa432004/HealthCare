@@ -23,13 +23,16 @@ import com.example.HealthCare.dto.DoctorDetailDto;
 import com.example.HealthCare.dto.DoctorSummaryDto;
 import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
 import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
+import com.example.HealthCare.dto.request.UpdatePersonalInfoRequest;
 import com.example.HealthCare.dto.request.UpdateProfessionalInfoRequest;
+import com.example.HealthCare.dto.response.PersonalInfoDetailResponse;
 import com.example.HealthCare.dto.response.ProfessionalInfoResponse;
 import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.DoctorService;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
+import com.example.HealthCare.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DoctorController {
 
     private final DoctorService doctorService;
+    private final UserService userService;
     private final UserAccountRepository userAccountRepository;
 
     // GET /api/doctors?search=Le
@@ -130,6 +134,45 @@ public class DoctorController {
     public ResponseEntity<DoctorDetailDto> getDoctorDetail(@PathVariable String id) {
         DoctorDetailDto doctor = doctorService.getDoctorDetail(UUID.fromString(id));
         return ResponseEntity.ok(doctor);
+    }
+
+    // GET /api/doctors/me/personal-info
+    @GetMapping("/me/personal-info")
+    @PreAuthorize("hasAuthority('VIEW_DOCTORS')")
+    public ResponseEntity<ResponseSuccess> getMyPersonalInfo() {
+        try {
+            log.info("Getting personal info for current doctor");
+            UUID currentUserId = getCurrentUserId();
+            PersonalInfoDetailResponse personalInfo = userService.getPersonalInfo(currentUserId);
+            return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, 
+                    "Personal information retrieved successfully", personalInfo));
+        } catch (Exception e) {
+            log.error("Error getting personal info: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // PUT /api/doctors/me/personal-info
+    @PutMapping("/me/personal-info")
+    @PreAuthorize("hasAuthority('VIEW_DOCTORS')")
+    public ResponseEntity<ResponseSuccess> updateMyPersonalInfo(@Valid @RequestBody UpdatePersonalInfoRequest request) {
+        try {
+            log.info("Updating personal info for current doctor");
+            UUID currentUserId = getCurrentUserId();
+            PersonalInfoDetailResponse updatedInfo = userService.updatePersonalInfo(currentUserId, request);
+            return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, 
+                    "Personal information updated successfully", updatedInfo));
+        } catch (Exception e) {
+            log.error("Error updating personal info: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // POST /api/doctors/me/personal-info (alternative endpoint)
+    @PostMapping("/me/personal-info")
+    @PreAuthorize("hasAuthority('VIEW_DOCTORS')")
+    public ResponseEntity<ResponseSuccess> updateMyPersonalInfoPost(@Valid @RequestBody UpdatePersonalInfoRequest request) {
+        return updateMyPersonalInfo(request);
     }
 
     private UUID getCurrentUserId() {

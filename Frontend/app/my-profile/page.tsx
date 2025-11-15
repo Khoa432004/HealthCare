@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
-import { userService, type ProfessionalInfoResponse, type WorkScheduleResponse, type UpdateWorkScheduleRequest } from "@/services/user.service"
+import { userService, type ProfessionalInfoResponse, type WorkScheduleResponse, type UpdateWorkScheduleRequest, type PersonalInfoDetailResponse, type UpdatePersonalInfoRequest } from "@/services/user.service"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
@@ -51,6 +51,8 @@ function MyProfilePageContent() {
   const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfoResponse | null>(null)
   const [isLoadingProfessional, setIsLoadingProfessional] = useState(false)
   const [isLoadingWorkSchedule, setIsLoadingWorkSchedule] = useState(false)
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfoDetailResponse | null>(null)
+  const [isLoadingPersonal, setIsLoadingPersonal] = useState(false)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -102,21 +104,19 @@ function MyProfilePageContent() {
 
   // Personal Information State
   const [personalData, setPersonalData] = useState({
-    fullName: "Lê Thị Tuyết Hoa",
-    gender: "Female",
-    identificationNumber: "9342234324234",
-    dateOfBirth: "31-08-1989",
-    phoneNumber: "9843233323",
+    fullName: "",
+    gender: "Male",
+    identificationNumber: "",
+    dateOfBirth: "",
+    phoneNumber: "",
     countryCode: "+84",
-    maritalStatus: "Prefer not to say",
-    ethnicity: "Kinh",
-    email: "hoa.doctor@gmail.com",
-    country: "Vietnam",
-    stateProvince: "Ho Chi Minh",
-    districtWard: "An Lac",
-    zipPostalCode: "",
-    addressLine1: "Street 1",
-    addressLine2: "",
+    maritalStatus: "",
+    ethnicity: "",
+    email: "",
+    country: "",
+    stateProvince: "",
+    districtWard: "",
+    addressLine1: "",
   })
 
   // Professional Information State (for editing)
@@ -204,6 +204,74 @@ function MyProfilePageContent() {
       loadWorkSchedule()
     }
   }, [activeTab])
+
+  // Load personal info when personal tab is active
+  const loadPersonalInfo = async () => {
+    setIsLoadingPersonal(true)
+    try {
+      const data = await userService.getPersonalInfo()
+      setPersonalInfo(data)
+      
+      // Convert gender from backend format (MALE/FEMALE) to frontend format (Male/Female)
+      const genderMap: Record<string, string> = {
+        'MALE': 'Male',
+        'FEMALE': 'Female',
+        'male': 'Male',
+        'female': 'Female',
+        'Male': 'Male',
+        'Female': 'Female'
+      }
+      
+      // Update personalData for editing
+      setPersonalData({
+        fullName: data.fullName || "",
+        gender: genderMap[data.gender] || "Male",
+        identificationNumber: data.cccdNumber || "",
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : "",
+        phoneNumber: data.phoneNumber || "",
+        countryCode: "+84",
+        maritalStatus: data.maritalStatus || "",
+        ethnicity: data.ethnicity || "",
+        email: data.email || "",
+        country: data.country || "",
+        stateProvince: data.stateProvince || "",
+        districtWard: data.districtWard || "",
+        addressLine1: data.addressLine1 || "",
+      })
+      
+      setOriginalPersonalData({
+        fullName: data.fullName || "",
+        gender: genderMap[data.gender] || "Male",
+        identificationNumber: data.cccdNumber || "",
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : "",
+        phoneNumber: data.phoneNumber || "",
+        countryCode: "+84",
+        maritalStatus: data.maritalStatus || "",
+        ethnicity: data.ethnicity || "",
+        email: data.email || "",
+        country: data.country || "",
+        stateProvince: data.stateProvince || "",
+        districtWard: data.districtWard || "",
+        addressLine1: data.addressLine1 || "",
+      })
+    } catch (error) {
+      console.error("Error loading personal info:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load personal information",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingPersonal(false)
+    }
+  }
+
+  // Auto-load personal info when component mounts or when personal tab becomes active
+  useEffect(() => {
+    if (activeTab === "personal" && !personalInfo && !isLoadingPersonal) {
+      loadPersonalInfo()
+    }
+  }, [activeTab]) // Run when activeTab changes
 
   const loadWorkSchedule = async () => {
     setIsLoadingWorkSchedule(true)
@@ -507,9 +575,62 @@ function MyProfilePageContent() {
           title: "Success",
           description: "Professional information updated successfully",
         })
-      } else {
-        // TODO: Update personal info when implemented
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+      } else if (activeTab === "personal") {
+        // Convert gender from frontend format (Male/Female) to backend format (MALE/FEMALE)
+        const genderToBackend: Record<string, string> = {
+          'Male': 'MALE',
+          'Female': 'FEMALE',
+          'MALE': 'MALE',
+          'FEMALE': 'FEMALE',
+          'male': 'MALE',
+          'female': 'FEMALE'
+        }
+        
+        // Update personal info
+        const updateData: UpdatePersonalInfoRequest = {
+          fullName: personalData.fullName.trim(),
+          phoneNumber: personalData.phoneNumber.trim(),
+          email: personalData.email.trim(),
+          dateOfBirth: personalData.dateOfBirth,
+          gender: genderToBackend[personalData.gender] || 'MALE',
+          country: personalData.country || undefined,
+          stateProvince: personalData.stateProvince || undefined,
+          districtWard: personalData.districtWard || undefined,
+          addressLine1: personalData.addressLine1 || undefined,
+          maritalStatus: personalData.maritalStatus || undefined,
+          ethnicity: personalData.ethnicity || undefined,
+        }
+        
+        const updatedInfo = await userService.updatePersonalInfo(updateData)
+        setPersonalInfo(updatedInfo)
+        
+        // Convert gender from backend format (MALE/FEMALE) to frontend format (Male/Female)
+        const genderMap: Record<string, string> = {
+          'MALE': 'Male',
+          'FEMALE': 'Female',
+          'male': 'Male',
+          'female': 'Female',
+          'Male': 'Male',
+          'Female': 'Female'
+        }
+        
+        // Update personalData with response
+        setPersonalData({
+          fullName: updatedInfo.fullName || "",
+          gender: genderMap[updatedInfo.gender] || "Male",
+          identificationNumber: updatedInfo.cccdNumber || "",
+          dateOfBirth: updatedInfo.dateOfBirth ? new Date(updatedInfo.dateOfBirth).toISOString().split('T')[0] : "",
+          phoneNumber: updatedInfo.phoneNumber || "",
+          countryCode: "+84",
+          maritalStatus: updatedInfo.maritalStatus || "",
+          ethnicity: updatedInfo.ethnicity || "",
+          email: updatedInfo.email || "",
+          country: updatedInfo.country || "",
+          stateProvince: updatedInfo.stateProvince || "",
+          districtWard: updatedInfo.districtWard || "",
+          addressLine1: updatedInfo.addressLine1 || "",
+        })
+        
         setOriginalPersonalData(personalData)
         toast({
           title: "Success",
@@ -862,6 +983,8 @@ function MyProfilePageContent() {
               setActiveTab(value)
               if (value === "professional") {
                 loadProfessionalInfo()
+              } else if (value === "personal") {
+                loadPersonalInfo()
               }
             }} className="space-y-6">
               <div className="flex items-center justify-between">
@@ -901,11 +1024,18 @@ function MyProfilePageContent() {
 
               {/* Personal Tab */}
               <TabsContent value="personal" className="space-y-6">
+                {isLoadingPersonal ? (
+                  <div className="flex justify-center items-center py-12">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
                 <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
                   <div className="flex gap-8">
                     <div className="flex-shrink-0">
                       <Avatar className="w-32 h-32 ring-4 ring-white shadow-soft-lg">
-                        <AvatarFallback className="gradient-primary text-white text-3xl font-semibold">LH</AvatarFallback>
+                        <AvatarFallback className="gradient-primary text-white text-3xl font-semibold">
+                          {getInitials(personalData.fullName || personalInfo?.fullName || "")}
+                        </AvatarFallback>
                       </Avatar>
                     </div>
 
@@ -1047,7 +1177,7 @@ function MyProfilePageContent() {
                       <div>
                         <h3 className="font-semibold mb-4">Address</h3>
                         <div className="space-y-4">
-                          <div className="grid grid-cols-4 gap-4">
+                          <div className="grid grid-cols-3 gap-4">
                             <div>
                               <Label htmlFor="country">
                                 Country {isEditMode && <span className="text-red-500">*</span>}
@@ -1104,49 +1234,26 @@ function MyProfilePageContent() {
                                 </SelectContent>
                               </Select>
                             </div>
-
-                            <div>
-                              <Label htmlFor="zipPostalCode">Zip / Postal Code</Label>
-                              <Input
-                                id="zipPostalCode"
-                                value={personalData.zipPostalCode}
-                                onChange={(e) => setPersonalData({ ...personalData, zipPostalCode: e.target.value })}
-                                disabled={!isEditMode}
-                                className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
-                              />
-                            </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="addressLine1">
-                                Address Line 1 {isEditMode && <span className="text-red-500">*</span>}
-                              </Label>
-                              <Input
-                                id="addressLine1"
-                                value={personalData.addressLine1}
-                                onChange={(e) => setPersonalData({ ...personalData, addressLine1: e.target.value })}
-                                disabled={!isEditMode}
-                                className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor="addressLine2">Address Line 2</Label>
-                              <Input
-                                id="addressLine2"
-                                value={personalData.addressLine2}
-                                onChange={(e) => setPersonalData({ ...personalData, addressLine2: e.target.value })}
-                                disabled={!isEditMode}
-                                className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
-                              />
-                            </div>
+                          <div>
+                            <Label htmlFor="addressLine1">
+                              Address Line 1 {isEditMode && <span className="text-red-500">*</span>}
+                            </Label>
+                            <Input
+                              id="addressLine1"
+                              value={personalData.addressLine1}
+                              onChange={(e) => setPersonalData({ ...personalData, addressLine1: e.target.value })}
+                              disabled={!isEditMode}
+                              className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
+                            />
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                )}
               </TabsContent>
 
               {/* Professional Tab */}

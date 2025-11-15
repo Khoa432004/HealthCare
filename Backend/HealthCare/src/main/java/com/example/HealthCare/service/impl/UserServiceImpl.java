@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.HealthCare.dto.request.CreateUserRequest;
+import com.example.HealthCare.dto.request.UpdatePersonalInfoRequest;
 import com.example.HealthCare.dto.request.UpdateUserRequest;
 import com.example.HealthCare.dto.request.UserCriteria;
+import com.example.HealthCare.dto.response.PersonalInfoDetailResponse;
 import com.example.HealthCare.dto.response.PrivilegeResponse;
 import com.example.HealthCare.dto.response.UserResponse;
 import com.example.HealthCare.enums.AccountStatus;
@@ -26,8 +28,10 @@ import com.example.HealthCare.enums.Gender;
 import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
+import com.example.HealthCare.model.DoctorProfile;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.ApprovalRequestRepository;
+import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.UserService;
 
@@ -41,6 +45,7 @@ public class UserServiceImpl implements UserService {
 
 	private final UserAccountRepository userAccountRepository;
 	private final ApprovalRequestRepository approvalRequestRepository;
+	private final DoctorProfileRepository doctorProfileRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
@@ -296,6 +301,117 @@ public class UserServiceImpl implements UserService {
 		}
 		
 		return response;
+	}
+
+	@Override
+	public PersonalInfoDetailResponse getPersonalInfo(UUID userId) {
+		log.info("Getting personal info for user: {}", userId);
+		
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		
+		PersonalInfoDetailResponse.PersonalInfoDetailResponseBuilder responseBuilder = PersonalInfoDetailResponse.builder()
+				.userId(userAccount.getId())
+				.email(userAccount.getEmail())
+				.fullName(userAccount.getFullName())
+				.phoneNumber(userAccount.getPhoneNumber())
+				.dateOfBirth(userAccount.getDateOfBirth())
+				.gender(userAccount.getGender());
+		
+		// Get doctor profile if exists (for CCCD number and address)
+		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
+			responseBuilder.cccdNumber(doctorProfile.getCccdNumber());
+			// Parse address from doctor_profile.address
+			// Format: "addressLine1, districtWard, stateProvince, country"
+			String address = doctorProfile.getAddress();
+			if (address != null && !address.isEmpty()) {
+				String[] addressParts = address.split(",");
+				if (addressParts.length >= 1) {
+					responseBuilder.addressLine1(addressParts[0].trim());
+				}
+				if (addressParts.length >= 2) {
+					responseBuilder.districtWard(addressParts[1].trim());
+				}
+				if (addressParts.length >= 3) {
+					responseBuilder.stateProvince(addressParts[2].trim());
+				}
+				if (addressParts.length >= 4) {
+					responseBuilder.country(addressParts[3].trim());
+				}
+			}
+			// Also check province field
+			if (doctorProfile.getProvince() != null) {
+				responseBuilder.stateProvince(doctorProfile.getProvince());
+			}
+		});
+		
+		return responseBuilder.build();
+	}
+
+	@Override
+	@Transactional
+	public PersonalInfoDetailResponse updatePersonalInfo(UUID userId, UpdatePersonalInfoRequest request) {
+		log.info("Updating personal info for user: {}", userId);
+		
+		UserAccount userAccount = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		
+		// Check if email is already used by another user
+		if (userAccountRepository.existsByEmailAndIdNot(request.getEmail(), userId)) {
+			throw new BadRequestException("Email already exists");
+		}
+		
+		// Check if phone number is already used by another user
+		if (userAccountRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), userId)) {
+			throw new BadRequestException("Phone number already exists");
+		}
+		
+		// Update user account
+		userAccount.setFullName(request.getFullName());
+		userAccount.setEmail(request.getEmail());
+		userAccount.setPhoneNumber(request.getPhoneNumber());
+		userAccount.setDateOfBirth(request.getDateOfBirth());
+		userAccount.setGender(request.getGender());
+		
+		UserAccount currentUser = getCurrentUser();
+		if (currentUser != null) {
+			userAccount.setUpdatedBy(currentUser);
+		}
+		
+		userAccount = userAccountRepository.save(userAccount);
+		
+		// Update doctor profile if exists (for address)
+		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
+			// Build address string from components
+			StringBuilder addressBuilder = new StringBuilder();
+			if (request.getAddressLine1() != null && !request.getAddressLine1().isEmpty()) {
+				addressBuilder.append(request.getAddressLine1());
+			}
+			if (request.getDistrictWard() != null && !request.getDistrictWard().isEmpty()) {
+				if (addressBuilder.length() > 0) addressBuilder.append(", ");
+				addressBuilder.append(request.getDistrictWard());
+			}
+			if (request.getStateProvince() != null && !request.getStateProvince().isEmpty()) {
+				if (addressBuilder.length() > 0) addressBuilder.append(", ");
+				addressBuilder.append(request.getStateProvince());
+			}
+			if (request.getCountry() != null && !request.getCountry().isEmpty()) {
+				if (addressBuilder.length() > 0) addressBuilder.append(", ");
+				addressBuilder.append(request.getCountry());
+			}
+			
+			doctorProfile.setAddress(addressBuilder.toString());
+			if (request.getStateProvince() != null) {
+				doctorProfile.setProvince(request.getStateProvince());
+			}
+			
+			doctorProfileRepository.save(doctorProfile);
+		});
+		
+		log.info("Personal info updated successfully for user: {}", userId);
+		
+		// Return updated info
+		return getPersonalInfo(userId);
 	}
 }
 
