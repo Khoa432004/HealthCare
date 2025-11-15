@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
-import { userService, type ProfessionalInfoResponse } from "@/services/user.service"
+import { userService, type ProfessionalInfoResponse, type WorkScheduleResponse, type UpdateWorkScheduleRequest } from "@/services/user.service"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
@@ -50,6 +50,7 @@ function MyProfilePageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfoResponse | null>(null)
   const [isLoadingProfessional, setIsLoadingProfessional] = useState(false)
+  const [isLoadingWorkSchedule, setIsLoadingWorkSchedule] = useState(false)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -169,17 +170,17 @@ function MyProfilePageContent() {
     }
   }
 
-  // Work Plans State
+  // Work Plans State - Initialize with all days disabled (OFF)
   const [workPlansData, setWorkPlansData] = useState({
     sessionDuration: 15, // 10, 15, 20, 30, 60 minutes
     appointmentCost: 150000, // VND
     days: {
-      monday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
-      tuesday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
-      wednesday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
-      thursday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
-      friday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
-      saturday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }] },
+      monday: { enabled: false, timeSlots: [] },
+      tuesday: { enabled: false, timeSlots: [] },
+      wednesday: { enabled: false, timeSlots: [] },
+      thursday: { enabled: false, timeSlots: [] },
+      friday: { enabled: false, timeSlots: [] },
+      saturday: { enabled: false, timeSlots: [] },
       sunday: { enabled: false, timeSlots: [] },
     },
   })
@@ -196,6 +197,71 @@ function MyProfilePageContent() {
   const [editingWorkExperiences, setEditingWorkExperiences] = useState<ProfessionalInfoResponse['workExperiences']>([])
   const [editingEducations, setEditingEducations] = useState<ProfessionalInfoResponse['educations']>([])
   const [editingCertifications, setEditingCertifications] = useState<ProfessionalInfoResponse['certifications']>([])
+
+  // Load work schedule when work-plans tab is active
+  useEffect(() => {
+    if (activeTab === 'work-plans') {
+      loadWorkSchedule()
+    }
+  }, [activeTab])
+
+  const loadWorkSchedule = async () => {
+    setIsLoadingWorkSchedule(true)
+    try {
+      const schedule = await userService.getWorkSchedule()
+      
+      // Convert backend response to frontend format
+      const dayMap: Record<number, string> = {
+        1: 'monday',
+        2: 'tuesday',
+        3: 'wednesday',
+        4: 'thursday',
+        5: 'friday',
+        6: 'saturday',
+        7: 'sunday'
+      }
+      
+      const days: any = {}
+      schedule.days.forEach(day => {
+        const dayKey = dayMap[day.weekday]
+        if (dayKey) {
+          days[dayKey] = {
+            enabled: day.enabled,
+            timeSlots: day.timeSlots.map(slot => ({
+              startTime: slot.startTime,
+              endTime: slot.endTime
+            }))
+          }
+        }
+      })
+      
+      const workPlansData = {
+        sessionDuration: schedule.sessionDuration,
+        appointmentCost: Number(schedule.appointmentCost),
+        days: {
+          monday: days.monday || { enabled: false, timeSlots: [] },
+          tuesday: days.tuesday || { enabled: false, timeSlots: [] },
+          wednesday: days.wednesday || { enabled: false, timeSlots: [] },
+          thursday: days.thursday || { enabled: false, timeSlots: [] },
+          friday: days.friday || { enabled: false, timeSlots: [] },
+          saturday: days.saturday || { enabled: false, timeSlots: [] },
+          sunday: days.sunday || { enabled: false, timeSlots: [] }
+        }
+      }
+      
+      setWorkPlansData(workPlansData)
+      setOriginalWorkPlansData(workPlansData)
+    } catch (error: any) {
+      console.error('Error loading work schedule:', error)
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể tải lịch làm việc",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingWorkSchedule(false)
+    }
+  }
 
   // Detect unsaved changes
   useEffect(() => {
@@ -628,21 +694,84 @@ function MyProfilePageContent() {
 
     setIsSavingWorkPlans(true)
     try {
-      // TODO: Call API to save work plans
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Convert frontend format to backend format
+      const dayMap: Record<string, number> = {
+        monday: 1,
+        tuesday: 2,
+        wednesday: 3,
+        thursday: 4,
+        friday: 5,
+        saturday: 6,
+        sunday: 7
+      }
       
-      setOriginalWorkPlansData(workPlansData)
+      const request: UpdateWorkScheduleRequest = {
+        sessionDuration: workPlansData.sessionDuration,
+        appointmentCost: workPlansData.appointmentCost,
+        days: Object.entries(workPlansData.days).map(([dayKey, dayData]) => ({
+          weekday: dayMap[dayKey],
+          enabled: dayData.enabled,
+          timeSlots: dayData.enabled ? dayData.timeSlots.map(slot => ({
+            startTime: slot.startTime,
+            endTime: slot.endTime
+          })) : []
+        }))
+      }
+      
+      const updatedSchedule = await userService.updateWorkSchedule(request)
+      
+      // Update local state with response
+      const dayMapReverse: Record<number, string> = {
+        1: 'monday',
+        2: 'tuesday',
+        3: 'wednesday',
+        4: 'thursday',
+        5: 'friday',
+        6: 'saturday',
+        7: 'sunday'
+      }
+      
+      const days: any = {}
+      updatedSchedule.days.forEach(day => {
+        const dayKey = dayMapReverse[day.weekday]
+        if (dayKey) {
+          days[dayKey] = {
+            enabled: day.enabled,
+            timeSlots: day.timeSlots.map(slot => ({
+              startTime: slot.startTime,
+              endTime: slot.endTime
+            }))
+          }
+        }
+      })
+      
+      const updatedWorkPlansData = {
+        sessionDuration: updatedSchedule.sessionDuration,
+        appointmentCost: Number(updatedSchedule.appointmentCost),
+        days: {
+          monday: days.monday || { enabled: false, timeSlots: [] },
+          tuesday: days.tuesday || { enabled: false, timeSlots: [] },
+          wednesday: days.wednesday || { enabled: false, timeSlots: [] },
+          thursday: days.thursday || { enabled: false, timeSlots: [] },
+          friday: days.friday || { enabled: false, timeSlots: [] },
+          saturday: days.saturday || { enabled: false, timeSlots: [] },
+          sunday: days.sunday || { enabled: false, timeSlots: [] }
+        }
+      }
+      
+      setWorkPlansData(updatedWorkPlansData)
+      setOriginalWorkPlansData(updatedWorkPlansData)
       setWorkPlansErrors({})
       
       toast({
         title: "Lưu thành công",
         description: "Lịch làm việc đã được cập nhật thành công",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving work plans:', error)
       toast({
         title: "Lỗi",
-        description: "Không thể lưu lịch làm việc. Vui lòng thử lại sau.",
+        description: error.message || "Không thể lưu lịch làm việc. Vui lòng thử lại sau.",
         variant: "destructive",
       })
     } finally {
@@ -1518,6 +1647,11 @@ function MyProfilePageContent() {
 
               {/* Work Plans Tab */}
               <TabsContent value="work-plans" className="space-y-6">
+                {isLoadingWorkSchedule ? (
+                  <div className="flex justify-center items-center py-12">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
                 <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
                   <div className="space-y-6">
                     {/* Session Duration and Appointment Cost */}
@@ -1731,6 +1865,7 @@ function MyProfilePageContent() {
                     </div>
                   </div>
                 </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>

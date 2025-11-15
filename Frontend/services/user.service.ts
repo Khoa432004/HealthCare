@@ -111,6 +111,40 @@ export interface UsersResponse {
   totalPages: number
 }
 
+export interface WorkScheduleResponse {
+  sessionDuration: number
+  appointmentCost: number
+  days: DayScheduleResponse[]
+}
+
+export interface DayScheduleResponse {
+  weekday: number // 1 = Monday, 7 = Sunday
+  enabled: boolean
+  timeSlots: TimeSlotResponse[]
+}
+
+export interface TimeSlotResponse {
+  startTime: string // HH:mm
+  endTime: string // HH:mm
+}
+
+export interface UpdateWorkScheduleRequest {
+  sessionDuration: number
+  appointmentCost: number
+  days: DayScheduleRequest[]
+}
+
+export interface DayScheduleRequest {
+  weekday: number
+  enabled: boolean
+  timeSlots: TimeSlotRequest[]
+}
+
+export interface TimeSlotRequest {
+  startTime: string
+  endTime: string
+}
+
 class UserService {
   /**
    * Get all users with pagination and filtering
@@ -331,6 +365,74 @@ class UserService {
         originalError: error,
         endpoint
       })
+      
+      throw new Error(errorMessage)
+    }
+  }
+
+  /**
+   * Get work schedule for current doctor
+   */
+  async getWorkSchedule(): Promise<WorkScheduleResponse> {
+    const endpoint = `/api/doctors/me/work-schedule`
+    console.log('Getting work schedule from:', endpoint)
+    
+    try {
+      const response = await apiClient.get<any>(endpoint)
+      
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch work schedule')
+      }
+
+      // Handle ResponseSuccess format: { status, message, data, timestamp }
+      if (response.data) {
+        return response.data as WorkScheduleResponse
+      }
+
+      throw new Error('Invalid response format from server')
+    } catch (error: any) {
+      console.error('Error in getWorkSchedule:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update work schedule for current doctor
+   */
+  async updateWorkSchedule(data: UpdateWorkScheduleRequest): Promise<WorkScheduleResponse> {
+    const endpoint = `/api/doctors/me/work-schedule`
+    console.log('Updating work schedule:', data)
+    
+    try {
+      let response: any
+      
+      // Try PUT first, then POST
+      try {
+        response = await apiClient.put<any>(endpoint, data)
+      } catch (putError: any) {
+        console.log('PUT failed, trying POST:', putError.message)
+        response = await apiClient.post<any>(endpoint, data)
+      }
+      
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to update work schedule')
+      }
+
+      // Handle ResponseSuccess format: { status, message, data, timestamp }
+      if (response.data) {
+        return response.data as WorkScheduleResponse
+      }
+
+      throw new Error('Invalid response format from server')
+    } catch (error: any) {
+      console.error('Error in updateWorkSchedule:', error)
+      
+      let errorMessage = 'Failed to update work schedule'
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
       
       throw new Error(errorMessage)
     }
