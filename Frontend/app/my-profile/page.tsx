@@ -152,6 +152,11 @@ function MyProfilePageContent() {
         languages: data.languages || [],
         certificationId: data.practicingCertificationId || "",
       })
+      
+      // Initialize editing states
+      setEditingWorkExperiences(data.workExperiences || [])
+      setEditingEducations(data.educations || [])
+      setEditingCertifications(data.certifications || [])
     } catch (error) {
       console.error("Error loading professional info:", error)
       toast({
@@ -187,6 +192,11 @@ function MyProfilePageContent() {
   const [originalProfessionalData, setOriginalProfessionalData] = useState(professionalData)
   const [originalWorkPlansData, setOriginalWorkPlansData] = useState(workPlansData)
 
+  // State for editing work experiences, educations, certifications
+  const [editingWorkExperiences, setEditingWorkExperiences] = useState<ProfessionalInfoResponse['workExperiences']>([])
+  const [editingEducations, setEditingEducations] = useState<ProfessionalInfoResponse['educations']>([])
+  const [editingCertifications, setEditingCertifications] = useState<ProfessionalInfoResponse['certifications']>([])
+
   // Detect unsaved changes
   useEffect(() => {
     if (isEditMode) {
@@ -218,7 +228,88 @@ function MyProfilePageContent() {
       setShowUnsavedDialog(true)
     } else {
       setIsEditMode(false)
+      // Reset editing states to original
+      if (professionalInfo) {
+        setEditingWorkExperiences(professionalInfo.workExperiences || [])
+        setEditingEducations(professionalInfo.educations || [])
+        setEditingCertifications(professionalInfo.certifications || [])
+      }
     }
+  }
+  
+  // Handlers for adding/removing items
+  const handleAddWorkExperience = () => {
+    const newExp: ProfessionalInfoResponse['workExperiences'][0] = {
+      id: crypto.randomUUID(),
+      position: "",
+      specialties: [],
+      clinicHospital: "",
+      location: "",
+      fromDate: new Date().toISOString().split('T')[0],
+      toDate: new Date().toISOString().split('T')[0],
+      isCurrentJob: false
+    }
+    setEditingWorkExperiences([...editingWorkExperiences, newExp])
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleRemoveWorkExperience = (id: string) => {
+    setEditingWorkExperiences(editingWorkExperiences.filter(exp => exp.id !== id))
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleUpdateWorkExperience = (id: string, field: string, value: any) => {
+    setEditingWorkExperiences(editingWorkExperiences.map(exp => 
+      exp.id === id ? { ...exp, [field]: value } : exp
+    ))
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleAddEducation = () => {
+    const newEdu: ProfessionalInfoResponse['educations'][0] = {
+      specialty: "",
+      qualification: "",
+      school: "",
+      fromYear: new Date().getFullYear() - 4,
+      toYear: new Date().getFullYear()
+    }
+    setEditingEducations([...editingEducations, newEdu])
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleRemoveEducation = (index: number) => {
+    setEditingEducations(editingEducations.filter((_, i) => i !== index))
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleUpdateEducation = (index: number, field: string, value: any) => {
+    setEditingEducations(editingEducations.map((edu, i) => 
+      i === index ? { ...edu, [field]: value } : edu
+    ))
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleAddCertification = () => {
+    const newCert: ProfessionalInfoResponse['certifications'][0] = {
+      name: "",
+      issuingOrganization: "",
+      issueDate: new Date().toISOString().split('T')[0],
+      attachmentUrl: ""
+    }
+    setEditingCertifications([...editingCertifications, newCert])
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleRemoveCertification = (index: number) => {
+    setEditingCertifications(editingCertifications.filter((_, i) => i !== index))
+    setHasUnsavedChanges(true)
+  }
+  
+  const handleUpdateCertification = (index: number, field: string, value: any) => {
+    setEditingCertifications(editingCertifications.map((cert, i) => 
+      i === index ? { ...cert, [field]: value } : cert
+    ))
+    setHasUnsavedChanges(true)
   }
 
   const confirmCancel = () => {
@@ -231,14 +322,147 @@ function MyProfilePageContent() {
 
   const handleSave = async () => {
     setIsSaving(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    setOriginalPersonalData(personalData)
-    setOriginalProfessionalData(professionalData)
-    setIsEditMode(false)
-    setHasUnsavedChanges(false)
-    setIsSaving(false)
+    try {
+      if (activeTab === "professional") {
+        // Validate required fields
+        if (!professionalData.title || !professionalData.title.trim()) {
+          toast({
+            title: "Validation Error",
+            description: "Title is required",
+            variant: "destructive",
+          })
+          setIsSaving(false)
+          return
+        }
+        
+        if (!professionalData.clinic || !professionalData.clinic.trim()) {
+          toast({
+            title: "Validation Error",
+            description: "Clinic/Hospital is required",
+            variant: "destructive",
+          })
+          setIsSaving(false)
+          return
+        }
+        
+        if (!professionalData.certificationId || !professionalData.certificationId.trim()) {
+          toast({
+            title: "Validation Error",
+            description: "Practicing certification ID is required",
+            variant: "destructive",
+          })
+          setIsSaving(false)
+          return
+        }
+        
+        // Update professional info
+        const updateData: any = {
+          title: professionalData.title.trim(),
+          facilityName: professionalData.clinic.trim(),
+          careForAdults: professionalData.medicalCareAdults,
+          careForChildren: professionalData.medicalCareChildren,
+          specialties: professionalData.specialties || [],
+          diseasesTreated: professionalData.treatments || [],
+          languages: professionalData.languages || [],
+          practicingCertificationId: professionalData.certificationId.trim(),
+        }
+        
+        // Add optional fields only if they have values
+        if (professionalData.currentProvince && professionalData.currentProvince.trim()) {
+          updateData.province = professionalData.currentProvince.trim()
+        }
+        
+        // Include workExperiences from editing state
+        if (editingWorkExperiences && editingWorkExperiences.length > 0) {
+          updateData.workExperiences = editingWorkExperiences
+            .filter(exp => exp.fromDate) // Only include valid experiences
+            .map(exp => ({
+              id: exp.id,
+              position: exp.position || "",
+              specialties: exp.specialties || [],
+              clinicHospital: exp.clinicHospital || "",
+              location: exp.location || "",
+              fromDate: exp.fromDate,
+              toDate: exp.toDate || undefined,
+              isCurrentJob: exp.isCurrentJob || false
+            }))
+        }
+        
+        // Include educations from editing state
+        if (editingEducations && editingEducations.length > 0) {
+          updateData.educations = editingEducations
+            .filter(edu => edu.school && edu.specialty) // Only include valid educations
+            .map(edu => ({
+              specialty: edu.specialty || "",
+              qualification: edu.qualification || "",
+              school: edu.school || "",
+              fromYear: edu.fromYear || new Date().getFullYear() - 4,
+              toYear: edu.toYear || new Date().getFullYear()
+            }))
+        }
+        
+        // Include certifications from editing state
+        if (editingCertifications && editingCertifications.length > 0) {
+          updateData.certifications = editingCertifications
+            .filter(cert => cert.name) // Only include valid certifications
+            .map(cert => ({
+              name: cert.name || "",
+              issuingOrganization: cert.issuingOrganization || "",
+              issueDate: cert.issueDate || undefined,
+              attachmentUrl: cert.attachmentUrl || undefined
+            }))
+        }
+        
+        console.log('Sending update request with data:', JSON.stringify(updateData, null, 2))
+        const updatedInfo = await userService.updateProfessionalInfo(updateData)
+        setProfessionalInfo(updatedInfo)
+        
+      // Update professionalData with response
+      setProfessionalData({
+        title: updatedInfo.title || "",
+        currentProvince: updatedInfo.province || "",
+        clinic: updatedInfo.facilityName || "",
+        medicalCareAdults: updatedInfo.careTarget?.includes("Người lớn") || updatedInfo.careTarget?.includes("Adults") || false,
+        medicalCareChildren: updatedInfo.careTarget?.includes("Trẻ em") || updatedInfo.careTarget?.includes("Children") || false,
+        specialties: updatedInfo.specialties || [],
+        treatments: updatedInfo.diseasesTreated || [],
+        languages: updatedInfo.languages || [],
+        certificationId: updatedInfo.practicingCertificationId || "",
+      })
+      
+      // Update editing states
+      setEditingWorkExperiences(updatedInfo.workExperiences || [])
+      setEditingEducations(updatedInfo.educations || [])
+      setEditingCertifications(updatedInfo.certifications || [])
+      
+      setOriginalProfessionalData(professionalData)
+        
+        toast({
+          title: "Success",
+          description: "Professional information updated successfully",
+        })
+      } else {
+        // TODO: Update personal info when implemented
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        setOriginalPersonalData(personalData)
+        toast({
+          title: "Success",
+          description: "Personal information updated successfully",
+        })
+      }
+      
+      setIsEditMode(false)
+      setHasUnsavedChanges(false)
+    } catch (error: any) {
+      console.error("Error saving:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save changes. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleNavigation = (path: string) => {
@@ -999,122 +1223,296 @@ function MyProfilePageContent() {
                 )}
                 
                 {/* Work Experience Section */}
-                {professionalInfo && professionalInfo.workExperiences && professionalInfo.workExperiences.length > 0 && (
-                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Work Experience</h3>
-                      {isEditMode && (
-                        <Button variant="outline" size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {professionalInfo.workExperiences.map((exp) => (
-                        <div key={exp.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-medium">{exp.position}</p>
-                              <p className="text-sm text-gray-600">{exp.clinicHospital}</p>
-                              <p className="text-sm text-gray-500">{exp.location}</p>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {exp.specialties.map((spec, idx) => (
-                                  <Badge key={idx} variant="outline">{spec}</Badge>
-                                ))}
-                              </div>
-                              <p className="text-sm text-gray-500 mt-2">
-                                {new Date(exp.fromDate).toLocaleDateString()} - {exp.isCurrentJob ? "Current" : new Date(exp.toDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                            {isEditMode && (
-                              <Button variant="ghost" size="sm">
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Work Experience</h3>
+                    {isEditMode && (
+                      <Button variant="outline" size="sm" onClick={handleAddWorkExperience}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    )}
                   </div>
-                )}
+                  <div className="space-y-4">
+                    {(isEditMode ? editingWorkExperiences : (professionalInfo?.workExperiences || [])).length > 0 ? (
+                      (isEditMode ? editingWorkExperiences : (professionalInfo?.workExperiences || [])).map((exp) => (
+                        <div key={exp.id} className="border rounded-lg p-4">
+                          {isEditMode ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Position</Label>
+                                  <Input
+                                    value={exp.position}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'position', e.target.value)}
+                                    placeholder="e.g., Senior Doctor"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Clinic/Hospital</Label>
+                                  <Input
+                                    value={exp.clinicHospital}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'clinicHospital', e.target.value)}
+                                    placeholder="e.g., Cho Ray Hospital"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Location</Label>
+                                  <Input
+                                    value={exp.location}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'location', e.target.value)}
+                                    placeholder="e.g., Ho Chi Minh City"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Specialties (comma-separated)</Label>
+                                  <Input
+                                    value={exp.specialties?.join(', ') || ''}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'specialties', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                                    placeholder="e.g., Cardiology, Internal Medicine"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <Label>From Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={exp.fromDate}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'fromDate', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>To Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={exp.toDate || ''}
+                                    onChange={(e) => handleUpdateWorkExperience(exp.id, 'toDate', e.target.value)}
+                                    disabled={exp.isCurrentJob}
+                                  />
+                                </div>
+                                <div className="flex items-end">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={exp.isCurrentJob}
+                                      onCheckedChange={(checked) => {
+                                        handleUpdateWorkExperience(exp.id, 'isCurrentJob', checked)
+                                        if (checked) {
+                                          handleUpdateWorkExperience(exp.id, 'toDate', new Date().toISOString().split('T')[0])
+                                        }
+                                      }}
+                                    />
+                                    <Label>Current Job</Label>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveWorkExperience(exp.id)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{exp.position}</p>
+                                <p className="text-sm text-gray-600">{exp.clinicHospital}</p>
+                                <p className="text-sm text-gray-500">{exp.location}</p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {exp.specialties?.map((spec, idx) => (
+                                    <Badge key={idx} variant="outline">{spec}</Badge>
+                                  ))}
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2">
+                                  {new Date(exp.fromDate).toLocaleDateString()} - {exp.isCurrentJob ? "Current" : (exp.toDate ? new Date(exp.toDate).toLocaleDateString() : '')}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 text-sm text-center py-4">No work experience added</p>
+                    )}
+                  </div>
+                </div>
 
                 {/* Education Section */}
-                {professionalInfo && professionalInfo.educations && professionalInfo.educations.length > 0 && (
-                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Education</h3>
-                      {isEditMode && (
-                        <Button variant="outline" size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {professionalInfo.educations.map((edu, idx) => (
-                        <div key={idx} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-medium">{edu.specialty}</p>
-                              <p className="text-sm text-gray-600">{edu.qualification}</p>
-                              <p className="text-sm text-gray-500">{edu.school}</p>
-                              <p className="text-sm text-gray-500 mt-2">
-                                {edu.fromYear} - {edu.toYear}
-                              </p>
-                            </div>
-                            {isEditMode && (
-                              <Button variant="ghost" size="sm">
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                {professionalInfo && (
+                <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Education</h3>
+                    {isEditMode && (
+                      <Button variant="outline" size="sm" onClick={handleAddEducation}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    )}
                   </div>
+                  <div className="space-y-4">
+                    {(isEditMode ? editingEducations : (professionalInfo?.educations || [])).length > 0 ? (
+                      (isEditMode ? editingEducations : (professionalInfo?.educations || [])).map((edu, idx) => (
+                        <div key={idx} className="border rounded-lg p-4">
+                          {isEditMode ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Specialty</Label>
+                                  <Input
+                                    value={edu.specialty}
+                                    onChange={(e) => handleUpdateEducation(idx, 'specialty', e.target.value)}
+                                    placeholder="e.g., Medicine"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Qualification</Label>
+                                  <Input
+                                    value={edu.qualification}
+                                    onChange={(e) => handleUpdateEducation(idx, 'qualification', e.target.value)}
+                                    placeholder="e.g., Bachelor's Degree"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label>School</Label>
+                                <Input
+                                  value={edu.school}
+                                  onChange={(e) => handleUpdateEducation(idx, 'school', e.target.value)}
+                                  placeholder="e.g., University of Medicine"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>From Year</Label>
+                                  <Input
+                                    type="number"
+                                    value={edu.fromYear}
+                                    onChange={(e) => handleUpdateEducation(idx, 'fromYear', parseInt(e.target.value) || new Date().getFullYear() - 4)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>To Year</Label>
+                                  <Input
+                                    type="number"
+                                    value={edu.toYear}
+                                    onChange={(e) => handleUpdateEducation(idx, 'toYear', parseInt(e.target.value) || new Date().getFullYear())}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveEducation(idx)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{edu.specialty}</p>
+                                <p className="text-sm text-gray-600">{edu.qualification}</p>
+                                <p className="text-sm text-gray-500">{edu.school}</p>
+                                <p className="text-sm text-gray-500 mt-2">
+                                  {edu.fromYear} - {edu.toYear}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 text-sm text-center py-4">No education added</p>
+                    )}
+                  </div>
+                </div>
                 )}
 
                 {/* Certification Section */}
-                {professionalInfo && professionalInfo.certifications && professionalInfo.certifications.length > 0 && (
-                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Certifications</h3>
-                      {isEditMode && (
-                        <Button variant="outline" size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {professionalInfo.certifications.map((cert, idx) => (
-                        <div key={idx} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-medium">{cert.name}</p>
-                              <p className="text-sm text-gray-600">{cert.issuingOrganization}</p>
-                              {cert.issueDate && (
-                                <p className="text-sm text-gray-500">
-                                  {new Date(cert.issueDate).toLocaleDateString()}
-                                </p>
-                              )}
-                              {cert.attachmentUrl && (
-                                <a href={cert.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-2 inline-block">
-                                  View Attachment
-                                </a>
-                              )}
-                            </div>
-                            {isEditMode && (
-                              <Button variant="ghost" size="sm">
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                {professionalInfo && (
+                <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Certifications</h3>
+                    {isEditMode && (
+                      <Button variant="outline" size="sm" onClick={handleAddCertification}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    )}
                   </div>
+                  <div className="space-y-4">
+                    {(isEditMode ? editingCertifications : (professionalInfo?.certifications || [])).length > 0 ? (
+                      (isEditMode ? editingCertifications : (professionalInfo?.certifications || [])).map((cert, idx) => (
+                        <div key={idx} className="border rounded-lg p-4">
+                          {isEditMode ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Certification Name</Label>
+                                  <Input
+                                    value={cert.name}
+                                    onChange={(e) => handleUpdateCertification(idx, 'name', e.target.value)}
+                                    placeholder="e.g., Medical License"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Issuing Organization</Label>
+                                  <Input
+                                    value={cert.issuingOrganization}
+                                    onChange={(e) => handleUpdateCertification(idx, 'issuingOrganization', e.target.value)}
+                                    placeholder="e.g., Ministry of Health"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Issue Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={cert.issueDate ? new Date(cert.issueDate).toISOString().split('T')[0] : ''}
+                                    onChange={(e) => handleUpdateCertification(idx, 'issueDate', e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Attachment URL (optional)</Label>
+                                  <Input
+                                    value={cert.attachmentUrl || ''}
+                                    onChange={(e) => handleUpdateCertification(idx, 'attachmentUrl', e.target.value)}
+                                    placeholder="https://..."
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveCertification(idx)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium">{cert.name}</p>
+                                <p className="text-sm text-gray-600">{cert.issuingOrganization}</p>
+                                {cert.issueDate && (
+                                  <p className="text-sm text-gray-500">
+                                    {new Date(cert.issueDate).toLocaleDateString()}
+                                  </p>
+                                )}
+                                {cert.attachmentUrl && (
+                                  <a href={cert.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-2 inline-block">
+                                    View Attachment
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 text-sm text-center py-4">No certifications added</p>
+                    )}
+                  </div>
+                </div>
                 )}
               </TabsContent>
 

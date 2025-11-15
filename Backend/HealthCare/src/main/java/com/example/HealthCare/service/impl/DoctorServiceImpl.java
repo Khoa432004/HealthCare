@@ -2,6 +2,7 @@
 package com.example.HealthCare.service.impl;
 import com.example.HealthCare.dto.DoctorDetailDto;
 import com.example.HealthCare.dto.DoctorSummaryDto;
+import com.example.HealthCare.dto.request.UpdateProfessionalInfoRequest;
 import com.example.HealthCare.dto.response.ProfessionalInfoResponse;
 import com.example.HealthCare.model.DoctorExperience;
 import com.example.HealthCare.model.DoctorProfile;
@@ -10,6 +11,7 @@ import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -248,6 +250,131 @@ public class DoctorServiceImpl implements DoctorService {
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
+        }
+
+        /**
+         * Format array to PostgreSQL array string format
+         */
+        private String formatArrayString(List<String> list) {
+            if (list == null || list.isEmpty()) {
+                return "{}";
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append("\"").append(list.get(i).replace("\"", "\\\"")).append("\"");
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+
+        @Override
+        @Transactional
+        public ProfessionalInfoResponse updateProfessionalInfo(UUID doctorId, UpdateProfessionalInfoRequest request) {
+            // Find existing profile
+            DoctorProfile profile = doctorProfileRepository.findByUserId(doctorId)
+                    .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
+
+            // Build care target from checkboxes
+            List<String> careTargetList = new ArrayList<>();
+            if (request.isCareForAdults()) {
+                careTargetList.add("Người lớn");
+            }
+            if (request.isCareForChildren()) {
+                careTargetList.add("Trẻ em");
+            }
+            String careTarget = careTargetList.isEmpty() ? "{\"Người lớn\"}" : formatArrayString(careTargetList);
+
+            // Update basic fields
+            profile.setTitle(request.getTitle());
+            profile.setProvince(request.getProvince());
+            profile.setFacilityName(request.getFacilityName());
+            profile.setCareTarget(careTarget);
+            profile.setSpecialties(formatArrayString(request.getSpecialties()));
+            profile.setDiseasesTreated(formatArrayString(request.getDiseasesTreated()));
+            
+            // Update practice license number (if changed)
+            if (request.getPracticingCertificationId() != null && 
+                !request.getPracticingCertificationId().equals(profile.getPracticeLicenseNo())) {
+                // Check if new license number already exists for another doctor
+                if (doctorProfileRepository.existsByPracticeLicenseNoAndUserIdNot(
+                        request.getPracticingCertificationId(), doctorId)) {
+                    throw new RuntimeException("Practice license number already exists");
+                }
+                profile.setPracticeLicenseNo(request.getPracticingCertificationId());
+            }
+
+            // Save updated profile
+            profile = doctorProfileRepository.save(profile);
+
+            // Update work experiences if provided
+            if (request.getWorkExperiences() != null) {
+                updateWorkExperiences(doctorId, request.getWorkExperiences());
+            }
+
+            // Return updated professional info
+            return getProfessionalInfo(doctorId);
+        }
+
+        /**
+         * Update work experiences for a doctor
+         */
+        private void updateWorkExperiences(UUID doctorId, List<UpdateProfessionalInfoRequest.WorkExperienceRequest> workExperiences) {
+            if (workExperiences == null || workExperiences.isEmpty()) {
+                return; // Don't update if not provided
+            }
+            
+            // For simplicity, we'll delete all existing and create new ones
+            // In a production system, you might want to do a more sophisticated merge
+            doctorExperienceRepository.deleteByDoctorId(doctorId);
+
+            for (UpdateProfessionalInfoRequest.WorkExperienceRequest expRequest : workExperiences) {
+                if (expRequest.getFromDate() == null || expRequest.getFromDate().isEmpty()) {
+                    continue; // Skip invalid entries
+                }
+                
+                LocalDate fromDate;
+                try {
+                    fromDate = LocalDate.parse(expRequest.getFromDate());
+                } catch (Exception e) {
+                    // Skip if date parsing fails
+                    continue;
+                }
+                
+                LocalDate toDate = null;
+                if (expRequest.getToDate() != null && !expRequest.getToDate().isEmpty()) {
+                    try {
+                        toDate = LocalDate.parse(expRequest.getToDate());
+                    } catch (Exception e) {
+                        // If parsing fails, will use fallback below
+                    }
+                }
+
+                // If isCurrentJob is true, set toDate to current date (since DB requires NOT NULL)
+                // We'll check isCurrentJob when reading back
+                if (expRequest.getIsCurrentJob() != null && expRequest.getIsCurrentJob()) {
+                    toDate = LocalDate.now();
+                } else if (toDate == null) {
+                    // If not current job but toDate is null, use current date as fallback
+                    toDate = LocalDate.now();
+                }
+
+                String specialtyString = formatArrayString(expRequest.getSpecialties() != null ? expRequest.getSpecialties() : new ArrayList<>());
+                
+                DoctorExperience experience = DoctorExperience.builder()
+                        .doctorId(doctorId)
+                        .fromDate(fromDate)
+                        .toDate(toDate)
+                        .organization(expRequest.getClinicHospital() != null ? expRequest.getClinicHospital() : "")
+                        .location(expRequest.getLocation() != null ? expRequest.getLocation() : "")
+                        .specialty(specialtyString)
+                        .build();
+
+                doctorExperienceRepository.save(experience);
+            }
         }
 
 }

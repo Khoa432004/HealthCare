@@ -11,4 +11,5 @@ public interface DoctorService {
     List<DoctorSummaryDto> getAllDoctors(String searchQuery);
     DoctorDetailDto getDoctorDetail(UUID doctorId);
     ProfessionalInfoResponse getProfessionalInfo(UUID doctorId);
+    ProfessionalInfoResponse updateProfessionalInfo(UUID doctorId, com.example.HealthCare.dto.request.UpdateProfessionalInfoRequest request);
 }
