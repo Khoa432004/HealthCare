@@ -35,17 +35,21 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
+import { userService, type ProfessionalInfoResponse } from "@/services/user.service"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
 function MyProfilePageContent() {
   const router = useRouter()
+  const { toast } = useToast()
   const [userInfo, setUserInfo] = useState<any>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfoResponse | null>(null)
+  const [isLoadingProfessional, setIsLoadingProfessional] = useState(false)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -114,20 +118,51 @@ function MyProfilePageContent() {
     addressLine2: "",
   })
 
-  // Professional Information State
+  // Professional Information State (for editing)
   const [professionalData, setProfessionalData] = useState({
-    title: "Doctor",
-    currentProvince: "Ho Chi Minh",
-    clinic: "Cho Ray Hospital",
-    medicalCareAdults: true,
-    medicalCareChildren: true,
-    specialties: ["Anesthesiology", "Cardiology", "Dermatology"],
-    treatments: ["Adolescence Health", "Anxiety Disorders", "Atrial Fibrillation"],
-    languages: ["English", "French", "Vietnamese"],
-    certificationId: "doctor-123",
-    issuingAuthority: "Medicine center",
-    dateOfIssue: "04-09-2010",
+    title: "",
+    currentProvince: "",
+    clinic: "",
+    medicalCareAdults: false,
+    medicalCareChildren: false,
+    specialties: [] as string[],
+    treatments: [] as string[],
+    languages: [] as string[],
+    certificationId: "",
   })
+
+  // Load professional info when professional tab is accessed
+  const loadProfessionalInfo = async () => {
+    if (professionalInfo) return // Already loaded
+    
+    setIsLoadingProfessional(true)
+    try {
+      const data = await userService.getProfessionalInfo()
+      setProfessionalInfo(data)
+      
+      // Update professionalData for editing
+      setProfessionalData({
+        title: data.title || "",
+        currentProvince: data.province || "",
+        clinic: data.facilityName || "",
+        medicalCareAdults: data.careTarget?.includes("Người lớn") || data.careTarget?.includes("Adults") || false,
+        medicalCareChildren: data.careTarget?.includes("Trẻ em") || data.careTarget?.includes("Children") || false,
+        specialties: data.specialties || [],
+        treatments: data.diseasesTreated || [],
+        languages: data.languages || [],
+        certificationId: data.practicingCertificationId || "",
+      })
+    } catch (error) {
+      console.error("Error loading professional info:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load professional information",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingProfessional(false)
+    }
+  }
 
   // Work Plans State
   const [workPlansData, setWorkPlansData] = useState({
@@ -147,7 +182,6 @@ function MyProfilePageContent() {
   const [workPlansErrors, setWorkPlansErrors] = useState<Record<string, string>>({})
   const [isSavingWorkPlans, setIsSavingWorkPlans] = useState(false)
   const [activeTab, setActiveTab] = useState("personal")
-  const { toast } = useToast()
 
   const [originalPersonalData, setOriginalPersonalData] = useState(personalData)
   const [originalProfessionalData, setOriginalProfessionalData] = useState(professionalData)
@@ -471,7 +505,12 @@ function MyProfilePageContent() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={(value) => {
+              setActiveTab(value)
+              if (value === "professional") {
+                loadProfessionalInfo()
+              }
+            }} className="space-y-6">
               <div className="flex items-center justify-between">
                 <TabsList>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
@@ -759,6 +798,11 @@ function MyProfilePageContent() {
 
               {/* Professional Tab */}
               <TabsContent value="professional" className="space-y-6">
+                {isLoadingProfessional ? (
+                  <div className="flex justify-center items-center py-12">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
                 <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
                   <div className="flex gap-8">
                     <div className="flex-shrink-0">
@@ -771,57 +815,88 @@ function MyProfilePageContent() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="title">Title</Label>
-                          <Select
-                            value={professionalData.title}
-                            onValueChange={(value) => setProfessionalData({ ...professionalData, title: value })}
-                            disabled={!isEditMode}
-                          >
-                            <SelectTrigger className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Doctor">Doctor</SelectItem>
-                              <SelectItem value="Specialist">Specialist</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {isEditMode ? (
+                            <Select
+                              value={professionalData.title}
+                              onValueChange={(value) => setProfessionalData({ ...professionalData, title: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select title" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Bác sĩ">Bác sĩ</SelectItem>
+                                <SelectItem value="Thạc sĩ">Thạc sĩ</SelectItem>
+                                <SelectItem value="Tiến sĩ">Tiến sĩ</SelectItem>
+                                <SelectItem value="Phó Giáo sư">Phó Giáo sư</SelectItem>
+                                <SelectItem value="Giáo sư">Giáo sư</SelectItem>
+                                <SelectItem value="Doctor">Doctor</SelectItem>
+                                <SelectItem value="Specialist">Specialist</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={professionalInfo?.title || ""}
+                              disabled
+                              className="cursor-not-allowed bg-gray-50"
+                            />
+                          )}
                         </div>
 
                         <div>
                           <Label htmlFor="currentProvince">Current (last) province of work</Label>
-                          <Select
-                            value={professionalData.currentProvince}
-                            onValueChange={(value) =>
-                              setProfessionalData({ ...professionalData, currentProvince: value })
-                            }
-                            disabled={!isEditMode}
-                          >
-                            <SelectTrigger className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Ho Chi Minh">Ho Chi Minh</SelectItem>
-                              <SelectItem value="Hanoi">Hanoi</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {isEditMode ? (
+                            <Select
+                              value={professionalData.currentProvince}
+                              onValueChange={(value) =>
+                                setProfessionalData({ ...professionalData, currentProvince: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select province" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Ho Chi Minh">Ho Chi Minh</SelectItem>
+                                <SelectItem value="Hanoi">Hanoi</SelectItem>
+                                <SelectItem value="Da Nang">Da Nang</SelectItem>
+                                <SelectItem value="Can Tho">Can Tho</SelectItem>
+                                <SelectItem value="Hai Phong">Hai Phong</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={professionalInfo?.province || ""}
+                              disabled
+                              className="cursor-not-allowed bg-gray-50"
+                            />
+                          )}
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="clinic">Clinic / hospital of work</Label>
-                          <Select
-                            value={professionalData.clinic}
-                            onValueChange={(value) => setProfessionalData({ ...professionalData, clinic: value })}
-                            disabled={!isEditMode}
-                          >
-                            <SelectTrigger className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Cho Ray Hospital">Cho Ray Hospital</SelectItem>
-                              <SelectItem value="FV Hospital">FV Hospital</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {isEditMode ? (
+                            <Select
+                              value={professionalData.clinic}
+                              onValueChange={(value) => setProfessionalData({ ...professionalData, clinic: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select clinic" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Cho Ray Hospital">Cho Ray Hospital</SelectItem>
+                                <SelectItem value="FV Hospital">FV Hospital</SelectItem>
+                                <SelectItem value="Bach Mai Hospital">Bach Mai Hospital</SelectItem>
+                                <SelectItem value="Viet Duc Hospital">Viet Duc Hospital</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={professionalInfo?.facilityName || ""}
+                              disabled
+                              className="cursor-not-allowed bg-gray-50"
+                            />
+                          )}
                         </div>
 
                         <div>
@@ -863,22 +938,30 @@ function MyProfilePageContent() {
                         <div>
                           <Label>Specialties</Label>
                           <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-md bg-gray-50">
-                            {professionalData.specialties.map((specialty) => (
-                              <Badge key={specialty} variant="outline" className="bg-white">
-                                {specialty}
-                              </Badge>
-                            ))}
+                            {(isEditMode ? professionalData.specialties : (professionalInfo?.specialties || [])).length > 0 ? (
+                              (isEditMode ? professionalData.specialties : (professionalInfo?.specialties || [])).map((specialty) => (
+                                <Badge key={specialty} variant="outline" className="bg-white">
+                                  {specialty}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-sm">No specialties specified</span>
+                            )}
                           </div>
                         </div>
 
                         <div>
                           <Label>Treatment of conditions</Label>
                           <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-md bg-gray-50">
-                            {professionalData.treatments.map((treatment) => (
-                              <Badge key={treatment} variant="outline" className="bg-white">
-                                {treatment}
-                              </Badge>
-                            ))}
+                            {(isEditMode ? professionalData.treatments : (professionalInfo?.diseasesTreated || [])).length > 0 ? (
+                              (isEditMode ? professionalData.treatments : (professionalInfo?.diseasesTreated || [])).map((treatment) => (
+                                <Badge key={treatment} variant="outline" className="bg-white">
+                                  {treatment}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-sm">No treatments specified</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -886,11 +969,15 @@ function MyProfilePageContent() {
                       <div>
                         <Label>Languages</Label>
                         <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-md bg-gray-50">
-                          {professionalData.languages.map((language) => (
-                            <Badge key={language} variant="outline" className="bg-white">
-                              {language}
-                            </Badge>
-                          ))}
+                          {(isEditMode ? professionalData.languages : (professionalInfo?.languages || [])).length > 0 ? (
+                            (isEditMode ? professionalData.languages : (professionalInfo?.languages || [])).map((language) => (
+                              <Badge key={language} variant="outline" className="bg-white">
+                                {language}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-gray-400 text-sm">No languages specified</span>
+                          )}
                         </div>
                       </div>
 
@@ -898,7 +985,7 @@ function MyProfilePageContent() {
                         <Label htmlFor="certificationId">Practicing certification ID</Label>
                         <Input
                           id="certificationId"
-                          value={professionalData.certificationId}
+                          value={isEditMode ? professionalData.certificationId : (professionalInfo?.practicingCertificationId || "")}
                           onChange={(e) =>
                             setProfessionalData({ ...professionalData, certificationId: e.target.value })
                           }
@@ -906,35 +993,129 @@ function MyProfilePageContent() {
                           className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
                         />
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="issuingAuthority">Issuing authority</Label>
-                          <Input
-                            id="issuingAuthority"
-                            value={professionalData.issuingAuthority}
-                            onChange={(e) =>
-                              setProfessionalData({ ...professionalData, issuingAuthority: e.target.value })
-                            }
-                            disabled={!isEditMode}
-                            className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="dateOfIssue">Date of issue</Label>
-                          <Input
-                            id="dateOfIssue"
-                            value={professionalData.dateOfIssue}
-                            onChange={(e) => setProfessionalData({ ...professionalData, dateOfIssue: e.target.value })}
-                            disabled={!isEditMode}
-                            className={cn(!isEditMode && "cursor-not-allowed bg-gray-50")}
-                          />
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
+                )}
+                
+                {/* Work Experience Section */}
+                {professionalInfo && professionalInfo.workExperiences && professionalInfo.workExperiences.length > 0 && (
+                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Work Experience</h3>
+                      {isEditMode && (
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      {professionalInfo.workExperiences.map((exp) => (
+                        <div key={exp.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium">{exp.position}</p>
+                              <p className="text-sm text-gray-600">{exp.clinicHospital}</p>
+                              <p className="text-sm text-gray-500">{exp.location}</p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {exp.specialties.map((spec, idx) => (
+                                  <Badge key={idx} variant="outline">{spec}</Badge>
+                                ))}
+                              </div>
+                              <p className="text-sm text-gray-500 mt-2">
+                                {new Date(exp.fromDate).toLocaleDateString()} - {exp.isCurrentJob ? "Current" : new Date(exp.toDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {isEditMode && (
+                              <Button variant="ghost" size="sm">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Education Section */}
+                {professionalInfo && professionalInfo.educations && professionalInfo.educations.length > 0 && (
+                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Education</h3>
+                      {isEditMode && (
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      {professionalInfo.educations.map((edu, idx) => (
+                        <div key={idx} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium">{edu.specialty}</p>
+                              <p className="text-sm text-gray-600">{edu.qualification}</p>
+                              <p className="text-sm text-gray-500">{edu.school}</p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                {edu.fromYear} - {edu.toYear}
+                              </p>
+                            </div>
+                            {isEditMode && (
+                              <Button variant="ghost" size="sm">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certification Section */}
+                {professionalInfo && professionalInfo.certifications && professionalInfo.certifications.length > 0 && (
+                  <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Certifications</h3>
+                      {isEditMode && (
+                        <Button variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      {professionalInfo.certifications.map((cert, idx) => (
+                        <div key={idx} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium">{cert.name}</p>
+                              <p className="text-sm text-gray-600">{cert.issuingOrganization}</p>
+                              {cert.issueDate && (
+                                <p className="text-sm text-gray-500">
+                                  {new Date(cert.issueDate).toLocaleDateString()}
+                                </p>
+                              )}
+                              {cert.attachmentUrl && (
+                                <a href={cert.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-2 inline-block">
+                                  View Attachment
+                                </a>
+                              )}
+                            </div>
+                            {isEditMode && (
+                              <Button variant="ghost" size="sm">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Work Plans Tab */}

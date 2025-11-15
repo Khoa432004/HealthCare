@@ -47,6 +47,46 @@ export interface DoctorExperience {
   specialty?: string[]
 }
 
+export interface ProfessionalInfoResponse {
+  title: string
+  province?: string
+  facilityName: string
+  careTarget: string[]
+  specialties: string[]
+  diseasesTreated: string[]
+  languages: string[]
+  practicingCertificationId: string
+  workExperiences: WorkExperienceDto[]
+  educations: EducationDto[]
+  certifications: CertificationDto[]
+}
+
+export interface WorkExperienceDto {
+  id: string
+  position: string
+  specialties: string[]
+  clinicHospital: string
+  location: string
+  fromDate: string
+  toDate: string
+  isCurrentJob: boolean
+}
+
+export interface EducationDto {
+  specialty: string
+  qualification: string
+  school: string
+  fromYear: number
+  toYear: number
+}
+
+export interface CertificationDto {
+  name: string
+  issuingOrganization: string
+  issueDate?: string
+  attachmentUrl?: string
+}
+
 export interface ApprovalRequest {
   userId: string
   type: string
@@ -151,6 +191,45 @@ class UserService {
     
     if (response.error) {
       throw new Error(response.error.message || 'Failed to toggle account status')
+    }
+  }
+
+  /**
+   * Get professional information for current doctor
+   */
+  async getProfessionalInfo(): Promise<ProfessionalInfoResponse> {
+    const endpoint = `/api/doctors/me/professional-info`
+    console.log('Calling endpoint:', endpoint)
+    
+    try {
+      const response = await apiClient.get<any>(endpoint)
+      console.log('Response received:', response)
+      
+      // Backend returns ResponseSuccess format: { status, message, data, timestamp }
+      // or ApiResponse format: { statusCode, message, data, error? }
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch professional information')
+      }
+
+      // Handle both ResponseSuccess and ApiResponse formats
+      if (response.data) {
+        return response.data as ProfessionalInfoResponse
+      }
+      
+      // If response is the data directly (shouldn't happen but handle it)
+      if (response.title || response.specialties) {
+        return response as ProfessionalInfoResponse
+      }
+
+      throw new Error('Invalid response format from server')
+    } catch (error: any) {
+      console.error('Error in getProfessionalInfo:', error)
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        endpoint
+      })
+      throw error
     }
   }
 }
