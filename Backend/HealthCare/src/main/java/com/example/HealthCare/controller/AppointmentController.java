@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -119,6 +120,34 @@ public class AppointmentController {
                     .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
         } catch (Exception e) {
             log.error("Error creating appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get appointment by ID
+     * @param id - Appointment ID
+     * @return Appointment details
+     */
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> getAppointmentById(@PathVariable UUID id) {
+        try {
+            UUID userId = getCurrentUserId();
+            AppointmentResponse appointment = appointmentService.getAppointmentById(id, userId);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when getting appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "error", "forbidden", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting appointment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }

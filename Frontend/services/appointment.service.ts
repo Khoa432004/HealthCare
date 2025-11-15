@@ -134,5 +134,34 @@ export const appointmentService = {
       throw newError;
     }
   },
+
+  /**
+   * Get appointment by ID
+   * @param appointmentId - Appointment ID
+   * @returns Appointment details
+   */
+  async getAppointmentById(appointmentId: string): Promise<Appointment> {
+    try {
+      const response: any = await apiClient.get(`/api/v1/appointments/${appointmentId}`);
+      
+      if (response.success && response.data) {
+        return response.data as Appointment;
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      console.error('Error fetching appointment:', error);
+      
+      // Extract error message from response
+      let errorMessage = 'Không thể tải thông tin lịch hẹn. Vui lòng thử lại.';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
 };
 

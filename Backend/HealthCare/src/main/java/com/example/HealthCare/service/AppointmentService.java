@@ -26,5 +26,15 @@ public interface AppointmentService {
      * @throws BadRequestException if there are conflicts or validation errors
      */
     AppointmentResponse createAppointment(CreateAppointmentRequest request, UUID doctorId);
+    
+    /**
+     * Get appointment by ID
+     * @param appointmentId - Appointment ID
+     * @param userId - Current user ID (for authorization check)
+     * @return Appointment response
+     * @throws NotFoundException if appointment not found
+     * @throws BadRequestException if user doesn't have permission to view this appointment
+     */
+    AppointmentResponse getAppointmentById(UUID appointmentId, UUID userId);
 }
 
