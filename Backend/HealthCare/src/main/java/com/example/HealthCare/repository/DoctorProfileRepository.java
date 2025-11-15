@@ -17,6 +17,9 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, UU
     Optional<DoctorProfile> findByPracticeLicenseNo(String practiceLicenseNo);
     
     boolean existsByPracticeLicenseNo(String practiceLicenseNo);
+    
+    @Query("SELECT COUNT(d) > 0 FROM DoctorProfile d WHERE d.practiceLicenseNo = :practiceLicenseNo AND d.userId != :userId")
+    boolean existsByPracticeLicenseNoAndUserIdNot(String practiceLicenseNo, UUID userId);
 
 
     // Tìm bác sĩ theo tên hoặc chuyên môn (case-insensitive)
