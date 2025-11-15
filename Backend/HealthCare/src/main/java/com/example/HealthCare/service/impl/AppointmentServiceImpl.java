@@ -204,5 +204,27 @@ public class AppointmentServiceImpl implements AppointmentService {
         
         return mapToResponse(savedAppointment);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AppointmentResponse getAppointmentById(UUID appointmentId, UUID userId) {
+        log.info("Getting appointment by ID: {} for user: {}", appointmentId, userId);
+        
+        // Get appointment with relations
+        Appointment appointment = appointmentRepository.findByIdWithRelations(appointmentId);
+        if (appointment == null) {
+            throw new NotFoundException("Appointment not found");
+        }
+        
+        // Check authorization: user must be either the patient or the doctor of this appointment
+        boolean isAuthorized = appointment.getPatientId().equals(userId) || 
+                              appointment.getDoctorId().equals(userId);
+        
+        if (!isAuthorized) {
+            throw new BadRequestException("You do not have permission to view this appointment");
+        }
+        
+        return mapToResponse(appointment);
+    }
 }
 
