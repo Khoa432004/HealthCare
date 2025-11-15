@@ -29,9 +29,11 @@ import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.DoctorProfile;
+import com.example.HealthCare.model.PatientProfile;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.ApprovalRequestRepository;
 import com.example.HealthCare.repository.DoctorProfileRepository;
+import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.UserService;
 
@@ -46,6 +48,7 @@ public class UserServiceImpl implements UserService {
 	private final UserAccountRepository userAccountRepository;
 	private final ApprovalRequestRepository approvalRequestRepository;
 	private final DoctorProfileRepository doctorProfileRepository;
+	private final PatientProfileRepository patientProfileRepository;
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
@@ -321,27 +324,25 @@ public class UserServiceImpl implements UserService {
 		// Get doctor profile if exists (for CCCD number and address)
 		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
 			responseBuilder.cccdNumber(doctorProfile.getCccdNumber());
-			// Parse address from doctor_profile.address
+			// For doctor, parse address from doctor_profile.address
 			// Format: "addressLine1, districtWard, stateProvince, country"
 			String address = doctorProfile.getAddress();
 			if (address != null && !address.isEmpty()) {
 				String[] addressParts = address.split(",");
 				if (addressParts.length >= 1) {
-					responseBuilder.addressLine1(addressParts[0].trim());
-				}
-				if (addressParts.length >= 2) {
-					responseBuilder.districtWard(addressParts[1].trim());
-				}
-				if (addressParts.length >= 3) {
-					responseBuilder.stateProvince(addressParts[2].trim());
-				}
-				if (addressParts.length >= 4) {
-					responseBuilder.country(addressParts[3].trim());
+					responseBuilder.address(addressParts[0].trim());
+				} else {
+					responseBuilder.address(address);
 				}
 			}
-			// Also check province field
-			if (doctorProfile.getProvince() != null) {
-				responseBuilder.stateProvince(doctorProfile.getProvince());
+		});
+		
+		// Get patient profile if exists (for address)
+		patientProfileRepository.findByUserId(userId).ifPresent(patientProfile -> {
+			// For patient, get address directly from patient_profile.address
+			String address = patientProfile.getAddress();
+			if (address != null && !address.isEmpty()) {
+				responseBuilder.address(address);
 			}
 		});
 		
@@ -381,32 +382,36 @@ public class UserServiceImpl implements UserService {
 		userAccount = userAccountRepository.save(userAccount);
 		
 		// Update doctor profile if exists (for address)
+		// Note: For doctor, we still need to handle address parsing if needed
+		// But for now, if address is provided directly, use it
 		doctorProfileRepository.findByUserId(userId).ifPresent(doctorProfile -> {
-			// Build address string from components
-			StringBuilder addressBuilder = new StringBuilder();
-			if (request.getAddressLine1() != null && !request.getAddressLine1().isEmpty()) {
-				addressBuilder.append(request.getAddressLine1());
+			if (request.getAddress() != null) {
+				doctorProfile.setAddress(request.getAddress());
 			}
-			if (request.getDistrictWard() != null && !request.getDistrictWard().isEmpty()) {
-				if (addressBuilder.length() > 0) addressBuilder.append(", ");
-				addressBuilder.append(request.getDistrictWard());
-			}
-			if (request.getStateProvince() != null && !request.getStateProvince().isEmpty()) {
-				if (addressBuilder.length() > 0) addressBuilder.append(", ");
-				addressBuilder.append(request.getStateProvince());
-			}
-			if (request.getCountry() != null && !request.getCountry().isEmpty()) {
-				if (addressBuilder.length() > 0) addressBuilder.append(", ");
-				addressBuilder.append(request.getCountry());
-			}
-			
-			doctorProfile.setAddress(addressBuilder.toString());
-			if (request.getStateProvince() != null) {
-				doctorProfile.setProvince(request.getStateProvince());
-			}
-			
 			doctorProfileRepository.save(doctorProfile);
 		});
+		
+		// Update patient profile if exists (for address)
+		patientProfileRepository.findByUserId(userId).ifPresent(patientProfile -> {
+			// For patient, set address directly from request
+			if (request.getAddress() != null) {
+				patientProfile.setAddress(request.getAddress());
+			}
+			patientProfileRepository.save(patientProfile);
+		});
+		
+		// If patient profile doesn't exist but user is a patient, create it
+		UserAccount userAccountCheck = userAccountRepository.findByIdAndIsDeletedFalse(userId)
+				.orElseThrow(() -> new NotFoundException("User not found"));
+		if (userAccountCheck.getRole() == UserRole.PATIENT && 
+			!patientProfileRepository.findByUserId(userId).isPresent() &&
+			request.getAddress() != null && !request.getAddress().isEmpty()) {
+			PatientProfile newPatientProfile = PatientProfile.builder()
+					.userId(userId)
+					.address(request.getAddress())
+					.build();
+			patientProfileRepository.save(newPatientProfile);
+		}
 		
 		log.info("Personal info updated successfully for user: {}", userId);
 		

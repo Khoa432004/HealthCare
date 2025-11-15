@@ -24,14 +24,7 @@ public class PersonalInfoDetailResponse {
     private LocalDate dateOfBirth;
     private Gender gender;
     
-    // Address fields
-    private String country;
-    private String stateProvince;
-    private String districtWard;
-    private String addressLine1;
-    
-    // Optional fields
-    private String maritalStatus;
-    private String ethnicity;
+    // Address field (from patient_profile.address or doctor_profile.address)
+    private String address;
 }
 
