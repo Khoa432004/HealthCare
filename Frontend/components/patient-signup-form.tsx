@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-import { CalendarIcon, AlertCircle, EyeIcon, EyeOffIcon } from "lucide-react"
+import { CalendarIcon, AlertCircle, EyeIcon, EyeOffIcon, CheckCircle2 } from "lucide-react"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Link from "next/link"
 
 export function PatientSignUpForm() {
@@ -147,11 +148,31 @@ export function PatientSignUpForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[url('/background.png')] bg-cover bg-center relative overflow-hidden">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="w-full max-w-2xl">
-            <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
+    <React.Fragment>
+      {/* Success Modal */}
+      <Dialog open={success} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <div className="flex flex-col items-center justify-center space-y-4 py-4">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-center text-gray-900">
+                Đăng ký thành công!
+              </DialogTitle>
+              <DialogDescription className="text-center text-base text-gray-600">
+                Tài khoản của bạn đã được tạo thành công. Đang chuyển hướng đến trang đăng nhập...
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <div className="min-h-screen bg-[url('/background.png')] bg-cover bg-center relative overflow-hidden">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+            <div className="w-full max-w-2xl">
+              <Card className="bg-[rgba(255,255,255,0.68)] backdrop-blur-sm border border-white/50 shadow-soft-xl rounded-3xl">
               <CardContent className="p-6 sm:p-8 lg:p-10">
                 {/* Back link */}
                 <div className="mb-6">
@@ -163,16 +184,6 @@ export function PatientSignUpForm() {
                 {/* Title */}
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#0b0c0c] mb-2">Đăng ký tài khoản Bệnh nhân</h1>
                 <p className="text-sm text-gray-600 mb-6">Điền thông tin để tạo tài khoản</p>
-
-                {/* Success Alert */}
-                {success && (
-                  <Alert className="mb-6 bg-green-50 border-green-200">
-                    <AlertCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-sm text-green-800">
-                      Đăng kí thành công! Đang chuyển hướng đến trang đăng nhập...
-                    </AlertDescription>
-                  </Alert>
-                )}
 
                 {/* Error Alert */}
                 {error && (
@@ -376,10 +387,11 @@ export function PatientSignUpForm() {
                 </form>
               </CardContent>
             </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </React.Fragment>
   )
 }
 
