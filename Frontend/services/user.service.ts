@@ -153,12 +153,7 @@ export interface PersonalInfoDetailResponse {
   cccdNumber?: string
   dateOfBirth: string
   gender: string
-  country?: string
-  stateProvince?: string
-  districtWard?: string
-  addressLine1?: string
-  maritalStatus?: string
-  ethnicity?: string
+  address?: string
 }
 
 export interface UpdatePersonalInfoRequest {
@@ -167,12 +162,7 @@ export interface UpdatePersonalInfoRequest {
   email: string
   dateOfBirth: string
   gender: string
-  country?: string
-  stateProvince?: string
-  districtWard?: string
-  addressLine1?: string
-  maritalStatus?: string
-  ethnicity?: string
+  address?: string
 }
 
 class UserService {
@@ -522,6 +512,77 @@ class UserService {
       throw new Error('Invalid response format from server')
     } catch (error: any) {
       console.error('Error in updatePersonalInfo:', error)
+      
+      let errorMessage = 'Failed to update personal information'
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+      
+      throw new Error(errorMessage)
+    }
+  }
+
+  /**
+   * Get personal information for current patient
+   */
+  async getPatientPersonalInfo(): Promise<PersonalInfoDetailResponse> {
+    const endpoint = `/api/patients/me/personal-info`
+    console.log('Calling endpoint:', endpoint)
+    
+    try {
+      const response = await apiClient.get<any>(endpoint)
+      console.log('Response received:', response)
+      
+      // Backend returns ResponseSuccess format: { status, message, data, timestamp }
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to fetch personal information')
+      }
+
+      // Handle ResponseSuccess format
+      if (response.data) {
+        return response.data as PersonalInfoDetailResponse
+      }
+      
+      throw new Error('Invalid response format from server')
+    } catch (error: any) {
+      console.error('Error in getPatientPersonalInfo:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update personal information for current patient
+   */
+  async updatePatientPersonalInfo(data: UpdatePersonalInfoRequest): Promise<PersonalInfoDetailResponse> {
+    const endpoint = `/api/patients/me/personal-info`
+    console.log('Calling endpoint:', endpoint)
+    console.log('Request data:', data)
+    
+    try {
+      let response: any
+      
+      // Try PUT first, then POST
+      try {
+        response = await apiClient.put<any>(endpoint, data)
+      } catch (putError: any) {
+        console.log('PUT failed, trying POST:', putError.message)
+        response = await apiClient.post<any>(endpoint, data)
+      }
+      
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to update personal information')
+      }
+
+      // Handle ResponseSuccess format
+      if (response.data) {
+        return response.data as PersonalInfoDetailResponse
+      }
+      
+      throw new Error('Invalid response format from server')
+    } catch (error: any) {
+      console.error('Error in updatePatientPersonalInfo:', error)
       
       let errorMessage = 'Failed to update personal information'
       if (error.message) {

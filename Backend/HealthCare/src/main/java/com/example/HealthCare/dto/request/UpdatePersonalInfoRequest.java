@@ -37,14 +37,7 @@ public class UpdatePersonalInfoRequest {
     @NotNull(message = "Gender is required")
     private Gender gender;
 
-    // Address fields (from doctor_profile.address and user_account)
-    private String country;
-    private String stateProvince;
-    private String districtWard;
-    private String addressLine1;
-    
-    // Optional fields
-    private String maritalStatus;
-    private String ethnicity;
+    // Address field (for patient_profile.address or doctor_profile.address)
+    private String address;
 }
 
