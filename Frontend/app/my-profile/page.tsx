@@ -30,11 +30,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, Edit, Loader2, AlertCircle, LayoutDashboard, Calendar, User, Settings, LogOut } from "lucide-react"
+import { Search, Edit, Loader2, AlertCircle, LayoutDashboard, Calendar, User, Settings, LogOut, Plus, X, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { LoadingSpinner, PageLoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
+import { Switch } from "@/components/ui/switch"
+import { useToast } from "@/hooks/use-toast"
 
 function MyProfilePageContent() {
   const router = useRouter()
@@ -127,8 +129,29 @@ function MyProfilePageContent() {
     dateOfIssue: "04-09-2010",
   })
 
+  // Work Plans State
+  const [workPlansData, setWorkPlansData] = useState({
+    sessionDuration: 15, // 10, 15, 20, 30, 60 minutes
+    appointmentCost: 150000, // VND
+    days: {
+      monday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
+      tuesday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
+      wednesday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
+      thursday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
+      friday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }, { startTime: "14:00", endTime: "17:00" }] },
+      saturday: { enabled: true, timeSlots: [{ startTime: "08:00", endTime: "12:00" }] },
+      sunday: { enabled: false, timeSlots: [] },
+    },
+  })
+
+  const [workPlansErrors, setWorkPlansErrors] = useState<Record<string, string>>({})
+  const [isSavingWorkPlans, setIsSavingWorkPlans] = useState(false)
+  const [activeTab, setActiveTab] = useState("personal")
+  const { toast } = useToast()
+
   const [originalPersonalData, setOriginalPersonalData] = useState(personalData)
   const [originalProfessionalData, setOriginalProfessionalData] = useState(professionalData)
+  const [originalWorkPlansData, setOriginalWorkPlansData] = useState(workPlansData)
 
   // Detect unsaved changes
   useEffect(() => {
@@ -199,6 +222,179 @@ function MyProfilePageContent() {
       setPendingNavigation(null)
     }
     setShowUnsavedDialog(false)
+  }
+
+  // Work Plans Helper Functions
+  const toggleDayEnabled = (dayKey: keyof typeof workPlansData.days) => {
+    setWorkPlansData(prev => ({
+      ...prev,
+      days: {
+        ...prev.days,
+        [dayKey]: {
+          ...prev.days[dayKey],
+          enabled: !prev.days[dayKey].enabled,
+          timeSlots: !prev.days[dayKey].enabled ? prev.days[dayKey].timeSlots : prev.days[dayKey].timeSlots
+        }
+      }
+    }))
+  }
+
+  const addTimeSlot = (dayKey: keyof typeof workPlansData.days) => {
+    setWorkPlansData(prev => ({
+      ...prev,
+      days: {
+        ...prev.days,
+        [dayKey]: {
+          ...prev.days[dayKey],
+          timeSlots: [...prev.days[dayKey].timeSlots, { startTime: "08:00", endTime: "12:00" }]
+        }
+      }
+    }))
+  }
+
+  const removeTimeSlot = (dayKey: keyof typeof workPlansData.days, slotIndex: number) => {
+    setWorkPlansData(prev => ({
+      ...prev,
+      days: {
+        ...prev.days,
+        [dayKey]: {
+          ...prev.days[dayKey],
+          timeSlots: prev.days[dayKey].timeSlots.filter((_, index) => index !== slotIndex)
+        }
+      }
+    }))
+  }
+
+  const updateTimeSlot = (dayKey: keyof typeof workPlansData.days, slotIndex: number, field: 'startTime' | 'endTime', value: string) => {
+    setWorkPlansData(prev => ({
+      ...prev,
+      days: {
+        ...prev.days,
+        [dayKey]: {
+          ...prev.days[dayKey],
+          timeSlots: prev.days[dayKey].timeSlots.map((slot, index) => 
+            index === slotIndex ? { ...slot, [field]: value } : slot
+          )
+        }
+      }
+    }))
+  }
+
+  const validateWorkPlans = (): boolean => {
+    const errors: Record<string, string> = {}
+
+    // Validate appointment cost
+    if (!workPlansData.appointmentCost || workPlansData.appointmentCost <= 0) {
+      errors.appointmentCost = "Giá khám phải lớn hơn 0"
+    }
+
+    // Validate session duration
+    const validDurations = [10, 15, 20, 30, 60]
+    if (!validDurations.includes(workPlansData.sessionDuration)) {
+      errors.sessionDuration = "Thời lượng phiên không hợp lệ"
+    }
+
+    // Validate time slots for enabled days
+    const dayLabels: Record<string, string> = {
+      monday: "Thứ 2",
+      tuesday: "Thứ 3",
+      wednesday: "Thứ 4",
+      thursday: "Thứ 5",
+      friday: "Thứ 6",
+      saturday: "Thứ 7",
+      sunday: "Chủ nhật"
+    }
+
+    Object.entries(workPlansData.days).forEach(([dayKey, dayData]) => {
+      if (dayData.enabled) {
+        if (dayData.timeSlots.length === 0) {
+          errors[`${dayKey}_slots`] = `${dayLabels[dayKey]} phải có ít nhất 1 khung giờ`
+        }
+
+        // Validate each time slot
+        dayData.timeSlots.forEach((slot, index) => {
+          const startTime = slot.startTime
+          const endTime = slot.endTime
+
+          if (!startTime || !endTime) {
+            errors[`${dayKey}_slot_${index}`] = "Thời gian bắt đầu và kết thúc không được để trống"
+            return
+          }
+
+          const [startHour, startMinute] = startTime.split(':').map(Number)
+          const [endHour, endMinute] = endTime.split(':').map(Number)
+          const startMinutes = startHour * 60 + startMinute
+          const endMinutes = endHour * 60 + endMinute
+
+          if (startMinutes >= endMinutes) {
+            errors[`${dayKey}_slot_${index}`] = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc"
+          }
+        })
+
+        // Check for overlapping time slots
+        const sortedSlots = [...dayData.timeSlots].sort((a, b) => {
+          const [aHour, aMin] = a.startTime.split(':').map(Number)
+          const [bHour, bMin] = b.startTime.split(':').map(Number)
+          return (aHour * 60 + aMin) - (bHour * 60 + bMin)
+        })
+
+        for (let i = 0; i < sortedSlots.length - 1; i++) {
+          const current = sortedSlots[i]
+          const next = sortedSlots[i + 1]
+          const [currentEndHour, currentEndMin] = current.endTime.split(':').map(Number)
+          const [nextStartHour, nextStartMin] = next.startTime.split(':').map(Number)
+          const currentEndMinutes = currentEndHour * 60 + currentEndMin
+          const nextStartMinutes = nextStartHour * 60 + nextStartMin
+
+          if (currentEndMinutes > nextStartMinutes) {
+            errors[`${dayKey}_overlap`] = `${dayLabels[dayKey]} có khung giờ bị trùng nhau`
+            break
+          }
+        }
+      }
+    })
+
+    setWorkPlansErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSaveWorkPlans = async () => {
+    if (!validateWorkPlans()) {
+      toast({
+        title: "Lỗi validation",
+        description: "Vui lòng kiểm tra lại thông tin đã nhập",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSavingWorkPlans(true)
+    try {
+      // TODO: Call API to save work plans
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      
+      setOriginalWorkPlansData(workPlansData)
+      setWorkPlansErrors({})
+      
+      toast({
+        title: "Lưu thành công",
+        description: "Lịch làm việc đã được cập nhật thành công",
+      })
+    } catch (error) {
+      console.error('Error saving work plans:', error)
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu lịch làm việc. Vui lòng thử lại sau.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSavingWorkPlans(false)
+    }
+  }
+
+  const handleCancelWorkPlans = () => {
+    setWorkPlansData(originalWorkPlansData)
+    setWorkPlansErrors({})
   }
 
   if (isLoading) {
@@ -275,37 +471,40 @@ function MyProfilePageContent() {
         {/* Main Content */}
         <main className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto">
-            <Tabs defaultValue="personal" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <div className="flex items-center justify-between">
                 <TabsList>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
                   <TabsTrigger value="professional">Professional</TabsTrigger>
+                  <TabsTrigger value="work-plans">Work Plans</TabsTrigger>
                 </TabsList>
 
-                <div className="flex gap-2">
-                  {!isEditMode ? (
-                    <Button onClick={handleEdit} className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={handleCancel}
-                        disabled={isSaving}
-                        className="glass border-[#16a1bd] text-[#16a1bd] hover:bg-white/50 transition-smooth"
-                      >
-                        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        Cancel
+                {activeTab !== "work-plans" && (
+                  <div className="flex gap-2">
+                    {!isEditMode ? (
+                      <Button onClick={handleEdit} className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
                       </Button>
-                      <Button onClick={handleSave} disabled={isSaving} className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth">
-                        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        Save
-                      </Button>
-                    </>
-                  )}
-                </div>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancel}
+                          disabled={isSaving}
+                          className="glass border-[#16a1bd] text-[#16a1bd] hover:bg-white/50 transition-smooth"
+                        >
+                          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSave} disabled={isSaving} className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth">
+                          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          Save
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Personal Tab */}
@@ -733,6 +932,223 @@ function MyProfilePageContent() {
                           />
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Work Plans Tab */}
+              <TabsContent value="work-plans" className="space-y-6">
+                <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
+                  <div className="space-y-6">
+                    {/* Session Duration and Appointment Cost */}
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="sessionDuration">
+                          Thời lượng phiên (phút) <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={workPlansData.sessionDuration.toString()}
+                          onValueChange={(value) =>
+                            setWorkPlansData({ ...workPlansData, sessionDuration: parseInt(value) })
+                          }
+                        >
+                          <SelectTrigger className={cn(workPlansErrors.sessionDuration && "border-red-500")}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10 phút</SelectItem>
+                            <SelectItem value="15">15 phút</SelectItem>
+                            <SelectItem value="20">20 phút</SelectItem>
+                            <SelectItem value="30">30 phút</SelectItem>
+                            <SelectItem value="60">60 phút</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {workPlansErrors.sessionDuration && (
+                          <p className="text-sm text-red-500 mt-1">{workPlansErrors.sessionDuration}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="appointmentCost">
+                          Giá khám (VND) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="appointmentCost"
+                          type="number"
+                          min="0"
+                          value={workPlansData.appointmentCost}
+                          onChange={(e) =>
+                            setWorkPlansData({ ...workPlansData, appointmentCost: parseInt(e.target.value) || 0 })
+                          }
+                          className={cn(workPlansErrors.appointmentCost && "border-red-500")}
+                        />
+                        {workPlansErrors.appointmentCost && (
+                          <p className="text-sm text-red-500 mt-1">{workPlansErrors.appointmentCost}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Days Configuration */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Cấu hình lịch làm việc theo ngày</h3>
+                      <div className="space-y-4">
+                        {Object.entries(workPlansData.days).map(([dayKey, dayData]) => {
+                          const dayLabels: Record<string, string> = {
+                            monday: "Thứ 2",
+                            tuesday: "Thứ 3",
+                            wednesday: "Thứ 4",
+                            thursday: "Thứ 5",
+                            friday: "Thứ 6",
+                            saturday: "Thứ 7",
+                            sunday: "Chủ nhật"
+                          }
+
+                          return (
+                            <div
+                              key={dayKey}
+                              className={cn(
+                                "border rounded-lg p-4 space-y-3",
+                                !dayData.enabled && "opacity-50 bg-gray-50"
+                              )}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Switch
+                                    checked={dayData.enabled}
+                                    onCheckedChange={() => toggleDayEnabled(dayKey as keyof typeof workPlansData.days)}
+                                  />
+                                  <Label className="text-base font-medium cursor-pointer" htmlFor={dayKey}>
+                                    {dayLabels[dayKey]}
+                                  </Label>
+                                </div>
+                                {dayData.enabled && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addTimeSlot(dayKey as keyof typeof workPlansData.days)}
+                                    className="gap-2"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                    Thêm khung giờ
+                                  </Button>
+                                )}
+                              </div>
+
+                              {dayData.enabled && (
+                                <div className="space-y-3 pl-8">
+                                  {workPlansErrors[`${dayKey}_slots`] && (
+                                    <p className="text-sm text-red-500">{workPlansErrors[`${dayKey}_slots`]}</p>
+                                  )}
+                                  {workPlansErrors[`${dayKey}_overlap`] && (
+                                    <p className="text-sm text-red-500">{workPlansErrors[`${dayKey}_overlap`]}</p>
+                                  )}
+
+                                  {dayData.timeSlots.length === 0 ? (
+                                    <p className="text-sm text-gray-500 italic">Chưa có khung giờ nào</p>
+                                  ) : (
+                                    dayData.timeSlots.map((slot, slotIndex) => (
+                                      <div
+                                        key={slotIndex}
+                                        className="flex items-center gap-3 p-3 bg-white rounded-md border"
+                                      >
+                                        <div className="flex items-center gap-2 flex-1">
+                                          <Clock className="w-4 h-4 text-gray-400" />
+                                          <div className="flex items-center gap-2">
+                                            <Input
+                                              type="time"
+                                              value={slot.startTime}
+                                              onChange={(e) =>
+                                                updateTimeSlot(
+                                                  dayKey as keyof typeof workPlansData.days,
+                                                  slotIndex,
+                                                  'startTime',
+                                                  e.target.value
+                                                )
+                                              }
+                                              className={cn(
+                                                "w-32",
+                                                workPlansErrors[`${dayKey}_slot_${slotIndex}`] && "border-red-500"
+                                              )}
+                                            />
+                                            <span className="text-gray-500">-</span>
+                                            <Input
+                                              type="time"
+                                              value={slot.endTime}
+                                              onChange={(e) =>
+                                                updateTimeSlot(
+                                                  dayKey as keyof typeof workPlansData.days,
+                                                  slotIndex,
+                                                  'endTime',
+                                                  e.target.value
+                                                )
+                                              }
+                                              className={cn(
+                                                "w-32",
+                                                workPlansErrors[`${dayKey}_slot_${slotIndex}`] && "border-red-500"
+                                              )}
+                                            />
+                                          </div>
+                                          {workPlansErrors[`${dayKey}_slot_${slotIndex}`] && (
+                                            <p className="text-xs text-red-500">
+                                              {workPlansErrors[`${dayKey}_slot_${slotIndex}`]}
+                                            </p>
+                                          )}
+                                        </div>
+                                        {dayData.timeSlots.length > 1 && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                              removeTimeSlot(dayKey as keyof typeof workPlansData.days, slotIndex)
+                                            }
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            <X className="w-4 h-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancelWorkPlans}
+                        disabled={isSavingWorkPlans}
+                        className="glass border-[#16a1bd] text-[#16a1bd] hover:bg-white/50 transition-smooth"
+                      >
+                        Hủy
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSaveWorkPlans}
+                        disabled={isSavingWorkPlans}
+                        className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth"
+                      >
+                        {isSavingWorkPlans ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Đang lưu...
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Lưu lịch
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>
