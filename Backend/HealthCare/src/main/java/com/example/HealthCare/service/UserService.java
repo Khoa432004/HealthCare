@@ -6,8 +6,10 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 
 import com.example.HealthCare.dto.request.CreateUserRequest;
+import com.example.HealthCare.dto.request.UpdatePersonalInfoRequest;
 import com.example.HealthCare.dto.request.UpdateUserRequest;
 import com.example.HealthCare.dto.request.UserCriteria;
+import com.example.HealthCare.dto.response.PersonalInfoDetailResponse;
 import com.example.HealthCare.dto.response.PrivilegeResponse;
 import com.example.HealthCare.dto.response.UserResponse;
 
@@ -23,4 +25,8 @@ public interface UserService {
 	void restoreUsers(List<UUID> ids);
 	List<UserResponse> getPendingDoctorAccounts();
 	void toggleAccountStatus(UUID userId, boolean activate);
+	
+	// Personal Info methods
+	PersonalInfoDetailResponse getPersonalInfo(UUID userId);
+	PersonalInfoDetailResponse updatePersonalInfo(UUID userId, UpdatePersonalInfoRequest request);
 }
