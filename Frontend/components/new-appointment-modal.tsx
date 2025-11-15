@@ -11,6 +11,7 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { PatientSearch } from "@/components/patient-search"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
+import { appointmentService } from "@/services/appointment.service"
 
 interface NewAppointmentModalProps {
   onClose: () => void
@@ -36,6 +37,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
 
   const [showError, setShowError] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [conflictErrors, setConflictErrors] = useState<string[]>([]) // Store conflict errors
   const [doctorTitle, setDoctorTitle] = useState<string>("")
   const [doctorName, setDoctorName] = useState<string>("")
   const [isLoadingDoctorInfo, setIsLoadingDoctorInfo] = useState(true)
@@ -150,6 +152,8 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
       startTime: newStartTime,
       endTime: calculatedEndTime,
     })
+    // Clear conflict errors when user changes time
+    setConflictErrors([])
   }
 
   // Fill current date/time into form
@@ -160,6 +164,8 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
     
     // Calculate end time using session duration
     const calculatedEndTime = calculateEndTime(timeStr)
+    // Clear conflict errors when user fills current time
+    setConflictErrors([])
     
     setFormData({
       ...formData,
@@ -197,18 +203,42 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
 
   const handleCreate = async () => {
     // Validate required fields
-    if (!formData.title || !formData.date || !formData.patientId) {
+    if (!formData.date || !formData.startTime || !formData.endTime || !formData.patientId) {
       setShowError(true)
+      setConflictErrors([]) // Clear conflict errors when showing validation errors
       return
     }
 
     setIsCreating(true)
     setShowError(false)
+    setConflictErrors([]) // Clear previous conflict errors
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // For now, simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Combine date and time to create ISO datetime strings
+      const dateStr = formData.date // YYYY-MM-DD
+      const startDateTime = new Date(`${dateStr}T${formData.startTime}:00`)
+      const endDateTime = new Date(`${dateStr}T${formData.endTime}:00`)
+      
+      // Convert to ISO strings
+      const scheduledStart = startDateTime.toISOString()
+      const scheduledEnd = endDateTime.toISOString()
+      
+      // Prepare appointment data
+      // Title is optional - backend will auto-generate if not provided
+      const appointmentData = {
+        patientId: formData.patientId,
+        scheduledStart,
+        scheduledEnd,
+        title: formData.title?.trim() || undefined, // Only send if not empty
+        reason: formData.reason?.trim() || undefined,
+        symptomsOns: formData.symptomsOnset?.trim() || undefined,
+        symptomsSever: formData.symptomsSeverity?.trim() || undefined,
+        currentMedication: formData.medications?.trim() || undefined,
+        notes: formData.notes?.trim() || undefined,
+      }
+      
+      // Call API to create appointment
+      await appointmentService.createAppointment(appointmentData)
       
       // Show success toast
       toast({
@@ -222,13 +252,46 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
       } else {
         onClose()
       }
-    } catch (error) {
-      console.error("Error creating appointment:", error)
-      toast({
-        title: "Lỗi",
-        description: "Không thể tạo lịch hẹn. Vui lòng thử lại.",
-        variant: "destructive",
-      })
+    } catch (error: any) {
+      // Extract error message - may contain conflict information
+      let errorMessage = "Không thể tạo lịch hẹn. Vui lòng thử lại."
+      if (error.message) {
+        errorMessage = error.message
+      }
+      
+      // Check if this is a conflict error
+      const isConflictError = errorMessage.includes("đã có lịch hẹn") || 
+                               errorMessage.includes("trùng") ||
+                               errorMessage.includes("conflict")
+      
+      // Format conflict message for better readability
+      if (isConflictError) {
+        // Split multiple conflicts by semicolon and format as list
+        const conflicts = errorMessage.split(';').map(c => c.trim()).filter(c => c.length > 0)
+        
+        // Set conflict errors to display on form
+        setConflictErrors(conflicts)
+        
+        // Also show toast but shorter
+        toast({
+          title: "⚠️ Xung đột lịch hẹn",
+          description: "Vui lòng kiểm tra thông tin xung đột bên dưới",
+          variant: "destructive",
+          duration: 4000,
+        })
+        
+        // Don't log conflict errors to console as they are expected and handled
+        // console.error("Conflict detected (handled):", conflicts)
+      } else {
+        // Only log non-conflict errors
+        console.error("Error creating appointment:", error)
+        setConflictErrors([])
+        toast({
+          title: "Lỗi",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      }
     } finally {
       setIsCreating(false)
     }
@@ -286,7 +349,11 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
                 <Input
                   type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, date: e.target.value })
+                    // Clear conflict errors when user changes date
+                    setConflictErrors([])
+                  }}
                 />
                 <Input
                   type="time"
@@ -297,7 +364,11 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
                 <Input
                   type="time"
                   value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, endTime: e.target.value })
+                    // Clear conflict errors when user changes end time
+                    setConflictErrors([])
+                  }}
                   placeholder="End time"
                 />
               </div>
@@ -388,6 +459,27 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
               </div>
             </div>
           </div>
+
+          {/* Conflict Errors - Display prominently */}
+          {conflictErrors.length > 0 && (
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-2">
+              <div className="flex items-center space-x-2 text-red-700 font-semibold">
+                <span className="text-lg">⚠️</span>
+                <span>Xung đột lịch hẹn</span>
+              </div>
+              <div className="space-y-1 pl-6">
+                {conflictErrors.map((error, index) => (
+                  <div key={index} className="flex items-start space-x-2 text-red-600 text-sm">
+                    <span className="text-red-500 mt-1">•</span>
+                    <span>{error}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-red-500 italic mt-2 pl-6">
+                Vui lòng chọn thời gian khác để tránh xung đột.
+              </p>
+            </div>
+          )}
 
           {/* Error Message */}
           {showError && (
