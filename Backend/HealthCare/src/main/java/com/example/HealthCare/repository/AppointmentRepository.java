@@ -91,5 +91,52 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         """)
     UserAccount inforPatientByAppointmentId(@Param("appointmentId") UUID appointmentId);
 
+    // Find appointment by ID with patient and doctor relations
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.id = :appointmentId
+        """)
+    Appointment findByIdWithRelations(@Param("appointmentId") UUID appointmentId);
+
+    // Check for conflicting appointments with patient
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.patientId = :patientId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForPatient(
+        @Param("patientId") UUID patientId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
+
+    // Check for conflicting appointments with doctor
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.doctorId = :doctorId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForDoctor(
+        @Param("doctorId") UUID doctorId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
+
 }
 
