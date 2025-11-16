@@ -17,7 +17,7 @@ interface Event {
   doctorGender?: string
   patient?: string
   patientGender?: string
-  status: "upcoming" | "pending" | "cancelled" | "completed"
+  status: "upcoming" | "in_process" | "pending" | "cancelled" | "completed"
   location?: string
   reason?: string
   symptomsOnset?: string
@@ -51,7 +51,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
 
     // Map appointment status to event status
     // Backend returns lowercase: "scheduled", "canceled", "completed", "in_process"
-    const mapStatus = (status: AppointmentStatus): "upcoming" | "pending" | "cancelled" | "completed" => {
+    const mapStatus = (status: AppointmentStatus): "upcoming" | "in_process" | "pending" | "cancelled" | "completed" => {
       if (!status) {
         return 'pending'
       }
@@ -62,7 +62,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
         case 'SCHEDULED':
           return 'upcoming'
         case 'IN_PROCESS':
-          return 'upcoming'
+          return 'in_process'
         case 'CANCELED':
         case 'CANCELLED':
           return 'cancelled'
@@ -135,6 +135,8 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
     switch (status) {
       case "upcoming":
         return "bg-blue-50 text-blue-700 border-blue-300 border-l-[3px]"
+      case "in_process":
+        return "bg-yellow-50 text-yellow-700 border-yellow-400 border-l-[3px]"
       case "pending":
         return "bg-yellow-50 text-yellow-700 border-yellow-300 border-l-[3px]"
       case "cancelled":
@@ -152,6 +154,11 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
         return {
           text: "Up Coming",
           className: "bg-[#16A1BD] hover:bg-teal-600 text-white"
+        }
+      case "in_process":
+        return {
+          text: "In Process",
+          className: "bg-yellow-600 hover:bg-yellow-700 text-white"
         }
       case "pending":
         return {

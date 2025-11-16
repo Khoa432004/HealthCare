@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2, X } from "lucide-react"
+import { Trash2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -36,9 +36,13 @@ interface MedicalRecord {
   confirmed?: boolean
 }
 
-export default function MedicalReportTab() {
+interface MedicalReportTabProps {
+  appointmentId?: string
+  appointmentStatus?: string
+}
+
+export default function MedicalReportTab({ appointmentId, appointmentStatus }: MedicalReportTabProps) {
   const [records, setRecords] = useState<MedicalRecord[]>([])
-  const [dialogOpen, setDialogOpen] = useState(false)
 
   const [form, setForm] = useState({
     temperature: "",
@@ -85,38 +89,47 @@ export default function MedicalReportTab() {
       sendToEmail: "",
       confirmed: false,
     })
-    setDialogOpen(false)
   }
 
   const deleteRecord = (id: string) => {
     setRecords(records.filter((r) => r.id !== id))
   }
 
+  const status = appointmentStatus?.toUpperCase()
+  const isScheduled = status === 'SCHEDULED'
+  const isInProcess = status === 'IN_PROCESS' || status === 'IN PROCESS'
+
   return (
     <div className="space-y-6">
-      {/* Header with single Add button */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Medical Report</h3>
-        <Button onClick={() => setDialogOpen(true)} className="gradient-primary text-white rounded-full px-6 py-2">
-          <Plus className="w-4 h-4 mr-2" />
-          Add
-        </Button>
+        {/* No Add button - form auto-opens for IN_PROCESS status */}
       </div>
 
-      {/* Dialog Modal */}
-      {dialogOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Dialog Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
-              <h2 className="text-xl font-semibold text-gray-900">Wednesday, 29.10.2025, 02:19 PM</h2>
-              <button onClick={() => setDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+      {/* Empty State for SCHEDULED status */}
+      {isScheduled && records.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <FileText className="w-10 h-10 text-gray-400" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">Chưa có báo cáo y tế</h4>
+          <p className="text-sm text-gray-500 text-center max-w-md">
+            Báo cáo y tế sẽ được tạo khi bác sĩ xác nhận khám và bắt đầu quá trình khám bệnh.
+          </p>
+        </div>
+      )}
 
-            {/* Dialog Content */}
-            <div className="p-6 space-y-6">
+      {/* Form displayed directly in tab for IN_PROCESS status */}
+      {isInProcess && records.length === 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+          {/* Form Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Báo cáo y tế</h2>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-6 space-y-6">
               {/* Vital Signs Section */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 mb-4">Vital signs</h4>
@@ -373,21 +386,17 @@ export default function MedicalReportTab() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 justify-end border-t border-gray-200 pt-6">
-                <Button variant="outline" onClick={() => setDialogOpen(false)} className="rounded-full px-6">
-                  Cancel
-                </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full px-6 border-teal-600 text-teal-600 hover:bg-teal-50 bg-transparent"
-                >
-                  Saving as draft
-                </Button>
-                <Button onClick={addRecord} className="gradient-primary text-white rounded-full px-6">
-                  Complete the report
-                </Button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end border-t border-gray-200 pt-6">
+              <Button
+                variant="outline"
+                className="rounded-full px-6 border-teal-600 text-teal-600 hover:bg-teal-50 bg-transparent"
+              >
+                Saving as draft
+              </Button>
+              <Button onClick={addRecord} className="gradient-primary text-white rounded-full px-6">
+                Complete the report
+              </Button>
             </div>
           </div>
         </div>

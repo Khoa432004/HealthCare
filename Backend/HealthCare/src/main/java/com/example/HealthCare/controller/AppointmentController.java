@@ -153,6 +153,44 @@ public class AppointmentController {
         }
     }
 
+    /**
+     * Confirm/start an appointment (change status to IN_PROCESS)
+     * @param id - Appointment ID
+     * @return Updated appointment details
+     */
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> confirmAppointment(@PathVariable UUID id) {
+        try {
+            UUID doctorId = getCurrentUserId();
+            
+            // Validate that current user is a doctor
+            UserAccount doctor = userAccountRepository.findById(doctorId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (doctor.getRole() == null || !"DOCTOR".equalsIgnoreCase(doctor.getRole().getValue())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only doctors can confirm appointments"));
+            }
+            
+            AppointmentResponse appointment = appointmentService.confirmAppointment(id, doctorId);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found when confirming: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when confirming appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error confirming appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();

@@ -17,7 +17,9 @@ import com.example.HealthCare.exception.BadRequestException;
 import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.Appointment;
 import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.model.AppointmentStatusHistory;
 import com.example.HealthCare.repository.AppointmentRepository;
+import com.example.HealthCare.repository.AppointmentStatusHistoryRepository;
 import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
@@ -32,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentStatusHistoryRepository statusHistoryRepository;
     private final UserAccountRepository userAccountRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final PatientProfileRepository patientProfileRepository;
@@ -265,6 +268,74 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         
         return mapToResponse(appointment);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse confirmAppointment(UUID appointmentId, UUID doctorId) {
+        log.info("Confirming appointment {} by doctor {}", appointmentId, doctorId);
+        
+        // Get appointment with relations
+        Appointment appointment = appointmentRepository.findByIdWithRelations(appointmentId);
+        if (appointment == null) {
+            throw new NotFoundException("Appointment not found");
+        }
+        
+        // Validate doctor exists and is a doctor
+        UserAccount doctor = userAccountRepository.findByIdAndIsDeletedFalse(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found"));
+        
+        if (doctor.getRole() == null || !"DOCTOR".equalsIgnoreCase(doctor.getRole().getValue())) {
+            throw new BadRequestException("Only doctors can confirm appointments");
+        }
+        
+        // Validate doctor is the assigned doctor for this appointment
+        if (!appointment.getDoctorId().equals(doctorId)) {
+            throw new BadRequestException("You are not the assigned doctor for this appointment");
+        }
+        
+        // Validate appointment status is SCHEDULED
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new BadRequestException(
+                String.format("Cannot confirm appointment. Current status is %s. Only SCHEDULED appointments can be confirmed.", 
+                    appointment.getStatus().getValue())
+            );
+        }
+        
+        // Time validation removed - allow confirmation at any time when status is SCHEDULED
+        // The appointment can be confirmed as long as it's in SCHEDULED status
+        OffsetDateTime now = OffsetDateTime.now();
+        
+        // Save old status for history
+        AppointmentStatus oldStatus = appointment.getStatus();
+        
+        // Update appointment status and started_at
+        appointment.setStatus(AppointmentStatus.IN_PROCESS);
+        appointment.setStartedAt(now); // Set actual start time
+        appointment.setUpdatedBy(doctorId);
+        appointment.setUpdatedAt(now);
+        
+        appointment = appointmentRepository.save(appointment);
+        log.info("Appointment {} confirmed successfully. Status changed to IN_PROCESS", appointmentId);
+        
+        // Save status history
+        AppointmentStatusHistory statusHistory = AppointmentStatusHistory.builder()
+                .appointmentId(appointmentId)
+                .oldStatus(oldStatus)
+                .newStatus(AppointmentStatus.IN_PROCESS)
+                .changedAt(now)
+                .changedBy(doctorId)
+                .build();
+        statusHistoryRepository.save(statusHistory);
+        log.info("Status history saved for appointment {}", appointmentId);
+        
+        // Reload with relations for response
+        Appointment updatedAppointment = appointmentRepository.findByIdWithRelations(appointmentId);
+        if (updatedAppointment == null) {
+            throw new RuntimeException("Failed to reload appointment after confirmation");
+        }
+        
+        return mapToResponse(updatedAppointment);
     }
 }
 

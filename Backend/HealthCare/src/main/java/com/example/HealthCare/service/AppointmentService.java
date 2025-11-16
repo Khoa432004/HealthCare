@@ -36,5 +36,15 @@ public interface AppointmentService {
      * @throws BadRequestException if user doesn't have permission to view this appointment
      */
     AppointmentResponse getAppointmentById(UUID appointmentId, UUID userId);
+    
+    /**
+     * Confirm/start an appointment (change status to IN_PROCESS)
+     * @param appointmentId - Appointment ID
+     * @param doctorId - ID of the doctor confirming the appointment
+     * @return Updated appointment response
+     * @throws NotFoundException if appointment not found
+     * @throws BadRequestException if validation fails (not doctor, not assigned doctor, wrong status, wrong time)
+     */
+    AppointmentResponse confirmAppointment(UUID appointmentId, UUID doctorId);
 }
 
