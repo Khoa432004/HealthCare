@@ -86,6 +86,11 @@ public class MedicalReportController {
             log.info("Getting medical report for appointment ID: {}", appointmentId);
             
             UUID currentUserId = getCurrentUserId();
+            if (currentUserId == null) {
+                log.error("Current user ID is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "error", "unauthorized", "message", "User not authenticated"));
+            }
             
             // Validate and parse UUID
             UUID appointmentUuid;
@@ -104,7 +109,8 @@ public class MedicalReportController {
                 log.info("No medical report found for appointment ID: {}", appointmentId);
                 return ResponseEntity.ok(Map.of("success", true, "data", null));
             }
-            log.info("Medical report found for appointment ID: {}, status: {}", appointmentId, response.getStatus());
+            log.info("Medical report found for appointment ID: {}, status: {}", appointmentId, 
+                    response.getStatus() != null ? response.getStatus() : "null");
             return ResponseEntity.ok(Map.of("success", true, "data", response));
         } catch (RuntimeException e) {
             // Let GlobalExceptionHandler handle it
@@ -118,13 +124,38 @@ public class MedicalReportController {
     }
 
     private UUID getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        return user.getId();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null) {
+                log.error("Authentication is null");
+                throw new RuntimeException("User not authenticated");
+            }
+            
+            String email = authentication.getName();
+            if (email == null || email.trim().isEmpty()) {
+                log.error("Email is null or empty in authentication");
+                throw new RuntimeException("User email not found");
+            }
+            
+            UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (user == null) {
+                log.error("User account is null for email: {}", email);
+                throw new RuntimeException("User not found");
+            }
+            
+            UUID userId = user.getId();
+            if (userId == null) {
+                log.error("User ID is null for email: {}", email);
+                throw new RuntimeException("User ID not found");
+            }
+            
+            return userId;
+        } catch (Exception e) {
+            log.error("Error getting current user ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get current user ID: " + e.getMessage(), e);
+        }
     }
 }
 
