@@ -220,11 +220,12 @@ public class MedicalReportServiceImpl implements MedicalReportService {
             }
             
             UUID reportId = report.getId();
-            if (reportId != null) {
-                log.info("Found medical report with ID: {} for appointment ID: {}", reportId, appointmentId);
-            } else {
+            if (reportId == null) {
                 log.warn("Found medical report but ID is null for appointment ID: {}", appointmentId);
+                return null;
             }
+            
+            log.info("Found medical report with ID: {} for appointment ID: {}", reportId, appointmentId);
             
             return mapToResponse(report);
         } catch (IllegalArgumentException | NotFoundException | BadRequestException e) {
@@ -430,56 +431,71 @@ public class MedicalReportServiceImpl implements MedicalReportService {
             }
             
             // Map vital signs with null checks
-            builder.vitalSigns(vitalSigns.stream()
-                    .filter(vs -> vs != null) // Filter out null vital signs
-                    .map(vs -> {
-                        try {
-                            return MedicalReportResponse.VitalSignResponse.builder()
-                                    .id(vs.getId())
-                                    .signType(vs.getSignType() != null ? vs.getSignType() : "")
-                                    .value(vs.getValue() != null ? vs.getValue() : "")
-                                    .unit(vs.getUnit())
-                                    .build();
-                        } catch (Exception e) {
-                            log.warn("Error mapping vital sign: {}", e.getMessage());
-                            return null;
-                        }
-                    })
-                    .filter(vs -> vs != null) // Filter out failed mappings
-                    .collect(Collectors.toList()));
+            try {
+                builder.vitalSigns(vitalSigns.stream()
+                        .filter(vs -> vs != null && vs.getId() != null) // Filter out null vital signs and those without ID
+                        .map(vs -> {
+                            try {
+                                return MedicalReportResponse.VitalSignResponse.builder()
+                                        .id(vs.getId())
+                                        .signType(vs.getSignType() != null ? vs.getSignType() : "")
+                                        .value(vs.getValue() != null ? vs.getValue() : "")
+                                        .unit(vs.getUnit())
+                                        .build();
+                            } catch (Exception e) {
+                                log.warn("Error mapping vital sign: {}", e.getMessage());
+                                return null;
+                            }
+                        })
+                        .filter(vs -> vs != null) // Filter out failed mappings
+                        .collect(Collectors.toList()));
+            } catch (Exception e) {
+                log.error("Error mapping vital signs: {}", e.getMessage(), e);
+                builder.vitalSigns(new ArrayList<>());
+            }
             
             // Map medications with null checks
-            builder.medications(medications.stream()
-                    .filter(med -> med != null) // Filter out null medications
-                    .map(med -> {
-                        try {
-                            MedicalReportResponse.MedicationResponse.MedicationResponseBuilder medBuilder = 
-                                    MedicalReportResponse.MedicationResponse.builder()
-                                            .id(med.getId())
-                                            .medicationName(med.getMedicationName() != null ? med.getMedicationName() : "")
-                                            .dosage(med.getDosage() != null ? med.getDosage() : "")
-                                            .medicationType(med.getMedicationType() != null ? med.getMedicationType() : "")
-                                            .durationDays(med.getDurationDays())
-                                            .startDate(med.getStartDate())
-                                            .note(med.getNote());
-                            
-                            if (med.getMealRelation() != null) {
-                                medBuilder.mealRelation(med.getMealRelation().getValue());
-                            } else {
-                                log.warn("Meal relation is null for medication ID: {}", med.getId());
-                                medBuilder.mealRelation("before");
+            try {
+                builder.medications(medications.stream()
+                        .filter(med -> med != null && med.getId() != null) // Filter out null medications and those without ID
+                        .map(med -> {
+                            try {
+                                MedicalReportResponse.MedicationResponse.MedicationResponseBuilder medBuilder = 
+                                        MedicalReportResponse.MedicationResponse.builder()
+                                                .id(med.getId())
+                                                .medicationName(med.getMedicationName() != null ? med.getMedicationName() : "")
+                                                .dosage(med.getDosage() != null ? med.getDosage() : "")
+                                                .medicationType(med.getMedicationType() != null ? med.getMedicationType() : "")
+                                                .durationDays(med.getDurationDays())
+                                                .startDate(med.getStartDate())
+                                                .note(med.getNote());
+                                
+                                if (med.getMealRelation() != null) {
+                                    medBuilder.mealRelation(med.getMealRelation().getValue());
+                                } else {
+                                    log.warn("Meal relation is null for medication ID: {}", med.getId());
+                                    medBuilder.mealRelation("before");
+                                }
+                                
+                                return medBuilder.build();
+                            } catch (Exception e) {
+                                log.warn("Error mapping medication: {}", e.getMessage());
+                                return null;
                             }
-                            
-                            return medBuilder.build();
-                        } catch (Exception e) {
-                            log.warn("Error mapping medication: {}", e.getMessage());
-                            return null;
-                        }
-                    })
-                    .filter(med -> med != null) // Filter out failed mappings
-                    .collect(Collectors.toList()));
+                        })
+                        .filter(med -> med != null) // Filter out failed mappings
+                        .collect(Collectors.toList()));
+            } catch (Exception e) {
+                log.error("Error mapping medications: {}", e.getMessage(), e);
+                builder.medications(new ArrayList<>());
+            }
             
-            return builder.build();
+            try {
+                return builder.build();
+            } catch (Exception e) {
+                log.error("Error building MedicalReportResponse: {}", e.getMessage(), e);
+                throw new RuntimeException("Failed to build medical report response", e);
+            }
         } catch (Exception e) {
             log.error("Error mapping medical report to response", e);
             throw new RuntimeException("Failed to map medical report to response: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()), e);
