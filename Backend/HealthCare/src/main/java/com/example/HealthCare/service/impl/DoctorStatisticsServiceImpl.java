@@ -42,7 +42,9 @@ public class DoctorStatisticsServiceImpl implements DoctorStatisticsService {
         OffsetDateTime[] dateRange = calculateDateRange(filter);
         OffsetDateTime fromDate = dateRange[0];
         OffsetDateTime toDate = dateRange[1];
-        OffsetDateTime now = OffsetDateTime.now();
+        
+        log.debug("Doctor statistics query - DoctorId: {}, Period: {}, FromDate: {}, ToDate: {}", 
+            doctorId, filter.getPeriod(), fromDate, toDate);
 
         // KPI 1: Tổng BN hôm nay = số bệnh nhân duy nhất có lịch của bác sĩ trong ngày
         Long totalPatientsToday = appointmentRepository.countDistinctPatientsByDoctorIdAndDateRange(
@@ -52,12 +54,12 @@ public class DoctorStatisticsServiceImpl implements DoctorStatisticsService {
         Long completedAppointments = appointmentRepository.countCompletedAppointmentsByDoctorIdAndDateRange(
             doctorId, AppointmentStatus.COMPLETED, fromDate, toDate);
 
-        // KPI 3: Ca khám chờ báo cáo = số Appointment đã đến giờ (start ≤ now) 
+        // KPI 3: Ca khám chờ báo cáo = số Appointment trong date range
         // mà report.status ≠ COMPLETED và status = IN-PROCESS
+        // Lấy tất cả appointments trong date range, không chỉ những cái đã đến giờ
         List<Appointment> pendingReportAppointments = appointmentRepository.findPendingReportAppointments(
             doctorId, 
             AppointmentStatus.IN_PROCESS, 
-            now, 
             ReportStatus.COMPLETED,
             fromDate, 
             toDate
@@ -109,45 +111,48 @@ public class DoctorStatisticsServiceImpl implements DoctorStatisticsService {
 
     private OffsetDateTime[] calculateDateRange(DoctorStatisticsFilterRequest filter) {
         OffsetDateTime now = OffsetDateTime.now();
+        // Use the same timezone offset as the current time
+        ZoneOffset currentOffset = now.getOffset();
         OffsetDateTime fromDate;
-        OffsetDateTime toDate = now;
+        OffsetDateTime toDate;
 
         String period = filter.getPeriod() != null ? filter.getPeriod().toLowerCase() : "today";
 
         switch (period) {
             case "today":
-                fromDate = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
-                toDate = now;
+                // Start of today to end of today in current timezone
+                fromDate = now.toLocalDate().atStartOfDay().atOffset(currentOffset);
+                toDate = now.toLocalDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 break;
             case "yesterday":
-                fromDate = now.toLocalDate().minusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-                toDate = now.toLocalDate().minusDays(1).atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
+                fromDate = now.toLocalDate().minusDays(1).atStartOfDay().atOffset(currentOffset);
+                toDate = now.toLocalDate().minusDays(1).atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 break;
             case "last7days":
-                fromDate = now.toLocalDate().minusDays(7).atStartOfDay().atOffset(ZoneOffset.UTC);
-                toDate = now;
+                fromDate = now.toLocalDate().minusDays(7).atStartOfDay().atOffset(currentOffset);
+                toDate = now.toLocalDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 break;
             case "thismonth":
                 fromDate = now.toLocalDate()
                         .withDayOfMonth(1)
                         .atStartOfDay()
-                        .atOffset(ZoneOffset.UTC);
-                toDate = now;
+                        .atOffset(currentOffset);
+                toDate = now.toLocalDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 break;
             case "custom":
                 if (filter.getFromDate() != null && filter.getToDate() != null) {
-                    fromDate = filter.getFromDate().atStartOfDay().atOffset(ZoneOffset.UTC);
-                    toDate = filter.getToDate().atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
+                    fromDate = filter.getFromDate().atStartOfDay().atOffset(currentOffset);
+                    toDate = filter.getToDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 } else {
                     // Default to today if custom dates not provided
-                    fromDate = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
-                    toDate = now;
+                    fromDate = now.toLocalDate().atStartOfDay().atOffset(currentOffset);
+                    toDate = now.toLocalDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
                 }
                 break;
             default:
-                // Default to today
-                fromDate = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
-                toDate = now;
+                // Default to today (full day)
+                fromDate = now.toLocalDate().atStartOfDay().atOffset(currentOffset);
+                toDate = now.toLocalDate().atTime(23, 59, 59, 999_000_000).atOffset(currentOffset);
         }
 
         return new OffsetDateTime[]{fromDate, toDate};

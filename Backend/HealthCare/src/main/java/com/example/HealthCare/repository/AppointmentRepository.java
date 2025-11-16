@@ -188,7 +188,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     );
 
     // UC-22: Find appointments waiting for report completion
-    // Conditions: status = IN_PROCESS, scheduled_start <= now, 
+    // Conditions: status = IN_PROCESS, scheduled_start trong date range
     // and (report doesn't exist OR report.status != COMPLETED)
     @Query("""
         SELECT DISTINCT a FROM Appointment a
@@ -196,7 +196,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         JOIN FETCH a.patient p
         WHERE a.doctorId = :doctorId
         AND a.status = :status
-        AND a.scheduledStart <= :now
         AND a.scheduledStart >= :startDate
         AND a.scheduledStart <= :endDate
         AND (mr IS NULL OR mr.status != :completedReportStatus)
@@ -205,7 +204,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     List<Appointment> findPendingReportAppointments(
         @Param("doctorId") UUID doctorId,
         @Param("status") AppointmentStatus status,
-        @Param("now") OffsetDateTime now,
         @Param("completedReportStatus") com.example.HealthCare.enums.ReportStatus completedReportStatus,
         @Param("startDate") OffsetDateTime startDate,
         @Param("endDate") OffsetDateTime endDate
