@@ -59,7 +59,8 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
         setAppointment(data)
         
         // If appointment is not COMPLETED and activeTab is medical-report, switch to appointment-details
-        if (data.status !== 'COMPLETED' && activeTab === 'medical-report') {
+        const statusUpper = data.status?.toUpperCase()
+        if (statusUpper !== 'COMPLETED' && activeTab === 'medical-report') {
           setActiveTab('appointment-details')
         }
         
@@ -299,8 +300,8 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                   >
                     Appointment Details
                   </TabsTrigger>
-                  {/* Only show Medical Report tab if appointment is COMPLETED */}
-                  {appointment.status === 'COMPLETED' && (
+                  {/* Show Medical Report tab if appointment is COMPLETED (case-insensitive) */}
+                  {(appointment.status?.toUpperCase() === 'COMPLETED' || appointment.status === 'completed') && (
                     <TabsTrigger
                       value="medical-report"
                       className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"

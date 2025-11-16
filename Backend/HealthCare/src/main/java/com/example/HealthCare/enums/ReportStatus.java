@@ -2,7 +2,7 @@ package com.example.HealthCare.enums;
 
 public enum ReportStatus {
     DRAFT("draft"),
-    completed("completed");
+    COMPLETED("completed");
 
     private final String value;
 
