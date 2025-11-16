@@ -374,7 +374,7 @@ export function CalendarDayView({ currentDate, appointments = [], userRole }: Ca
 
               {/* Footer with View Details button */}
               <div className="px-6 py-4 border-t border-gray-200">
-                <Link href={`/calendar/appointment/${selectedEvent.id}`} className="w-full">
+                <Link href={userRole === 'PATIENT' ? `/patient-calendar/appointment/${selectedEvent.id}` : `/calendar/appointment/${selectedEvent.id}`} className="w-full">
                   <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#e5f5f8] border border-[#0d6171] text-[#0d6171]" type="button">
                     View details
                   </button>

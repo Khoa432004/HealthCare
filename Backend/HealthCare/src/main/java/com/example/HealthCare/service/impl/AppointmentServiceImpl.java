@@ -18,6 +18,8 @@ import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.Appointment;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.AppointmentRepository;
+import com.example.HealthCare.repository.DoctorProfileRepository;
+import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.AppointmentService;
 
@@ -31,6 +33,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final UserAccountRepository userAccountRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
+    private final PatientProfileRepository patientProfileRepository;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -58,24 +62,54 @@ public class AppointmentServiceImpl implements AppointmentService {
         String patientName = null;
         String patientFullName = null;
         String patientGender = null;
+        String patientPhoneNumber = null;
+        String patientAddress = null;
         if (appointment.getPatient() != null) {
             patientName = appointment.getPatient().getFullName();
             patientFullName = appointment.getPatient().getFullName();
             patientGender = appointment.getPatient().getGender() != null 
                     ? appointment.getPatient().getGender().getValue() 
                     : null;
+            patientPhoneNumber = appointment.getPatient().getPhoneNumber();
+            
+            // Get patient profile for address
+            if (appointment.getPatientId() != null) {
+                var patientProfileOpt = patientProfileRepository.findByUserId(appointment.getPatientId());
+                if (patientProfileOpt.isPresent()) {
+                    patientAddress = patientProfileOpt.get().getAddress();
+                }
+            }
         }
         
         // Get doctor info
         String doctorName = null;
         String doctorFullName = null;
         String doctorGender = null;
+        String doctorTitle = null;
+        String doctorPhoneNumber = null;
+        String doctorWorkplace = null;
+        String doctorSpecialties = null;
+        
         if (appointment.getDoctor() != null) {
             doctorName = appointment.getDoctor().getFullName();
             doctorFullName = appointment.getDoctor().getFullName();
             doctorGender = appointment.getDoctor().getGender() != null 
                     ? appointment.getDoctor().getGender().getValue() 
                     : null;
+            doctorPhoneNumber = appointment.getDoctor().getPhoneNumber();
+            
+            // Get doctor profile info
+            if (appointment.getDoctorId() != null) {
+                var doctorProfileOpt = doctorProfileRepository.findByUserId(appointment.getDoctorId());
+                if (doctorProfileOpt.isPresent()) {
+                    var profile = doctorProfileOpt.get();
+                    doctorTitle = profile.getTitle();
+                    doctorWorkplace = profile.getWorkplaceName() != null 
+                            ? profile.getWorkplaceName() 
+                            : profile.getFacilityName();
+                    doctorSpecialties = profile.getSpecialties();
+                }
+            }
         }
         
         return AppointmentResponse.builder()
@@ -94,9 +128,15 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .patientName(patientName)
                 .patientFullName(patientFullName)
                 .patientGender(patientGender)
+                .patientPhoneNumber(patientPhoneNumber)
+                .patientAddress(patientAddress)
                 .doctorName(doctorName)
                 .doctorFullName(doctorFullName)
                 .doctorGender(doctorGender)
+                .doctorTitle(doctorTitle)
+                .doctorPhoneNumber(doctorPhoneNumber)
+                .doctorWorkplace(doctorWorkplace)
+                .doctorSpecialties(doctorSpecialties)
                 .build();
     }
 
