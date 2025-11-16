@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
 import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
 import com.example.HealthCare.dto.MedicalReportVitalSignDto;
+import com.example.HealthCare.enums.AppointmentStatus;
+import com.example.HealthCare.enums.ReportStatus;
 import com.example.HealthCare.model.Appointment;
 import com.example.HealthCare.model.MedicalReportVitalSign;
 import com.example.HealthCare.model.UserAccount;
@@ -25,18 +27,34 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
 
     @Override
     public List<MedicalExaminationHistorySummaryDto> getHistoryByPatientId(UUID patientId) {
-        List<Appointment> appointments = appointmentRepository.findCompletedByPatientId(patientId);
+        // UC-17: Get completed appointments with completed medical reports
+        // Sorted by completed_at DESC (default), then by scheduledStart DESC
+        System.out.println("MedicalExaminationHistoryService: Getting history for patientId: " + patientId);
+        List<Appointment> appointments = appointmentRepository.findCompletedByPatientId(
+            patientId, 
+            AppointmentStatus.COMPLETED, 
+            ReportStatus.COMPLETED
+        );
+        System.out.println("MedicalExaminationHistoryService: Found " + appointments.size() + " completed appointments");
 
         return appointments.stream()
-            .map(apt -> MedicalExaminationHistorySummaryDto.builder()
-                .id(apt.getId().toString())
-                .patientId(patientId.toString())
-                .doctor(apt.getDoctor().getFullName())
-                .date(apt.getScheduledStart())
-                .reason(apt.getReason())
-                .clinic(apt.getDoctor().getDoctorProfile().getWorkplaceName())
-                .build()
-            )
+            .map(apt -> {
+                // Get medical report for additional information (diagnosis, notes, completedAt)
+                var medicalReport = apt.getMedicalReport();
+                
+                return MedicalExaminationHistorySummaryDto.builder()
+                    .id(apt.getId().toString())
+                    .patientId(patientId.toString())
+                    .doctor(apt.getDoctor().getFullName())
+                    .date(apt.getScheduledStart())
+                    .reason(apt.getReason())
+                    .clinic(apt.getDoctor().getDoctorProfile().getWorkplaceName())
+                    // UC-17: Additional fields for doctors - full notes, diagnosis, completed date
+                    .diagnosis(medicalReport != null ? medicalReport.getDiagnosis() : null)
+                    .notes(medicalReport != null ? medicalReport.getNote() : null)
+                    .completedAt(medicalReport != null ? medicalReport.getCompletedAt() : null)
+                    .build();
+            })
             .collect(Collectors.toList());
     }
 

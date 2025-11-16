@@ -61,11 +61,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        String errorMessage = ex.getMessage();
+        if (errorMessage == null || errorMessage.trim().isEmpty()) {
+            errorMessage = "An unexpected error occurred: " + ex.getClass().getSimpleName();
+        }
+        
         Map<String, Object> response = new HashMap<>();
         response.put("error", "internal_error");
-        response.put("message", ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred");
+        response.put("message", errorMessage);
         
-        log.error("Runtime exception: {}", ex.getMessage(), ex);
+        log.error("Runtime exception: {} - Class: {}", errorMessage, ex.getClass().getName(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 

@@ -53,17 +53,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
 
     // For Medical Examination History
+    // UC-17: Get completed appointments with completed medical reports, sorted by completed_at DESC
     @Query("""
-        SELECT a FROM Appointment a
+        SELECT DISTINCT a FROM Appointment a
         JOIN FETCH a.doctor d
         JOIN FETCH d.doctorProfile dp 
         JOIN FETCH a.medicalReport mr
         WHERE a.patientId = :patientId
-        AND a.status = 'completed' 
-        AND mr.status = 'completed' 
-        ORDER BY a.scheduledStart DESC
+        AND a.status = :appointmentStatus
+        AND mr.status = :reportStatus
+        ORDER BY mr.completedAt DESC NULLS LAST, a.scheduledStart DESC
         """)
-    List<Appointment> findCompletedByPatientId(@Param("patientId") UUID patientId);
+    List<Appointment> findCompletedByPatientId(
+        @Param("patientId") UUID patientId,
+        @Param("appointmentStatus") com.example.HealthCare.enums.AppointmentStatus appointmentStatus,
+        @Param("reportStatus") com.example.HealthCare.enums.ReportStatus reportStatus
+    );
 
 
     @Query("""
@@ -90,6 +95,53 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         WHERE a.id = :appointmentId
         """)
     UserAccount inforPatientByAppointmentId(@Param("appointmentId") UUID appointmentId);
+
+    // Find appointment by ID with patient and doctor relations
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.id = :appointmentId
+        """)
+    Appointment findByIdWithRelations(@Param("appointmentId") UUID appointmentId);
+
+    // Check for conflicting appointments with patient
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.patientId = :patientId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForPatient(
+        @Param("patientId") UUID patientId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
+
+    // Check for conflicting appointments with doctor
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.doctorId = :doctorId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForDoctor(
+        @Param("doctorId") UUID doctorId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
 
 }
 
