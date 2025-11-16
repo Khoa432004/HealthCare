@@ -1,39 +1,49 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2, FileText } from "lucide-react"
+import { Trash2, FileText, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+interface VitalSign {
+  id: string
+  name: string
+  unit: string
+  value: string
+}
+
+interface Medication {
+  id: string
+  medicationName: string
+  medicationDosage: string
+  medicationType: string
+  medicationMealTiming: string
+  durationDays?: number
+  startDate?: string
+  note?: string
+}
+
 interface MedicalRecord {
   id: string
   // Vital Signs
-  temperature?: string
-  bloodGlucose?: string
-  // Lab Test
-  labTestName?: string
-  labTestResult?: string
+  vitalSigns?: VitalSign[]
   // Medicine
-  medicationName?: string
-  medicationDosage?: string
-  medicationType?: string
-  medicationMealTiming?: string
-  medicationDosing?: {
-    morning: number
-    noon: number
-    afternoon: number
-    evening: number
-  }
-  // Report Info
-  coveredBy?: string
+  medications?: Medication[]
+  // Report Info (matching database)
+  clinic?: string
+  province?: string
+  chronicConditions?: string
+  illness?: string
+  medicalExam?: string
+  icdCode?: string
+  diagnosis?: string
   coverage?: string
   recommendation?: string
-  notes?: string
+  note?: string
   followUpDate?: string
-  sendToEmail?: string
-  confirmed?: boolean
+  status?: 'draft' | 'completed'
 }
 
 interface MedicalReportTabProps {
@@ -41,54 +51,179 @@ interface MedicalReportTabProps {
   appointmentStatus?: string
 }
 
+// Available vital signs with their units
+const AVAILABLE_VITAL_SIGNS = [
+  { id: 'temperature', name: 'Temperature', unit: '°C' },
+  { id: 'bloodGlucose', name: 'Blood glucose', unit: 'mg/dL' },
+  { id: 'bloodPressure', name: 'Blood pressure', unit: 'mmHg' },
+  { id: 'cholesterol', name: 'Cholesterol', unit: 'mg/dL' },
+  { id: 'heartRate', name: 'Heart rate', unit: 'bpm' },
+  { id: 'respiratoryRate', name: 'Respiratory rate', unit: 'breaths/min' },
+  { id: 'spO2', name: 'SpO₂', unit: '%' },
+  { id: 'weight', name: 'Weight', unit: 'kg' },
+]
+
 export default function MedicalReportTab({ appointmentId, appointmentStatus }: MedicalReportTabProps) {
   const [records, setRecords] = useState<MedicalRecord[]>([])
+  const [selectedVitalSigns, setSelectedVitalSigns] = useState<string[]>([])
+  const [vitalSignValues, setVitalSignValues] = useState<Record<string, string>>({})
+  const [showVitalSignsSelector, setShowVitalSignsSelector] = useState(false)
+  const [medications, setMedications] = useState<Medication[]>([])
+  const [medicineForms, setMedicineForms] = useState<Array<{
+    id: string
+    medicationName: string
+    medicationDosage: string
+    medicationType: string
+    medicationMealTiming: string
+    durationDays?: number
+    startDate?: string
+    note?: string
+  }>>([])
 
   const [form, setForm] = useState({
-    temperature: "",
-    bloodGlucose: "",
-    labTestName: "",
-    labTestResult: "",
-    medicationName: "",
-    medicationDosage: "",
-    medicationType: "",
-    medicationMealTiming: "before-meal",
-    medicationDosing: { morning: 0, noon: 0, afternoon: 0, evening: 0 },
-    coveredBy: "",
+    clinic: "",
+    province: "",
+    chronicConditions: "",
+    illness: "",
+    medicalExam: "",
+    icdCode: "",
+    diagnosis: "",
     coverage: "",
     recommendation: "",
-    notes: "",
+    note: "",
     followUpDate: "",
-    sendToEmail: "",
-    confirmed: false,
+    status: 'draft' as 'draft' | 'completed',
   })
 
-  const addRecord = () => {
-    setRecords([
-      ...records,
+  const handleVitalSignToggle = (vitalSignId: string) => {
+    if (selectedVitalSigns.includes(vitalSignId)) {
+      // Remove from selection
+      setSelectedVitalSigns(selectedVitalSigns.filter(id => id !== vitalSignId))
+      // Clear value
+      const newValues = { ...vitalSignValues }
+      delete newValues[vitalSignId]
+      setVitalSignValues(newValues)
+    } else {
+      // Add to selection
+      setSelectedVitalSigns([...selectedVitalSigns, vitalSignId])
+      // Initialize value to empty
+      setVitalSignValues({ ...vitalSignValues, [vitalSignId]: "" })
+    }
+  }
+
+  const handleVitalSignValueChange = (vitalSignId: string, value: string) => {
+    setVitalSignValues({ ...vitalSignValues, [vitalSignId]: value })
+  }
+
+  const addMedicineForm = () => {
+    const newFormId = Date.now().toString()
+    setMedicineForms([
+      ...medicineForms,
       {
-        id: Date.now().toString(),
-        ...form,
+        id: newFormId,
+        medicationName: "",
+        medicationDosage: "",
+        medicationType: "",
+        medicationMealTiming: "before-meal",
+        durationDays: undefined,
+        startDate: "",
+        note: "",
       },
     ])
-    setForm({
-      temperature: "",
-      bloodGlucose: "",
-      labTestName: "",
-      labTestResult: "",
+  }
+
+  const removeMedicineForm = (formId: string) => {
+    setMedicineForms(medicineForms.filter(f => f.id !== formId))
+  }
+
+  const updateMedicineForm = (formId: string, updates: Partial<typeof medicineForms[0]>) => {
+    setMedicineForms(medicineForms.map(f => f.id === formId ? { ...f, ...updates } : f))
+  }
+
+  const addMedicationFromForm = (formId: string) => {
+    const form = medicineForms.find(f => f.id === formId)
+    if (!form || !form.medicationName || !form.medicationDosage || !form.medicationType) {
+      return // Basic validation
+    }
+    
+    const newMedication: Medication = {
+      id: Date.now().toString(),
+      medicationName: form.medicationName,
+      medicationDosage: form.medicationDosage,
+      medicationType: form.medicationType,
+      medicationMealTiming: form.medicationMealTiming,
+      durationDays: form.durationDays,
+      startDate: form.startDate,
+      note: form.note,
+    }
+    
+    setMedications([...medications, newMedication])
+    
+    // Reset form but keep it open
+    updateMedicineForm(formId, {
       medicationName: "",
       medicationDosage: "",
       medicationType: "",
       medicationMealTiming: "before-meal",
-      medicationDosing: { morning: 0, noon: 0, afternoon: 0, evening: 0 },
-      coveredBy: "",
+      durationDays: undefined,
+      startDate: "",
+      note: "",
+    })
+  }
+
+  const removeMedication = (id: string) => {
+    setMedications(medications.filter(m => m.id !== id))
+  }
+
+  const addRecord = () => {
+    // Convert selected vital signs to array format
+    const vitalSigns: VitalSign[] = selectedVitalSigns
+      .map(id => {
+        const vitalSign = AVAILABLE_VITAL_SIGNS.find(vs => vs.id === id)
+        if (!vitalSign) return null
+        return {
+          id: vitalSign.id,
+          name: vitalSign.name,
+          unit: vitalSign.unit,
+          value: vitalSignValues[id] || ""
+        }
+      })
+      .filter((vs): vs is VitalSign => vs !== null)
+
+    setRecords([
+      ...records,
+      {
+        id: Date.now().toString(),
+        vitalSigns,
+        medications: medications.length > 0 ? medications : undefined,
+        ...form,
+      },
+    ])
+    
+    // Reset form
+    setForm({
+      clinic: "",
+      province: "",
+      chronicConditions: "",
+      illness: "",
+      medicalExam: "",
+      icdCode: "",
+      diagnosis: "",
       coverage: "",
       recommendation: "",
-      notes: "",
+      note: "",
       followUpDate: "",
-      sendToEmail: "",
-      confirmed: false,
+      status: 'draft',
     })
+    
+    // Reset vital signs
+    setSelectedVitalSigns([])
+    setVitalSignValues({})
+    setShowVitalSignsSelector(false)
+    
+    // Reset medications
+    setMedications([])
+    setMedicineForms([])
   }
 
   const deleteRecord = (id: string) => {
@@ -132,180 +267,267 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
           <div className="p-6 space-y-6">
               {/* Vital Signs Section */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Vital signs</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Temperature <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="e.g., 37"
-                      value={form.temperature}
-                      onChange={(e) => setForm({ ...form, temperature: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Blood glucose <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="e.g., 100"
-                      value={form.bloodGlucose}
-                      onChange={(e) => setForm({ ...form, bloodGlucose: e.target.value })}
-                    />
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-semibold text-gray-900">Vital signs</h4>
+                  {!showVitalSignsSelector && (
+                    <Button
+                      onClick={() => setShowVitalSignsSelector(true)}
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full px-4 border-teal-600 text-teal-600 hover:bg-teal-50"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  )}
                 </div>
-              </div>
+                
+                {/* Checkbox list for selecting vital signs - only show when Add button is clicked */}
+                {showVitalSignsSelector && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {AVAILABLE_VITAL_SIGNS.map((vitalSign) => (
+                        <div key={vitalSign.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={vitalSign.id}
+                            checked={selectedVitalSigns.includes(vitalSign.id)}
+                            onCheckedChange={() => handleVitalSignToggle(vitalSign.id)}
+                          />
+                          <label
+                            htmlFor={vitalSign.id}
+                            className="text-sm font-medium text-gray-700 cursor-pointer"
+                          >
+                            {vitalSign.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* Lab Test Section */}
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Lab Test</h4>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Lab test name <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g., Blood Test"
-                    value={form.labTestName}
-                    onChange={(e) => setForm({ ...form, labTestName: e.target.value })}
-                  />
-                </div>
-                <div className="mt-3">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Result <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g., Normal"
-                    value={form.labTestResult}
-                    onChange={(e) => setForm({ ...form, labTestResult: e.target.value })}
-                  />
-                </div>
+                {/* Input fields for selected vital signs */}
+                {selectedVitalSigns.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4">
+                    {selectedVitalSigns.map((vitalSignId) => {
+                      const vitalSign = AVAILABLE_VITAL_SIGNS.find(vs => vs.id === vitalSignId)
+                      if (!vitalSign) return null
+                      
+                      return (
+                        <div key={vitalSignId}>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            {vitalSign.name} <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={vitalSignValues[vitalSignId] || ""}
+                              onChange={(e) => handleVitalSignValueChange(vitalSignId, e.target.value)}
+                              className="pr-12"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                              {vitalSign.unit}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Medicine Section */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Medicine</h4>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Medication name <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g., Aspirin"
-                    value={form.medicationName}
-                    onChange={(e) => setForm({ ...form, medicationName: e.target.value })}
-                  />
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-semibold text-gray-900">Medicine</h4>
+                  <Button
+                    onClick={addMedicineForm}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full px-4 border-teal-600 text-teal-600 hover:bg-teal-50"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add
+                  </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Medication dosage <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="e.g., 500mg"
-                      value={form.medicationDosage}
-                      onChange={(e) => setForm({ ...form, medicationDosage: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Medication type <span className="text-red-500">*</span>
-                    </label>
-                    <Select
-                      value={form.medicationType}
-                      onValueChange={(value) => setForm({ ...form, medicationType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tablet">Tablet</SelectItem>
-                        <SelectItem value="capsule">Capsule</SelectItem>
-                        <SelectItem value="liquid">Liquid</SelectItem>
-                        <SelectItem value="injection">Injection</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="text-sm font-medium text-gray-700 mb-3 block">Medication use with meals</label>
-                  <div className="flex gap-2">
-                    {[
-                      { value: "before-meal", label: "Before meal" },
-                      { value: "with-food", label: "With food" },
-                      { value: "after-meal", label: "After meal" },
-                      { value: "anytime", label: "Anytime" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setForm({ ...form, medicationMealTiming: option.value })}
-                        className={`flex-1 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
-                          form.medicationMealTiming === option.value
-                            ? "border-teal-600 bg-teal-50 text-teal-700"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="text-sm font-medium text-gray-700 mb-3 block">Dosing</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { key: "morning", label: "Morning" },
-                      { key: "noon", label: "Noon" },
-                      { key: "afternoon", label: "Afternoon" },
-                      { key: "evening", label: "Evening" },
-                    ].map((time) => (
-                      <div key={time.key} className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-600 mb-1">{time.label}</p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                setForm({
-                                  ...form,
-                                  medicationDosing: {
-                                    ...form.medicationDosing,
-                                    [time.key]: Math.max(
-                                      0,
-                                      form.medicationDosing[time.key as keyof typeof form.medicationDosing] - 1,
-                                    ),
-                                  },
-                                })
-                              }
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                            >
-                              −
-                            </button>
-                            <span className="w-8 text-center font-medium">
-                              {form.medicationDosing[time.key as keyof typeof form.medicationDosing]}
-                            </span>
-                            <button
-                              onClick={() =>
-                                setForm({
-                                  ...form,
-                                  medicationDosing: {
-                                    ...form.medicationDosing,
-                                    [time.key]:
-                                      form.medicationDosing[time.key as keyof typeof form.medicationDosing] + 1,
-                                  },
-                                })
-                              }
-                              className="w-8 h-8 rounded-full border border-teal-600 text-teal-600 flex items-center justify-center hover:bg-teal-50"
-                            >
-                              +
-                            </button>
+                {/* List of added medications */}
+                {medications.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {medications.map((medication) => (
+                      <div key={medication.id} className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="font-semibold text-gray-900">{medication.medicationName}</p>
+                              <span className="text-xs text-gray-500 capitalize">({medication.medicationType})</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <p className="text-xs text-gray-600">Dosage</p>
+                                <p className="font-medium text-gray-900">{medication.medicationDosage}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-600">Use with meals</p>
+                                <p className="font-medium text-gray-900 capitalize">
+                                  {medication.medicationMealTiming.replace("-", " ")}
+                                </p>
+                              </div>
+                            </div>
+                            {(medication.durationDays || medication.startDate) && (
+                              <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                                {medication.durationDays && (
+                                  <div>
+                                    <p className="text-xs text-gray-600">Duration</p>
+                                    <p className="font-medium text-gray-900">{medication.durationDays} days</p>
+                                  </div>
+                                )}
+                                {medication.startDate && (
+                                  <div>
+                                    <p className="text-xs text-gray-600">Start date</p>
+                                    <p className="font-medium text-gray-900">{medication.startDate}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {medication.note && (
+                              <div className="mt-2">
+                                <p className="text-xs text-gray-600">Note</p>
+                                <p className="font-medium text-gray-900">{medication.note}</p>
+                              </div>
+                            )}
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeMedication(medication.id)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                )}
+
+                {/* Medicine Forms - can have multiple forms */}
+                {medicineForms.length > 0 && (
+                  <div className="space-y-4 mb-4">
+                    {medicineForms.map((form) => (
+                      <div key={form.id} className="bg-white border border-gray-200 rounded-lg p-4 relative">
+                        <button
+                          onClick={() => removeMedicineForm(form.id)}
+                          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            Medication name <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            placeholder="e.g., Aspirin"
+                            value={form.medicationName}
+                            onChange={(e) => updateMedicineForm(form.id, { medicationName: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Medication dosage <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              placeholder="e.g., 500mg"
+                              value={form.medicationDosage}
+                              onChange={(e) => updateMedicineForm(form.id, { medicationDosage: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Medication type <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                              value={form.medicationType}
+                              onValueChange={(value) => updateMedicineForm(form.id, { medicationType: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tablet">Tablet</SelectItem>
+                                <SelectItem value="capsule">Capsule</SelectItem>
+                                <SelectItem value="liquid">Liquid</SelectItem>
+                                <SelectItem value="injection">Injection</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-gray-700 mb-3 block">Medication use with meals</label>
+                          <div className="flex gap-2">
+                            {[
+                              { value: "before-meal", label: "Before meal" },
+                              { value: "with-food", label: "With food" },
+                              { value: "after-meal", label: "After meal" },
+                              { value: "anytime", label: "Anytime" },
+                            ].map((option) => (
+                              <button
+                                key={option.value}
+                                onClick={() => updateMedicineForm(form.id, { medicationMealTiming: option.value })}
+                                className={`flex-1 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
+                                  form.medicationMealTiming === option.value
+                                    ? "border-teal-600 bg-teal-50 text-teal-700"
+                                    : "border-gray-200 hover:border-gray-300 text-gray-700"
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Duration (days)
+                            </label>
+                            <Input
+                              type="number"
+                              placeholder="e.g., 7"
+                              value={form.durationDays || ""}
+                              onChange={(e) => updateMedicineForm(form.id, { durationDays: e.target.value ? parseInt(e.target.value) : undefined })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Start date
+                            </label>
+                            <Input
+                              type="date"
+                              value={form.startDate || ""}
+                              onChange={(e) => updateMedicineForm(form.id, { startDate: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">Note</label>
+                          <textarea
+                            placeholder="Enter medication note"
+                            value={form.note || ""}
+                            onChange={(e) => updateMedicineForm(form.id, { note: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-gray-200 pt-6">
@@ -313,11 +535,63 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Covered by</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Clinic</label>
                     <Input
-                      placeholder="Enter coverage provider"
-                      value={form.coveredBy}
-                      onChange={(e) => setForm({ ...form, coveredBy: e.target.value })}
+                      placeholder="Enter clinic name"
+                      value={form.clinic}
+                      onChange={(e) => setForm({ ...form, clinic: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Province</label>
+                    <Input
+                      placeholder="Enter province"
+                      value={form.province}
+                      onChange={(e) => setForm({ ...form, province: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Chronic Conditions</label>
+                  <textarea
+                    placeholder="Enter chronic conditions"
+                    value={form.chronicConditions}
+                    onChange={(e) => setForm({ ...form, chronicConditions: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Illness</label>
+                  <textarea
+                    placeholder="Enter illness description"
+                    value={form.illness}
+                    onChange={(e) => setForm({ ...form, illness: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Medical Exam</label>
+                  <textarea
+                    placeholder="Enter medical examination results"
+                    value={form.medicalExam}
+                    onChange={(e) => setForm({ ...form, medicalExam: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">ICD Code</label>
+                    <Input
+                      placeholder="Enter ICD code"
+                      value={form.icdCode}
+                      onChange={(e) => setForm({ ...form, icdCode: e.target.value })}
                     />
                   </div>
                   <div>
@@ -328,6 +602,17 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
                       onChange={(e) => setForm({ ...form, coverage: e.target.value })}
                     />
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Diagnosis</label>
+                  <textarea
+                    placeholder="Enter diagnosis"
+                    value={form.diagnosis}
+                    onChange={(e) => setForm({ ...form, diagnosis: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                    rows={3}
+                  />
                 </div>
 
                 <div className="mt-4">
@@ -345,56 +630,42 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Notes</label>
                   <textarea
                     placeholder="Enter additional notes"
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    value={form.note}
+                    onChange={(e) => setForm({ ...form, note: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                     rows={3}
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Follow-up date</label>
-                    <Input
-                      type="date"
-                      value={form.followUpDate}
-                      onChange={(e) => setForm({ ...form, followUpDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Send this report to doctor email
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="Enter email address"
-                      value={form.sendToEmail}
-                      onChange={(e) => setForm({ ...form, sendToEmail: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center space-x-2">
-                  <Checkbox
-                    id="confirm"
-                    checked={form.confirmed}
-                    onCheckedChange={(checked) => setForm({ ...form, confirmed: checked as boolean })}
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Follow-up date</label>
+                  <Input
+                    type="date"
+                    value={form.followUpDate}
+                    onChange={(e) => setForm({ ...form, followUpDate: e.target.value })}
                   />
-                  <label htmlFor="confirm" className="text-sm text-gray-700">
-                    I confirm that i have reviewed and verified all the medical information provided above.
-                  </label>
                 </div>
               </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3 justify-end border-t border-gray-200 pt-6">
               <Button
+                onClick={() => {
+                  setForm({ ...form, status: 'draft' })
+                  addRecord()
+                }}
                 variant="outline"
                 className="rounded-full px-6 border-teal-600 text-teal-600 hover:bg-teal-50 bg-transparent"
               >
                 Saving as draft
               </Button>
-              <Button onClick={addRecord} className="gradient-primary text-white rounded-full px-6">
+              <Button 
+                onClick={() => {
+                  setForm({ ...form, status: 'completed' })
+                  addRecord()
+                }} 
+                className="gradient-primary text-white rounded-full px-6"
+              >
                 Complete the report
               </Button>
             </div>
@@ -416,115 +687,130 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
               <div className="space-y-4">
                 {/* Vital Signs Display */}
-                {(record.temperature || record.bloodGlucose) && (
+                {record.vitalSigns && record.vitalSigns.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Vital signs</p>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      {record.temperature && (
-                        <div className="bg-white p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-600">Temperature</p>
-                          <p className="font-medium text-gray-900">{record.temperature}°C</p>
+                      {record.vitalSigns.map((vitalSign) => (
+                        <div key={vitalSign.id} className="bg-white p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-600">{vitalSign.name}</p>
+                          <p className="font-medium text-gray-900">
+                            {vitalSign.value} {vitalSign.unit}
+                          </p>
                         </div>
-                      )}
-                      {record.bloodGlucose && (
-                        <div className="bg-white p-2 rounded border border-gray-200">
-                          <p className="text-xs text-gray-600">Blood glucose</p>
-                          <p className="font-medium text-gray-900">{record.bloodGlucose} mg/dL</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Lab Test Display */}
-                {record.labTestName && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Lab Test</p>
-                    <div className="bg-white p-3 rounded border border-gray-200 text-sm">
-                      <p className="text-xs text-gray-600">Test Name</p>
-                      <p className="font-medium text-gray-900">{record.labTestName}</p>
-                      {record.labTestResult && (
-                        <>
-                          <p className="text-xs text-gray-600 mt-2">Result</p>
-                          <p className="font-medium text-gray-900">{record.labTestResult}</p>
-                        </>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Medicine Display */}
-                {record.medicationName && (
+                {record.medications && record.medications.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Medicine</p>
-                    <div className="bg-blue-50 p-3 rounded border border-blue-200 text-sm space-y-2">
-                      <div>
-                        <p className="text-xs text-gray-600">Medication name</p>
-                        <p className="font-medium text-gray-900">{record.medicationName}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {record.medicationDosage && (
+                    <div className="space-y-3">
+                      {record.medications.map((medication) => (
+                        <div key={medication.id} className="bg-blue-50 p-3 rounded border border-blue-200 text-sm space-y-2">
                           <div>
-                            <p className="text-xs text-gray-600">Dosage</p>
-                            <p className="font-medium text-gray-900">{record.medicationDosage}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-gray-900">{medication.medicationName}</p>
+                              <span className="text-xs text-gray-500 capitalize">({medication.medicationType})</span>
+                            </div>
                           </div>
-                        )}
-                        {record.medicationType && (
-                          <div>
-                            <p className="text-xs text-gray-600">Type</p>
-                            <p className="font-medium text-gray-900 capitalize">{record.medicationType}</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-xs text-gray-600">Dosage</p>
+                              <p className="font-medium text-gray-900">{medication.medicationDosage}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Use with meals</p>
+                              <p className="font-medium text-gray-900 capitalize">
+                                {medication.medicationMealTiming.replace("-", " ")}
+                              </p>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      {record.medicationMealTiming && (
-                        <div>
-                          <p className="text-xs text-gray-600">Use with meals</p>
-                          <p className="font-medium text-gray-900 capitalize">
-                            {record.medicationMealTiming.replace("-", " ")}
-                          </p>
+                          {(medication.durationDays || medication.startDate) && (
+                            <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                              {medication.durationDays && (
+                                <div>
+                                  <p className="text-xs text-gray-600">Duration</p>
+                                  <p className="font-medium text-gray-900">{medication.durationDays} days</p>
+                                </div>
+                              )}
+                              {medication.startDate && (
+                                <div>
+                                  <p className="text-xs text-gray-600">Start date</p>
+                                  <p className="font-medium text-gray-900">{medication.startDate}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {medication.note && (
+                            <div className="mt-2">
+                              <p className="text-xs text-gray-600">Note</p>
+                              <p className="font-medium text-gray-900">{medication.note}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {record.medicationDosing && (
-                        <div>
-                          <p className="text-xs text-gray-600 mb-1">Dosing</p>
-                          <div className="grid grid-cols-4 gap-2 text-xs">
-                            <div className="text-center">
-                              <p className="text-gray-600">Morning</p>
-                              <p className="font-medium">{record.medicationDosing.morning}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-gray-600">Noon</p>
-                              <p className="font-medium">{record.medicationDosing.noon}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-gray-600">Afternoon</p>
-                              <p className="font-medium">{record.medicationDosing.afternoon}</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-gray-600">Evening</p>
-                              <p className="font-medium">{record.medicationDosing.evening}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Report Information Display */}
-                {(record.coveredBy ||
+                {(record.clinic ||
+                  record.province ||
+                  record.chronicConditions ||
+                  record.illness ||
+                  record.medicalExam ||
+                  record.icdCode ||
+                  record.diagnosis ||
                   record.coverage ||
                   record.recommendation ||
-                  record.notes ||
-                  record.followUpDate ||
-                  record.sendToEmail) && (
+                  record.note ||
+                  record.followUpDate) && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Report Information</p>
                     <div className="bg-teal-50 p-3 rounded border border-teal-200 text-sm space-y-2">
-                      {record.coveredBy && (
+                      {record.clinic && (
                         <div>
-                          <p className="text-xs text-gray-600">Covered by</p>
-                          <p className="font-medium text-gray-900">{record.coveredBy}</p>
+                          <p className="text-xs text-gray-600">Clinic</p>
+                          <p className="font-medium text-gray-900">{record.clinic}</p>
+                        </div>
+                      )}
+                      {record.province && (
+                        <div>
+                          <p className="text-xs text-gray-600">Province</p>
+                          <p className="font-medium text-gray-900">{record.province}</p>
+                        </div>
+                      )}
+                      {record.chronicConditions && (
+                        <div>
+                          <p className="text-xs text-gray-600">Chronic Conditions</p>
+                          <p className="font-medium text-gray-900">{record.chronicConditions}</p>
+                        </div>
+                      )}
+                      {record.illness && (
+                        <div>
+                          <p className="text-xs text-gray-600">Illness</p>
+                          <p className="font-medium text-gray-900">{record.illness}</p>
+                        </div>
+                      )}
+                      {record.medicalExam && (
+                        <div>
+                          <p className="text-xs text-gray-600">Medical Exam</p>
+                          <p className="font-medium text-gray-900">{record.medicalExam}</p>
+                        </div>
+                      )}
+                      {record.icdCode && (
+                        <div>
+                          <p className="text-xs text-gray-600">ICD Code</p>
+                          <p className="font-medium text-gray-900">{record.icdCode}</p>
+                        </div>
+                      )}
+                      {record.diagnosis && (
+                        <div>
+                          <p className="text-xs text-gray-600">Diagnosis</p>
+                          <p className="font-medium text-gray-900">{record.diagnosis}</p>
                         </div>
                       )}
                       {record.coverage && (
@@ -539,22 +825,16 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
                           <p className="font-medium text-gray-900">{record.recommendation}</p>
                         </div>
                       )}
-                      {record.notes && (
+                      {record.note && (
                         <div>
                           <p className="text-xs text-gray-600">Notes</p>
-                          <p className="font-medium text-gray-900">{record.notes}</p>
+                          <p className="font-medium text-gray-900">{record.note}</p>
                         </div>
                       )}
                       {record.followUpDate && (
                         <div>
                           <p className="text-xs text-gray-600">Follow-up date</p>
                           <p className="font-medium text-gray-900">{record.followUpDate}</p>
-                        </div>
-                      )}
-                      {record.sendToEmail && (
-                        <div>
-                          <p className="text-xs text-gray-600">Send to email</p>
-                          <p className="font-medium text-gray-900">{record.sendToEmail}</p>
                         </div>
                       )}
                     </div>
