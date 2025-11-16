@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +32,7 @@ interface AppointmentDetailPageProps {
 
 export default function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [showNotifications, setShowNotifications] = useState(false)
   const [activeTab, setActiveTab] = useState("appointment-details")
@@ -42,6 +43,14 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   
   // Unwrap params using React.use()
   const { id } = use(params)
+
+  // Check for tab query parameter and set active tab
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'medical-report') {
+      setActiveTab('medical-report')
+    }
+  }, [searchParams])
 
   // Load appointment data
   useEffect(() => {

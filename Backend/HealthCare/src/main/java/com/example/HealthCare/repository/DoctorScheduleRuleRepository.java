@@ -1,5 +1,6 @@
 package com.example.HealthCare.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,5 +21,9 @@ public interface DoctorScheduleRuleRepository extends JpaRepository<DoctorSchedu
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM DoctorScheduleRule r WHERE r.doctorId = :doctorId")
     void deleteByDoctorId(@Param("doctorId") UUID doctorId);
+    
+    // UC-22: Get average appointment cost for a doctor (or default if no rules exist)
+    @Query("SELECT COALESCE(AVG(r.appointmentCost), 150000) FROM DoctorScheduleRule r WHERE r.doctorId = :doctorId")
+    BigDecimal getAverageAppointmentCostByDoctorId(@Param("doctorId") UUID doctorId);
 }
 

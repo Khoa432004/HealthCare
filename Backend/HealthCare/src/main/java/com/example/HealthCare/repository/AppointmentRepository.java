@@ -143,5 +143,73 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         @Param("canceledStatus") AppointmentStatus canceledStatus
     );
 
+    // UC-22: Count unique patients for a doctor in date range
+    @Query("SELECT COUNT(DISTINCT a.patientId) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND DATE(a.scheduledStart) = DATE(:date)")
+    Long countDistinctPatientsByDoctorIdAndDate(
+        @Param("doctorId") UUID doctorId,
+        @Param("date") OffsetDateTime date
+    );
+
+    // UC-22: Count unique patients for a doctor in date range (general)
+    @Query("SELECT COUNT(DISTINCT a.patientId) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate")
+    Long countDistinctPatientsByDoctorIdAndDateRange(
+        @Param("doctorId") UUID doctorId,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+
+    // UC-22: Count completed appointments for a doctor in date range
+    @Query("SELECT COUNT(a) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.status = :status " +
+           "AND DATE(a.scheduledStart) = DATE(:date)")
+    Long countCompletedAppointmentsByDoctorIdAndDate(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("date") OffsetDateTime date
+    );
+
+    // UC-22: Count completed appointments for a doctor in date range (general)
+    @Query("SELECT COUNT(a) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.status = :status " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate")
+    Long countCompletedAppointmentsByDoctorIdAndDateRange(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+
+    // UC-22: Find appointments waiting for report completion
+    // Conditions: status = IN_PROCESS, scheduled_start <= now, 
+    // and (report doesn't exist OR report.status != COMPLETED)
+    @Query("""
+        SELECT DISTINCT a FROM Appointment a
+        LEFT JOIN FETCH a.medicalReport mr
+        JOIN FETCH a.patient p
+        WHERE a.doctorId = :doctorId
+        AND a.status = :status
+        AND a.scheduledStart <= :now
+        AND a.scheduledStart >= :startDate
+        AND a.scheduledStart <= :endDate
+        AND (mr IS NULL OR mr.status != :completedReportStatus)
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findPendingReportAppointments(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("now") OffsetDateTime now,
+        @Param("completedReportStatus") com.example.HealthCare.enums.ReportStatus completedReportStatus,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+
 }
 
