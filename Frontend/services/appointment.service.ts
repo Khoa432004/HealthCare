@@ -19,9 +19,15 @@ export interface Appointment {
   patientName?: string;
   patientFullName?: string;
   patientGender?: string;
+  patientPhoneNumber?: string;
+  patientAddress?: string;
   doctorName?: string;
   doctorFullName?: string;
   doctorGender?: string;
+  doctorTitle?: string;
+  doctorPhoneNumber?: string;
+  doctorWorkplace?: string;
+  doctorSpecialties?: string; // Comma-separated string
 }
 
 export interface AppointmentResponse {

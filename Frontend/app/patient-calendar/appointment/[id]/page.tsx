@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit } from "lucide-react"
+import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import DoctorSidebar from "@/components/doctor-sidebar"
+import { PatientSidebar } from "@/components/patient-sidebar"
 import MedicalReportTab from "@/components/medical-report-tab"
 import { appointmentService, type Appointment } from "@/services/appointment.service"
 import { authService } from "@/services/auth.service"
@@ -29,14 +29,14 @@ interface AppointmentDetailPageProps {
   }>
 }
 
-export default function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
+export default function PatientAppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [showNotifications, setShowNotifications] = useState(false)
   const [activeTab, setActiveTab] = useState("appointment-details")
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; fullName: string } | null>(null)
   
   // Unwrap params using React.use()
   const { id } = use(params)
@@ -48,11 +48,25 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
         setIsLoading(true)
         const user = authService.getUserInfo()
         if (user) {
-          setCurrentUser({ id: user.id || "", role: user.role || "" })
+          setCurrentUser({ 
+            id: user.id || "", 
+            role: user.role || "",
+            fullName: user.fullName || ""
+          })
         }
         
         const data = await appointmentService.getAppointmentById(id)
         setAppointment(data)
+        
+        // If appointment is not COMPLETED and activeTab is medical-report, switch to appointment-details
+        if (data.status !== 'COMPLETED' && activeTab === 'medical-report') {
+          setActiveTab('appointment-details')
+        }
+        
+        // Note: We don't fetch doctor professional info for patient view
+        // because the endpoint requires VIEW_DOCTORS permission which patient doesn't have
+        // We'll just use the basic doctor info from appointment response (doctorFullName, doctorName)
+        // If you need full doctor info, consider adding it to the appointment response or creating a patient-accessible endpoint
       } catch (error: any) {
         console.error("Error loading appointment:", error)
         toast({
@@ -60,7 +74,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
           description: error.message || "Không thể tải thông tin lịch hẹn",
           variant: "destructive",
         })
-        router.push("/calendar")
+        router.push("/patient-calendar")
       } finally {
         setIsLoading(false)
       }
@@ -68,6 +82,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
     
     loadAppointment()
   }, [id, router, toast])
+
 
   // Format date and time
   const formatDateTime = (dateString: string) => {
@@ -96,15 +111,20 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
     return statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-700' }
   }
 
-  // Check if current user is doctor
-  const isDoctor = currentUser?.role === 'DOCTOR'
-  const isPatient = currentUser?.role === 'PATIENT'
-  const canEdit = isDoctor && appointment?.status === 'SCHEDULED'
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'PT'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
 
   if (isLoading) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
-        <DoctorSidebar />
+        <PatientSidebar />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
@@ -115,11 +135,11 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   if (!appointment) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
-        <DoctorSidebar />
+        <PatientSidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-500 mb-4">Không tìm thấy lịch hẹn</p>
-            <Link href="/calendar">
+            <Link href="/patient-calendar">
               <Button>Quay lại Calendar</Button>
             </Link>
           </div>
@@ -150,14 +170,14 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
-      <DoctorSidebar />
+      <PatientSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="glass border-b border-white/50 px-6 py-4 shadow-soft">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/calendar">
+              <Link href="/patient-calendar">
                 <Button variant="ghost" size="icon" className="hover:bg-white/50">
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
@@ -175,13 +195,6 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                 <Badge className={`${statusBadge.className} rounded-full px-4 py-1.5 text-sm font-medium`}>
                   {statusBadge.label}
                 </Badge>
-                {/* Edit Button (only for doctor) */}
-                {canEdit && (
-                  <Button variant="outline" size="sm" className="ml-2">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
               </div>
             </div>
 
@@ -229,18 +242,20 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   >
                     <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
                       <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="gradient-primary text-white font-semibold">LH</AvatarFallback>
+                      <AvatarFallback className="gradient-primary text-white font-semibold">
+                        {currentUser ? getInitials(currentUser.fullName) : 'PT'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">Lê Thị Tuyết Hoa</p>
-                      <p className="text-xs text-gray-500">Doctor</p>
+                      <p className="text-sm font-semibold text-gray-700">{currentUser?.fullName || 'Patient'}</p>
+                      <p className="text-xs text-gray-500">Patient</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
                   <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">Lê Thị Tuyết Hoa</p>
-                    <p className="text-xs text-gray-500 font-medium">Doctor</p>
+                    <p className="font-semibold text-gray-900">{currentUser?.fullName || 'Patient'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Patient</p>
                   </div>
                   <Link href="/my-profile">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
@@ -284,18 +299,15 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   >
                     Appointment Details
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="medical-report"
-                    className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
-                  >
-                    Medical Report
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="appointment"
-                    className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
-                  >
-                    Appointment
-                  </TabsTrigger>
+                  {/* Only show Medical Report tab if appointment is COMPLETED */}
+                  {appointment.status === 'COMPLETED' && (
+                    <TabsTrigger
+                      value="medical-report"
+                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
+                    >
+                      Medical Report
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 <TabsContent value="appointment-details" className="mt-0">
@@ -468,59 +480,74 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
               </Tabs>
             </div>
 
-            {/* Right Panel - Patient Info */}
+            {/* Right Panel - Doctor Info (for patient view) */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                {/* Patient Header */}
-                <div className="flex items-center space-x-4 pb-6 border-b border-gray-100 mb-6">
-                  <Avatar className="w-16 h-16">
-                    <AvatarFallback className="bg-gray-200 text-gray-600 text-xl font-bold">
-                      {appointment.patientFullName ? 
-                        (appointment.patientFullName.split(" ")[0]?.[0] || '') + 
-                        (appointment.patientFullName.split(" ").pop()?.[0] || '') 
-                        : 'PT'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{appointment.patientFullName || appointment.patientName || 'Unknown'}</h3>
-                    {appointment.patientGender && (
-                      <p className="text-sm text-gray-500">{appointment.patientGender}</p>
-                    )}
+                {/* Doctor Header */}
+                <div className="flex items-center justify-between pb-6 border-b border-gray-100 mb-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="w-16 h-16">
+                      <AvatarFallback className="bg-gray-200 text-gray-600 text-xl font-bold">
+                        {appointment.doctorFullName ? 
+                          (appointment.doctorFullName.split(" ")[0]?.[0] || '') + 
+                          (appointment.doctorFullName.split(" ").pop()?.[0] || '') 
+                          : 'DR'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">{appointment.doctorFullName || appointment.doctorName || 'Unknown'}</h3>
+                      {appointment.doctorGender && (
+                        <p className="text-sm text-gray-500">{appointment.doctorGender}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Personal Info */}
+                {/* Doctor Info */}
                 <div className="py-6">
-                  <h3 className="text-base font-semibold text-gray-900 mb-4">Personal info</h3>
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">Doctor Information</h3>
                   <div className="space-y-4">
                     {/* Name */}
                     <div className="flex items-start space-x-3">
-                      <div className="rounded-full bg-[#e5f5f8] flex items-center justify-center h-10 w-10">
-                        <User className="w-5 h-5 text-[#128197]" />
+                      <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-teal-600" />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1">
                         <p className="text-xs text-gray-500">Name</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {appointment.patientFullName || appointment.patientName || 'Unknown'}
+                          {appointment.doctorFullName || appointment.doctorName || 'Unknown'}
                         </p>
                       </div>
                     </div>
 
-                    {/* Gender */}
-                    {appointment.patientGender && (
+                    {/* Title */}
+                    {appointment.doctorTitle && (
                       <div className="flex items-start space-x-3">
-                        <div className="rounded-full bg-[#e5f5f8] flex items-center justify-center h-10 w-10">
-                          <User className="w-5 h-5 text-[#128197]" />
+                        <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-teal-600" />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500">Title</p>
+                          <p className="text-sm font-medium text-gray-900">{appointment.doctorTitle}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gender */}
+                    {appointment.doctorGender && (
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-teal-600" />
+                        </div>
+                        <div className="flex-1">
                           <p className="text-xs text-gray-500">Gender</p>
-                          <p className="text-sm font-medium text-gray-900">{appointment.patientGender}</p>
+                          <p className="text-sm font-medium text-gray-900">{appointment.doctorGender}</p>
                         </div>
                       </div>
                     )}
 
                     {/* Phone Number */}
-                    {appointment.patientPhoneNumber && (
+                    {appointment.doctorPhoneNumber && (
                       <div className="flex items-start space-x-3">
                         <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
                           <svg
@@ -539,20 +566,46 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-gray-500">Phone Number</p>
-                          <p className="text-sm font-medium text-gray-900">{appointment.patientPhoneNumber}</p>
+                          <p className="text-sm font-medium text-gray-900">{appointment.doctorPhoneNumber}</p>
                         </div>
                       </div>
                     )}
 
-                    {/* Address */}
-                    {appointment.patientAddress && (
+                    {/* Workplace */}
+                    {appointment.doctorWorkplace && (
                       <div className="flex items-start space-x-3">
                         <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
                           <MapPin className="w-5 h-5 text-teal-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500">Address</p>
-                          <p className="text-sm font-medium text-gray-900">{appointment.patientAddress}</p>
+                          <p className="text-xs text-gray-500">Workplace</p>
+                          <p className="text-sm font-medium text-gray-900">{appointment.doctorWorkplace}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Specialties */}
+                    {appointment.doctorSpecialties && (
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                          <Activity className="w-5 h-5 text-teal-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 mb-2">Specialties</p>
+                          <div className="flex flex-wrap gap-1">
+                            {appointment.doctorSpecialties
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter((s) => s.length > 0)
+                              .map((specialty, index) => (
+                                <span
+                                  key={index}
+                                  className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded"
+                                >
+                                  {specialty}
+                                </span>
+                              ))}
+                          </div>
                         </div>
                       </div>
                     )}
