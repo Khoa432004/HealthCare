@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import MedicalReportTab from "@/components/medical-report-tab"
+import AppointmentHistoryTab from "@/components/appointment-history-tab"
 import { appointmentService, type Appointment } from "@/services/appointment.service"
 import { authService } from "@/services/auth.service"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -377,10 +378,10 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                     Medical Report
                   </TabsTrigger>
                   <TabsTrigger
-                    value="appointment"
+                    value="appointment-history"
                     className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
                   >
-                    Appointment
+                    Lịch sử khám
                   </TabsTrigger>
                 </TabsList>
 
@@ -550,6 +551,16 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
 
                 <TabsContent value="medical-report" className="mt-0">
                   <MedicalReportTab appointmentId={appointment.id} appointmentStatus={appointment.status} />
+                </TabsContent>
+
+                <TabsContent value="appointment-history" className="mt-0">
+                  {appointment?.patientId ? (
+                    <AppointmentHistoryTab patientId={appointment.patientId} />
+                  ) : (
+                    <div className="p-6 text-center text-gray-500">
+                      <p>Không tìm thấy thông tin bệnh nhân</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
