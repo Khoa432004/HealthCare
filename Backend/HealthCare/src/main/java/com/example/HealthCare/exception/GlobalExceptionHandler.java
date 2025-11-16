@@ -59,6 +59,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<Map<String, Object>> handleNullPointerException(NullPointerException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", "internal_error");
+        response.put("message", "An unexpected error occurred: NullPointerException");
+        
+        log.error("NullPointerException occurred: {}", ex.getMessage(), ex);
+        // Log stack trace to help debug
+        StackTraceElement[] stackTrace = ex.getStackTrace();
+        if (stackTrace != null && stackTrace.length > 0) {
+            log.error("NullPointerException at: {}:{}", stackTrace[0].getClassName(), stackTrace[0].getLineNumber());
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         String errorMessage = ex.getMessage();
