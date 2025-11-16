@@ -133,10 +133,10 @@ function ReportsContent() {
                     <User className="mr-2 h-3.5 w-3.5" />
                     <span className="text-sm">My Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  {/* <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-3.5 w-3.5" />
                     <span className="text-sm">Settings</span>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-3.5 w-3.5" />

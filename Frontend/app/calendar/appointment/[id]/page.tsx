@@ -377,12 +377,12 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/settings">
+                  {/* <Link href="/settings">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
                       <Settings className="w-4 h-4 text-[#16a1bd]" />
                       <span className="font-medium">Settings</span>
                     </DropdownMenuItem>
-                  </Link>
+                  </Link> */}
                   <DropdownMenuSeparator className="border-white/50" />
                   <DropdownMenuItem 
                     className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth"
