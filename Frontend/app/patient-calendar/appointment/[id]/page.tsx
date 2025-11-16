@@ -475,7 +475,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                 </TabsContent>
 
                 <TabsContent value="medical-report" className="mt-0">
-                  <MedicalReportTab appointmentId={appointment.id} />
+                  <MedicalReportTab appointmentId={appointment.id} appointmentStatus={appointment.status} />
                 </TabsContent>
               </Tabs>
             </div>

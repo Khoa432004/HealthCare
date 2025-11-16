@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit } from "lucide-react"
+import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,6 +36,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   const [activeTab, setActiveTab] = useState("appointment-details")
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isConfirming, setIsConfirming] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null)
   
   // Unwrap params using React.use()
@@ -96,10 +97,83 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
     return statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-700' }
   }
 
-  // Check if current user is doctor
-  const isDoctor = currentUser?.role === 'DOCTOR'
-  const isPatient = currentUser?.role === 'PATIENT'
+  // Check if current user is doctor (backend returns lowercase: "doctor", "patient", "admin")
+  const isDoctor = currentUser?.role?.toUpperCase() === 'DOCTOR' || currentUser?.role === 'doctor'
+  const isPatient = currentUser?.role?.toUpperCase() === 'PATIENT' || currentUser?.role === 'patient'
   const canEdit = isDoctor && appointment?.status === 'SCHEDULED'
+  
+  // Check if confirmation button should be shown
+  // Button is shown when: status = SCHEDULED, user is doctor, and user is assigned doctor
+  // Time validation is handled by backend when confirming
+  const canConfirm = (): boolean => {
+    // Debug logs
+    console.log('canConfirm check:', {
+      isDoctor,
+      hasAppointment: !!appointment,
+      appointmentStatus: appointment?.status,
+      currentUserId: currentUser?.id,
+      appointmentDoctorId: appointment?.doctorId,
+      userRole: currentUser?.role
+    })
+    
+    // Must be a doctor
+    if (!isDoctor || !appointment) {
+      console.log('canConfirm: false - not doctor or no appointment')
+      return false
+    }
+    
+    // Status must be SCHEDULED (check both uppercase and lowercase)
+    const status = appointment.status?.toUpperCase()
+    if (status !== 'SCHEDULED') {
+      console.log('canConfirm: false - status is not SCHEDULED, current status:', appointment.status)
+      return false
+    }
+    
+    // Current user must be the assigned doctor for this appointment
+    // Compare as strings to handle UUID format differences
+    const currentUserId = String(currentUser?.id || '').trim()
+    const appointmentDoctorId = String(appointment.doctorId || '').trim()
+    
+    if (currentUserId !== appointmentDoctorId) {
+      console.log('canConfirm: false - user is not assigned doctor', {
+        currentUserId,
+        appointmentDoctorId,
+        match: currentUserId === appointmentDoctorId
+      })
+      return false
+    }
+    
+    console.log('canConfirm: true - all conditions met')
+    return true
+  }
+  
+  // Handle confirm appointment
+  const handleConfirmAppointment = async () => {
+    if (!appointment) return
+    
+    try {
+      setIsConfirming(true)
+      const updatedAppointment = await appointmentService.confirmAppointment(appointment.id)
+      setAppointment(updatedAppointment)
+      
+      toast({
+        title: "Thành công",
+        description: "Đã xác nhận khám thành công. Bạn có thể tiếp tục với báo cáo y tế.",
+      })
+      
+      // Optionally switch to Medical Report tab
+      setActiveTab("medical-report")
+    } catch (error: any) {
+      console.error("Error confirming appointment:", error)
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể xác nhận khám. Vui lòng thử lại.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsConfirming(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -175,6 +249,18 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                 <Badge className={`${statusBadge.className} rounded-full px-4 py-1.5 text-sm font-medium`}>
                   {statusBadge.label}
                 </Badge>
+                {/* Confirm Appointment Button (only for doctor, when conditions are met) */}
+                {canConfirm() && (
+                  <Button 
+                    onClick={handleConfirmAppointment}
+                    disabled={isConfirming}
+                    className="ml-2 bg-green-600 hover:bg-green-700 text-white"
+                    size="sm"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {isConfirming ? "Đang xác nhận..." : "Xác nhận khám"}
+                  </Button>
+                )}
                 {/* Edit Button (only for doctor) */}
                 {canEdit && (
                   <Button variant="outline" size="sm" className="ml-2">
@@ -463,7 +549,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                 </TabsContent>
 
                 <TabsContent value="medical-report" className="mt-0">
-                  <MedicalReportTab appointmentId={appointment.id} />
+                  <MedicalReportTab appointmentId={appointment.id} appointmentStatus={appointment.status} />
                 </TabsContent>
               </Tabs>
             </div>

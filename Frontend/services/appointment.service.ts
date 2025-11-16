@@ -169,5 +169,34 @@ export const appointmentService = {
       throw new Error(errorMessage);
     }
   },
+
+  /**
+   * Confirm/start an appointment (change status to IN_PROCESS)
+   * @param appointmentId - Appointment ID
+   * @returns Updated appointment details
+   */
+  async confirmAppointment(appointmentId: string): Promise<Appointment> {
+    try {
+      const response: any = await apiClient.post(`/api/v1/appointments/${appointmentId}/confirm`);
+      
+      if (response.success && response.data) {
+        return response.data as Appointment;
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      console.error('Error confirming appointment:', error);
+      
+      // Extract error message from response
+      let errorMessage = 'Không thể xác nhận khám. Vui lòng thử lại.';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
 };
 
