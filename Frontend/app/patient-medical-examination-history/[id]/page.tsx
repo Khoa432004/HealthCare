@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { ArrowLeft, Download, Eye, User, Calendar, Stethoscope, FileText, Pill, AlertCircle } from "lucide-react"
+import { Eye, User, Calendar, Stethoscope, FileText, Pill, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -82,9 +82,6 @@ export default function MedicalReportDetail() {
     if (appointmentId) fetchReport()
   }, [appointmentId])
 
-  const handleDownloadPDF = () => {
-    alert(`Tải PDF báo cáo ${appointmentId}`)
-  }
 
   // const handleViewPrescription = () => {
   //   router.push(`/prescription/${appointmentId}`)
@@ -98,16 +95,6 @@ export default function MedicalReportDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/patient-medical-examination-history")}
-          className="mb-6 text-[#16a1bd] hover:text-[#0d6171]"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
-
         {/* Header */}
         <Card className="mb-6 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-[#16a1bd] to-[#0d6171] text-white">
@@ -290,13 +277,6 @@ export default function MedicalReportDetail() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4">
-          <Button size="lg" onClick={handleDownloadPDF} className="bg-[#16a1bd] hover:bg-[#0d6171]">
-            <Download className="w-5 h-5 mr-2" />
-            Tải PDF Báo Cáo
-          </Button>
-        </div>
       </div>
     </div>
   )

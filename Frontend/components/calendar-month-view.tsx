@@ -18,7 +18,7 @@ interface Event {
   doctorGender?: string
   patient?: string
   patientGender?: string
-  status: "upcoming" | "pending" | "cancelled" | "completed"
+  status: "upcoming" | "in_process" | "pending" | "cancelled" | "completed"
   location?: string
   reason?: string
   symptomsOnset?: string
@@ -52,7 +52,7 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
 
     // Map appointment status to event status
     // Backend returns lowercase: "scheduled", "canceled", "completed", "in_process"
-    const mapStatus = (status: AppointmentStatus): "upcoming" | "pending" | "cancelled" | "completed" => {
+    const mapStatus = (status: AppointmentStatus): "upcoming" | "in_process" | "pending" | "cancelled" | "completed" => {
       if (!status) {
         return 'pending'
       }
@@ -63,7 +63,7 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
         case 'SCHEDULED':
           return 'upcoming'
         case 'IN_PROCESS':
-          return 'upcoming'
+          return 'in_process'
         case 'CANCELED':
         case 'CANCELLED':
           return 'cancelled'
@@ -134,6 +134,8 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
     switch (status) {
       case "upcoming":
         return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-blue-50 text-blue-700 border-blue-300 border border-l-[3px] hover:bg-blue-100 transition-colors"
+      case "in_process":
+        return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-yellow-50 text-yellow-700 border-yellow-400 border border-l-[3px] hover:bg-yellow-100 transition-colors"
       case "pending":
         return "cursor-pointer w-full flex flex-col relative z-20 rounded-md px-2 py-1.5 bg-yellow-50 text-yellow-700 border-yellow-300 border border-l-[3px] hover:bg-yellow-100 transition-colors"
       case "cancelled":
@@ -151,6 +153,11 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
         return {
           text: "Up Coming",
           className: "bg-[#16A1BD] hover:bg-teal-600 text-white"
+        }
+      case "in_process":
+        return {
+          text: "In Process",
+          className: "bg-yellow-600 hover:bg-yellow-700 text-white"
         }
       case "pending":
         return {
@@ -404,7 +411,7 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
 
               {/* Footer with View Details button */}
               <div className="px-6 py-4 border-t border-gray-200">
-                <Link href={`/calendar/appointment/${selectedEvent.id}`} className="w-full">
+                <Link href={userRole === 'PATIENT' ? `/patient-calendar/appointment/${selectedEvent.id}` : `/calendar/appointment/${selectedEvent.id}`} className="w-full">
                   <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#e5f5f8] border border-[#0d6171] text-[#0d6171] " type="button">       
                     View details
                   </button>

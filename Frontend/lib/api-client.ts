@@ -72,17 +72,32 @@ class ApiClient {
         let responseText = ''
         try {
           responseText = await response.text()
-          console.error('API Error Response Text:', responseText)
-          console.error('API Error Response Status:', response.status)
-          console.error('API Error Response Headers:', Object.fromEntries(response.headers.entries()))
+          
+          // Only log detailed error info for non-400 errors (400 is usually validation/conflict which is expected)
+          if (response.status !== 400) {
+            console.error('API Error Response Text:', responseText)
+            console.error('API Error Response Status:', response.status)
+            console.error('API Error Response Headers:', Object.fromEntries(response.headers.entries()))
+          }
           
           if (responseText && responseText.trim()) {
             try {
-              errorData = JSON.parse(responseText)
-              // Spring Boot default error format: {"timestamp":"...","status":405,"error":"Method Not Allowed","path":"/api/..."}
-              // Extract message from Spring Boot error format
-              if (errorData.status && errorData.error && !errorData.message) {
-                errorData.message = `${errorData.error} for path ${errorData.path || 'unknown'}`
+              const parsed = JSON.parse(responseText)
+              // Only use parsed data if it has meaningful content
+              if (parsed && (parsed.message || parsed.error || parsed.details || parsed.errors || Object.keys(parsed).length > 0)) {
+                errorData = parsed
+                // Spring Boot default error format: {"timestamp":"...","status":405,"error":"Method Not Allowed","path":"/api/..."}
+                // Extract message from Spring Boot error format
+                if (errorData.status && errorData.error && !errorData.message) {
+                  errorData.message = `${errorData.error} for path ${errorData.path || 'unknown'}`
+                }
+              } else {
+                // Parsed but empty or invalid, use raw text
+                errorData = {
+                  error: 'parse_error',
+                  message: responseText,
+                  rawText: responseText
+                }
               }
             } catch (parseError) {
               // If JSON parse fails, use text as message
@@ -109,16 +124,28 @@ class ApiClient {
           }
         }
         
-        // If errorData is empty object, provide default message
-        if (Object.keys(errorData).length === 0) {
-          errorData = {
-            error: 'unknown_error',
-            message: `HTTP error! status: ${response.status}. Response was empty.`,
-            status: response.status
+        // If errorData is empty object or doesn't have message, provide default message
+        if (Object.keys(errorData).length === 0 || (!errorData.message && !errorData.details && !errorData.error)) {
+          // Try to use responseText as message if available
+          if (responseText && responseText.trim()) {
+            errorData = {
+              error: 'parse_error',
+              message: responseText,
+              rawText: responseText
+            }
+          } else {
+            errorData = {
+              error: 'unknown_error',
+              message: `HTTP error! status: ${response.status}. Response was empty.`,
+              status: response.status
+            }
           }
         }
         
-        console.error('API Error Response (parsed):', errorData)
+        // Only log non-400 errors to avoid console noise
+        if (response.status !== 400) {
+          console.error('API Error Response (parsed):', errorData)
+        }
         
         // Handle validation errors with details
         if (errorData.errors && typeof errorData.errors === 'object') {
@@ -129,7 +156,7 @@ class ApiClient {
         }
         
         // Provide more specific error messages for common status codes
-        let errorMessage = errorData.message || errorData.details
+        let errorMessage = errorData.message || errorData.details || errorData.rawText
         if (!errorMessage) {
           switch (response.status) {
             case 400:
@@ -154,14 +181,25 @@ class ApiClient {
               errorMessage = `HTTP error! status: ${response.status}`
           }
         }
-        throw new Error(errorMessage)
+        
+        // Create error object with message
+        const error = new Error(errorMessage)
+        // Add response status to error for better handling
+        ;(error as any).status = response.status
+        ;(error as any).isConflict = errorMessage.includes('đã có lịch hẹn') || 
+                                      errorMessage.includes('trùng') || 
+                                      errorMessage.includes('conflict')
+        throw error
       }
 
       const jsonData = await response.json()
       console.log('API Response Data:', jsonData)
       return jsonData
     } catch (error: any) {
-      console.error('API Request Error:', error)
+      // Don't log conflict errors (they are expected and handled)
+      if (!error.isConflict) {
+        console.error('API Request Error:', error)
+      }
       
       // Handle network errors
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
