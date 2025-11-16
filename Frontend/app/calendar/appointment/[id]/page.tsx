@@ -38,7 +38,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isConfirming, setIsConfirming] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ id: string; role: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; fullName: string } | null>(null)
   
   // Unwrap params using React.use()
   const { id } = use(params)
@@ -50,7 +50,11 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
         setIsLoading(true)
         const user = authService.getUserInfo()
         if (user) {
-          setCurrentUser({ id: user.id || "", role: user.role || "" })
+          setCurrentUser({ 
+            id: user.id || "", 
+            role: user.role || "",
+            fullName: user.fullName || ""
+          })
         }
         
         const data = await appointmentService.getAppointmentById(id)
@@ -70,6 +74,29 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
     
     loadAppointment()
   }, [id, router, toast])
+
+  // Helper function to get initials from fullName
+  const getInitials = (name: string): string => {
+    if (!name) return 'DR'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Clear local data and redirect anyway
+      authService.clearAuthData()
+      router.push('/login')
+    }
+  }
 
   // Format date and time
   const formatDateTime = (dateString: string) => {
@@ -316,17 +343,23 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   >
                     <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
                       <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="gradient-primary text-white font-semibold">LH</AvatarFallback>
+                      <AvatarFallback className="gradient-primary text-white font-semibold">
+                        {currentUser?.fullName ? getInitials(currentUser.fullName) : 'DR'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">Lê Thị Tuyết Hoa</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {currentUser?.fullName || 'Doctor'}
+                      </p>
                       <p className="text-xs text-gray-500">Doctor</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
                   <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">Lê Thị Tuyết Hoa</p>
+                    <p className="font-semibold text-gray-900">
+                      {currentUser?.fullName || 'Doctor'}
+                    </p>
                     <p className="text-xs text-gray-500 font-medium">Doctor</p>
                   </div>
                   <Link href="/my-profile">
@@ -342,7 +375,10 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
+                  <DropdownMenuItem 
+                    className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth"
+                    onClick={handleLogout}
+                  >
                     <span className="font-medium">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
