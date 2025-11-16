@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +32,7 @@ interface AppointmentDetailPageProps {
 
 export default function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [showNotifications, setShowNotifications] = useState(false)
   const [activeTab, setActiveTab] = useState("appointment-details")
@@ -42,6 +43,14 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   
   // Unwrap params using React.use()
   const { id } = use(params)
+
+  // Check for tab query parameter and set active tab
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'medical-report') {
+      setActiveTab('medical-report')
+    }
+  }, [searchParams])
 
   // Load appointment data
   useEffect(() => {
@@ -368,12 +377,12 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/settings">
+                  {/* <Link href="/settings">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
                       <Settings className="w-4 h-4 text-[#16a1bd]" />
                       <span className="font-medium">Settings</span>
                     </DropdownMenuItem>
-                  </Link>
+                  </Link> */}
                   <DropdownMenuSeparator className="border-white/50" />
                   <DropdownMenuItem 
                     className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth"

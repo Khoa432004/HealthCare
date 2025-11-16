@@ -477,10 +477,10 @@ export default function CalendarPage() {
                     <User className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
                     </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  {/* <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />

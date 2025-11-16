@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, User, Settings, LogOut } from "lucide-react"
+import { Search, Bell, LayoutDashboard, User, Settings, LogOut, RefreshCw, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,18 +15,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import DoctorSidebar from "@/components/doctor-sidebar"
-import DoctorMetricsCards from "@/components/doctor-metrics-cards"
-import AppointmentStatusChart from "@/components/appointment-status-chart"
-import AppointmentTrendChart from "@/components/appointment-trend-chart"
-import CriticalCasesTable from "@/components/critical-cases-table"
-import TodayAppointmentsSidebar from "@/components/today-appointments-sidebar"
-import PatientReviews from "@/components/patient-reviews"
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
+import { doctorStatisticsService, DoctorStatisticsFilter, DoctorStatistics } from "@/services/doctor-statistics.service"
+import DoctorStatisticsKPICards from "@/components/doctor-statistics-kpi-cards"
+import PendingReportsTable from "@/components/pending-reports-table"
+import StatisticsFilter from "@/components/statistics-filter"
 
-function DoctorDashboardContent() {
+function ReportsContent() {
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
+  const [statistics, setStatistics] = useState<DoctorStatistics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<DoctorStatisticsFilter>({ period: 'today' })
+  const [showFilter, setShowFilter] = useState(false)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -39,7 +40,31 @@ function DoctorDashboardContent() {
     }
   }, [])
 
-  // Helper function to get initials from fullName
+  useEffect(() => {
+    loadStatistics()
+  }, [filter])
+
+  const loadStatistics = async () => {
+    try {
+      setLoading(true)
+      const data = await doctorStatisticsService.getDoctorStatistics(filter)
+      setStatistics(data)
+    } catch (error) {
+      console.error('Error loading statistics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFilterChange = (newFilter: DoctorStatisticsFilter) => {
+    setFilter(newFilter)
+    setShowFilter(false)
+  }
+
+  const handleRefresh = () => {
+    loadStatistics()
+  }
+
   const getInitials = (name: string): string => {
     if (!name) return 'DR'
     const parts = name.trim().split(' ')
@@ -55,7 +80,6 @@ function DoctorDashboardContent() {
       router.push('/login')
     } catch (error) {
       console.error('Logout error:', error)
-      // Clear local data and redirect anyway
       authService.clearAuthData()
       router.push('/login')
     }
@@ -72,7 +96,7 @@ function DoctorDashboardContent() {
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <LayoutDashboard className="w-4 h-4 text-gray-700" />
-                <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+                <h1 className="text-lg font-semibold text-gray-900">Báo cáo</h1>
               </div>
             </div>
 
@@ -108,11 +132,11 @@ function DoctorDashboardContent() {
                   <DropdownMenuItem onClick={() => router.push('/my-profile')}>
                     <User className="mr-2 h-3.5 w-3.5" />
                     <span className="text-sm">My Profile</span>
-                    </DropdownMenuItem>
+                  </DropdownMenuItem>
                   {/* <DropdownMenuItem onClick={() => router.push('/settings')}>
                     <Settings className="mr-2 h-3.5 w-3.5" />
                     <span className="text-sm">Settings</span>
-                    </DropdownMenuItem> */}
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-3.5 w-3.5" />
@@ -124,84 +148,91 @@ function DoctorDashboardContent() {
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <div className="flex-1 flex">
-          {/* Main Dashboard Area */}
-          <div className="flex-1 px-4 pb-4">
-            <DoctorMetricsCards />
-
-            {/* Charts and Updates Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-              <div className="lg:col-span-1">
-                <AppointmentStatusChart />
+        {/* Statistics Content */}
+        <div className="flex-1 px-4 pb-4">
+          {/* Filter Toolbar */}
+          <div className="bg-white rounded-2xl shadow-soft-lg border-white/50 p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilter(!showFilter)}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Lọc</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2"
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Làm mới</span>
+                </Button>
               </div>
-
-              <div className="lg:col-span-2">
-                <div className="glass rounded-2xl shadow-soft-lg border-white/50 p-4 h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">New Update</h3>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">New Chats</span>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          12+
-                        </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Order Reviews - Lab Test</span>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          2+
-                        </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Order Reviews - Medical Imaging</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Notification</span>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          20+
-                        </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="text-sm text-gray-600">
+                {filter.period === 'today' && 'Hôm nay'}
+                {filter.period === 'yesterday' && 'Hôm qua'}
+                {filter.period === 'last7days' && '7 ngày gần đây'}
+                {filter.period === 'thisMonth' && 'Tháng này'}
+                {filter.period === 'custom' && `${filter.fromDate} - ${filter.toDate}`}
               </div>
             </div>
 
-            <CriticalCasesTable />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-              <AppointmentTrendChart />
-
-              <PatientReviews />
-            </div>
+            {/* Filter Panel */}
+            {showFilter && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <StatisticsFilter
+                  currentFilter={filter}
+                  onFilterChange={handleFilterChange}
+                />
+              </div>
+            )}
           </div>
 
-          <TodayAppointmentsSidebar />
+          {/* KPI Cards */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Đang tải...</div>
+            </div>
+          ) : statistics ? (
+            <>
+              <DoctorStatisticsKPICards statistics={statistics} />
+              
+              {/* Pending Reports Table */}
+              <div className="mt-4 bg-white rounded-2xl shadow-soft-lg border-white/50 p-4">
+                <h2 className="text-base font-semibold mb-4" style={{ color: '#16a1bd' }}>
+                  Ca khám chờ hoàn thành báo cáo
+                </h2>
+                <PendingReportsTable 
+                  appointments={statistics.pendingReports}
+                  onAppointmentClick={(appointmentId) => {
+                    // Navigate to appointment detail page with medical report tab (UC-06)
+                    router.push(`/calendar/appointment/${appointmentId}?tab=medical-report`)
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Không có dữ liệu</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-export default function DoctorDashboard() {
+export default function Reports() {
   return (
     <AuthGuard allowedRoles={['DOCTOR']}>
-      <DoctorDashboardContent />
+      <ReportsContent />
     </AuthGuard>
   )
 }
+

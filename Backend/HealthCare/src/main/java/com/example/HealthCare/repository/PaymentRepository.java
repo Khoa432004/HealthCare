@@ -22,5 +22,31 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
             @Param("fromDate") OffsetDateTime fromDate,
             @Param("toDate") OffsetDateTime toDate
     );
+
+    // UC-22: Sum revenue for a doctor's appointments in date range
+    @Query("SELECT COALESCE(SUM(p.totalAmount), 0) FROM Payment p " +
+           "JOIN p.appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND p.status = :status " +
+           "AND DATE(p.paymentTime) = DATE(:date)")
+    BigDecimal sumRevenueByDoctorIdAndDate(
+            @Param("doctorId") java.util.UUID doctorId,
+            @Param("status") PaymentStatus status,
+            @Param("date") OffsetDateTime date
+    );
+
+    // UC-22: Sum revenue for a doctor's appointments in date range (general)
+    @Query("SELECT COALESCE(SUM(p.totalAmount), 0) FROM Payment p " +
+           "JOIN p.appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND p.status = :status " +
+           "AND p.paymentTime >= :startDate " +
+           "AND p.paymentTime <= :endDate")
+    BigDecimal sumRevenueByDoctorIdAndDateRange(
+            @Param("doctorId") java.util.UUID doctorId,
+            @Param("status") PaymentStatus status,
+            @Param("startDate") OffsetDateTime startDate,
+            @Param("endDate") OffsetDateTime endDate
+    );
 }
 

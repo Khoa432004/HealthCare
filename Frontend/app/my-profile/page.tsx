@@ -957,7 +957,7 @@ function MyProfilePageContent() {
                     <User className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
                   </DropdownMenuItem>
-                  {userInfo?.role !== 'PATIENT' && (
+                  {/* {userInfo?.role !== 'PATIENT' && (
                     <>
                       <DropdownMenuItem onClick={() => router.push('/settings')}>
                         <Settings className="mr-2 h-4 w-4" />
@@ -965,7 +965,8 @@ function MyProfilePageContent() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
-                  )}
+                  )} */}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
