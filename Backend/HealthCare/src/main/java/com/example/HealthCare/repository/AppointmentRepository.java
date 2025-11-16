@@ -53,17 +53,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
 
     // For Medical Examination History
+    // UC-17: Get completed appointments with completed medical reports, sorted by completed_at DESC
     @Query("""
-        SELECT a FROM Appointment a
+        SELECT DISTINCT a FROM Appointment a
         JOIN FETCH a.doctor d
         JOIN FETCH d.doctorProfile dp 
         JOIN FETCH a.medicalReport mr
         WHERE a.patientId = :patientId
-        AND a.status = 'completed' 
-        AND mr.status = 'completed' 
-        ORDER BY a.scheduledStart DESC
+        AND a.status = :appointmentStatus
+        AND mr.status = :reportStatus
+        ORDER BY mr.completedAt DESC NULLS LAST, a.scheduledStart DESC
         """)
-    List<Appointment> findCompletedByPatientId(@Param("patientId") UUID patientId);
+    List<Appointment> findCompletedByPatientId(
+        @Param("patientId") UUID patientId,
+        @Param("appointmentStatus") com.example.HealthCare.enums.AppointmentStatus appointmentStatus,
+        @Param("reportStatus") com.example.HealthCare.enums.ReportStatus reportStatus
+    );
 
 
     @Query("""
