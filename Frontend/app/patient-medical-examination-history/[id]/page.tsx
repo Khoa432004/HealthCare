@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { Eye, User, Calendar, Stethoscope, FileText, Pill, AlertCircle } from "lucide-react"
+import { Eye, User, Calendar, Stethoscope, FileText, Pill, AlertCircle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -95,6 +95,14 @@ export default function MedicalReportDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
+        {/* Back Button */}
+          <Link
+              href={`/patient-medical-examination-history`}            
+              className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Link>
         {/* Header */}
         <Card className="mb-6 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-[#16a1bd] to-[#0d6171] text-white">
