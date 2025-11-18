@@ -32,8 +32,8 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
         System.out.println("MedicalExaminationHistoryService: Getting history for patientId: " + patientId);
         List<Appointment> appointments = appointmentRepository.findCompletedByPatientId(
             patientId, 
-            AppointmentStatus.COMPLETED, 
-            ReportStatus.COMPLETED
+            AppointmentStatus.completed, 
+            ReportStatus.completed
         );
         System.out.println("MedicalExaminationHistoryService: Found " + appointments.size() + " completed appointments");
 

@@ -4,6 +4,7 @@ public enum AppointmentStatus {
     SCHEDULED("scheduled"),
     CANCELED("canceled"),
     COMPLETED("completed"),
+    completed("completed"),
     IN_PROCESS("in_process");
 
     private final String value;
