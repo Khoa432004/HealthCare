@@ -76,9 +76,11 @@ interface DoctorDetailDto {
 type Step = 1 | 2 | 3
 
 export default function BookingPage() {
-  const [isLoadingSpecialists, setIsLoadingSpecialists] = useState(false)////////////
+  const amount=100000; // Ví dụ: 100,000 VND//dữ liệu mock
+  const [orderInfo, setOrderInfo] = useState("Thanh toan don hang #123");
 
 
+  const [isLoadingSpecialists, setIsLoadingSpecialists] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
@@ -224,16 +226,72 @@ export default function BookingPage() {
     }
   }
 
-  const handleConfirmAppointment = () => {
-    console.log("Appointment confirmed with data:", {
-      selectedDoctor,
-      selectedDate,
-      selectedTime,
-      formData,
-    })
-    // TODO: Send confirmation to backend
-  }
+const handleConfirmAppointment = async () => {
+    // 1. Chuẩn bị dữ liệu để gửi đi
+    const paymentData = new URLSearchParams();
+    paymentData.append('amount', amount.toString());
+    paymentData.append('orderInfo', orderInfo);
+    
+    // Nếu backend của bạn yêu cầu JSON thay vì x-www-form-urlencoded:
+    // const paymentData = { amount, orderInfo }; 
+    // và đặt header 'Content-Type': 'application/json'
 
+    try {
+        // 2. Gửi yêu cầu đến Backend (endpoint /submitOrder của Controller Java)
+        const response = await fetch('/submitOrder', { // Thay bằng URL chính xác của backend
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded', // Hoặc 'application/json'
+            },
+            body: paymentData.toString(), // Hoặc JSON.stringify(paymentData)
+            redirect: 'follow' // Quan trọng nếu server trả về redirect
+        });
+        
+        // 3. Xử lý phản hồi từ server
+        if (response.ok) {
+            // Trường hợp 1: Backend (Controller Java) đã trả về một lệnh redirect
+            // Trình duyệt sẽ tự động theo dõi redirect đó,
+            // nhưng nếu bạn cần lấy URL từ response:
+            
+            // Cách phổ biến khi sử dụng Spring: Server đã thực hiện redirect.
+            // Nếu bạn muốn lấy URL chuyển hướng cuối cùng từ Response Headers:
+            const vnpayUrl = response.url; // Đây là URL cuối cùng sau redirect (có thể không chính xác 100% nếu server trả về lệnh redirect 302)
+
+            // Cách an toàn hơn: Nếu backend trả về trực tiếp URL VNPay trong body (ví dụ: { vnpayUrl: "..." })
+            // const data = await response.json();
+            // const vnpayUrl = data.vnpayUrl;
+            
+            // Nếu backend chỉ trả về một lệnh redirect:
+            // Bạn chỉ cần đảm bảo hàm fetch được gọi, và trình duyệt sẽ tự động chuyển hướng.
+            
+            // CÁCH TỐT NHẤT: Kiểm tra xem server có trả về một URL rõ ràng hay không.
+            
+            // Vì Controller Java trả về `return "redirect:" + vnpayUrl;`,
+            // thông thường, bạn chỉ cần gọi fetch và trình duyệt sẽ tự động được chuyển hướng đến VNPay.
+            
+            // Nếu server đã chuyển hướng (HTTP 302), không cần thao tác gì thêm.
+            // Nếu server trả về URL trong body, bạn cần:
+            // window.location.href = vnpayUrl;
+            
+            // Kiểm tra trạng thái chuyển hướng
+            if (response.redirected) {
+                console.log("Đã được chuyển hướng tự động đến VNPay.");
+                // Không cần làm gì thêm
+            } else {
+                 // Xử lý nếu backend trả về URL trong body (ít phổ biến trong trường hợp này)
+                 // const data = await response.json();
+                 // window.location.href = data.vnpayUrl;
+            }
+
+        } else {
+            console.error("Lỗi khi tạo yêu cầu thanh toán:", response.statusText);
+            alert("Lỗi: Không thể khởi tạo thanh toán.");
+        }
+    } catch (error) {
+        console.error("Lỗi kết nối:", error);
+        alert("Lỗi kết nối server. Vui lòng thử lại.");
+    }
+};
   const filteredDoctors = doctors
   .filter((doc) => {
     const matchesSearch =
@@ -1014,21 +1072,23 @@ export default function BookingPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-4 justify-center pt-4">
-                    <Button
-                      onClick={handlePreviousStep}
-                      variant="outline"
-                      className="px-8 py-3 bg-transparent border border-gray-300"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleConfirmAppointment}
-                      className="px-16 py-3 bg-gray-300 hover:bg-gray-400 text-gray-500 rounded-full font-semibold cursor-not-allowed"
-                      disabled
-                    >
-                      Confirm And Pay
-                    </Button>
+                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10">
+                    <div className="flex gap-4 justify-center max-w-md mx-auto">
+                      <Button
+                        onClick={handlePreviousStep}
+                        variant="outline"
+                        className="flex-1 px-8 py-3 bg-transparent border border-gray-300 rounded-full"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleConfirmAppointment}
+                        className="flex-1 px-8 py-3 bg-[#16a1bd] hover:bg-[#0d6171] text-white rounded-full font-semibold disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        disabled // Giữ nguyên logic disable của bạn
+                      >
+                        Confirm And Pay
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
