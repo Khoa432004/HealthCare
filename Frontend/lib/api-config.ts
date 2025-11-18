@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   },
   APPOINTMENTS: {
     MY_APPOINTMENTS: '/api/v1/appointments/my-appointments',
+    CREATE: '/api/v1/appointments',
     BY_ID: (id: string) => `/api/v1/appointments/${id}`,
   },
   DOCTORS: {

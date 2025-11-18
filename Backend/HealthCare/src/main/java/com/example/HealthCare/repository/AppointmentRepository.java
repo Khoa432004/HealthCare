@@ -53,17 +53,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
 
     // For Medical Examination History
+    // UC-17: Get completed appointments with completed medical reports, sorted by completed_at DESC
     @Query("""
-        SELECT a FROM Appointment a
+        SELECT DISTINCT a FROM Appointment a
         JOIN FETCH a.doctor d
         JOIN FETCH d.doctorProfile dp 
         JOIN FETCH a.medicalReport mr
         WHERE a.patientId = :patientId
-        AND a.status = 'completed' 
-        AND mr.status = 'completed' 
-        ORDER BY a.scheduledStart DESC
+        AND a.status = :appointmentStatus
+        AND mr.status = :reportStatus
+        ORDER BY mr.completedAt DESC NULLS LAST, a.scheduledStart DESC
         """)
-    List<Appointment> findCompletedByPatientId(@Param("patientId") UUID patientId);
+    List<Appointment> findCompletedByPatientId(
+        @Param("patientId") UUID patientId,
+        @Param("appointmentStatus") com.example.HealthCare.enums.AppointmentStatus appointmentStatus,
+        @Param("reportStatus") com.example.HealthCare.enums.ReportStatus reportStatus
+    );
 
 
     @Query("""
@@ -90,6 +95,119 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         WHERE a.id = :appointmentId
         """)
     UserAccount inforPatientByAppointmentId(@Param("appointmentId") UUID appointmentId);
+
+    // Find appointment by ID with patient and doctor relations
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.id = :appointmentId
+        """)
+    Appointment findByIdWithRelations(@Param("appointmentId") UUID appointmentId);
+
+    // Check for conflicting appointments with patient
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.patientId = :patientId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForPatient(
+        @Param("patientId") UUID patientId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
+
+    // Check for conflicting appointments with doctor
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.patient p
+        JOIN FETCH a.doctor d
+        WHERE a.doctorId = :doctorId
+        AND a.status != :canceledStatus
+        AND (
+            (a.scheduledStart < :endTime AND a.scheduledEnd > :startTime)
+        )
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findConflictingAppointmentsForDoctor(
+        @Param("doctorId") UUID doctorId,
+        @Param("startTime") OffsetDateTime startTime,
+        @Param("endTime") OffsetDateTime endTime,
+        @Param("canceledStatus") AppointmentStatus canceledStatus
+    );
+
+    // UC-22: Count unique patients for a doctor in date range
+    @Query("SELECT COUNT(DISTINCT a.patientId) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND DATE(a.scheduledStart) = DATE(:date)")
+    Long countDistinctPatientsByDoctorIdAndDate(
+        @Param("doctorId") UUID doctorId,
+        @Param("date") OffsetDateTime date
+    );
+
+    // UC-22: Count unique patients for a doctor in date range (general)
+    @Query("SELECT COUNT(DISTINCT a.patientId) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate")
+    Long countDistinctPatientsByDoctorIdAndDateRange(
+        @Param("doctorId") UUID doctorId,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+
+    // UC-22: Count completed appointments for a doctor in date range
+    @Query("SELECT COUNT(a) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.status = :status " +
+           "AND DATE(a.scheduledStart) = DATE(:date)")
+    Long countCompletedAppointmentsByDoctorIdAndDate(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("date") OffsetDateTime date
+    );
+
+    // UC-22: Count completed appointments for a doctor in date range (general)
+    @Query("SELECT COUNT(a) FROM Appointment a " +
+           "WHERE a.doctorId = :doctorId " +
+           "AND a.status = :status " +
+           "AND a.scheduledStart >= :startDate " +
+           "AND a.scheduledStart <= :endDate")
+    Long countCompletedAppointmentsByDoctorIdAndDateRange(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
+
+    // UC-22: Find appointments waiting for report completion
+    // Conditions: status = IN_PROCESS, scheduled_start trong date range
+    // and (report doesn't exist OR report.status != COMPLETED)
+    @Query("""
+        SELECT DISTINCT a FROM Appointment a
+        LEFT JOIN FETCH a.medicalReport mr
+        JOIN FETCH a.patient p
+        WHERE a.doctorId = :doctorId
+        AND a.status = :status
+        AND a.scheduledStart >= :startDate
+        AND a.scheduledStart <= :endDate
+        AND (mr IS NULL OR mr.status != :completedReportStatus)
+        ORDER BY a.scheduledStart ASC
+        """)
+    List<Appointment> findPendingReportAppointments(
+        @Param("doctorId") UUID doctorId,
+        @Param("status") AppointmentStatus status,
+        @Param("completedReportStatus") com.example.HealthCare.enums.ReportStatus completedReportStatus,
+        @Param("startDate") OffsetDateTime startDate,
+        @Param("endDate") OffsetDateTime endDate
+    );
 
 }
 

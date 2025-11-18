@@ -43,36 +43,36 @@ const metrics = [
 
 export default function DoctorMetricsCards() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
       {metrics.map((metric, index) => (
-        <div key={index} className="glass rounded-3xl shadow-soft-md border-white/50 p-6 hover-lift">
-          <h3 className="text-sm font-semibold text-gray-600 mb-3">{metric.title}</h3>
+        <div key={index} className="glass rounded-2xl shadow-soft-md border-white/50 p-4 hover-lift">
+          <h3 className="text-xs font-semibold text-gray-600 mb-2">{metric.title}</h3>
 
-          <div className="flex items-baseline space-x-2 mb-2">
-            <span className="text-3xl font-bold bg-gradient-to-r from-[#1d2939] to-[#1d2939] bg-clip-text text-transparent">{metric.value}</span>
-            <span className="text-sm text-gray-500 font-medium">{metric.unit}</span>
+          <div className="flex items-baseline space-x-1.5 mb-2">
+            <span className="text-2xl font-bold bg-gradient-to-r from-[#1d2939] to-[#1d2939] bg-clip-text text-transparent">{metric.value}</span>
+            <span className="text-xs text-gray-500 font-medium">{metric.unit}</span>
           </div>
 
-          <div className="flex items-center space-x-1 mb-5">
+          <div className="flex items-center space-x-1 mb-3">
             {metric.trend === "up" ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-3.5 h-3.5 text-green-500" />
             ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
+              <TrendingDown className="w-3.5 h-3.5 text-red-500" />
             )}
-            <span className={`text-sm font-semibold ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}>
+            <span className={`text-xs font-semibold ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}>
               {metric.change}
             </span>
-            <span className="text-sm text-gray-500">{metric.changeText}</span>
+            <span className="text-xs text-gray-500">{metric.changeText}</span>
           </div>
 
-          <div className="h-14 flex items-end justify-between space-x-1">
+          <div className="h-12 flex items-end justify-between space-x-1">
             {metric.chartData.map((value, i) => {
               const maxValue = Math.max(...metric.chartData)
               const height = (value / maxValue) * 100
               return (
                 <div
                   key={i}
-                  className={`flex-1 rounded-t-xl transition-all duration-300 hover:scale-110 ${metric.trend === "up" ? "bg-gradient-to-t from-green-400 to-green-200 shadow-soft" : "bg-gradient-to-t from-red-400 to-red-200 shadow-soft"}`}
+                  className={`flex-1 rounded-t-lg transition-all duration-300 hover:scale-110 ${metric.trend === "up" ? "bg-gradient-to-t from-green-400 to-green-200 shadow-soft" : "bg-gradient-to-t from-red-400 to-red-200 shadow-soft"}`}
                   style={{ height: `${height}%` }}
                 />
               )
