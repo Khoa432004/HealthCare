@@ -30,10 +30,16 @@ public class AppointmentResponse {
     private String patientName;
     private String patientFullName;
     private String patientGender;
+    private String patientPhoneNumber;
+    private String patientAddress;
     
     // Doctor info
     private String doctorName;
     private String doctorFullName;
     private String doctorGender;
+    private String doctorTitle;
+    private String doctorPhoneNumber;
+    private String doctorWorkplace;
+    private String doctorSpecialties; // Comma-separated string
 }
 

@@ -12,11 +12,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.HealthCare.dto.request.CreateAppointmentRequest;
 import com.example.HealthCare.dto.response.AppointmentResponse;
+import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.AppointmentService;
@@ -76,6 +81,111 @@ public class AppointmentController {
             return ResponseEntity.ok(Map.of("success", true, "data", appointments));
         } catch (Exception e) {
             log.error("Error getting appointments", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Create a new appointment
+     * @param request - Appointment creation request
+     * @return Created appointment
+     */
+    @PostMapping
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentRequest request) {
+        try {
+            UUID doctorId = getCurrentUserId();
+            
+            // Validate that current user is a doctor
+            UserAccount doctor = userAccountRepository.findById(doctorId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (doctor.getRole() == null || !"DOCTOR".equalsIgnoreCase(doctor.getRole().getValue())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only doctors can create appointments"));
+            }
+            
+            AppointmentResponse appointment = appointmentService.createAppointment(request, doctorId);
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ResponseSuccess(HttpStatus.CREATED, "Appointment created successfully", appointment));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when creating appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Not found when creating appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get appointment by ID
+     * @param id - Appointment ID
+     * @return Appointment details
+     */
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> getAppointmentById(@PathVariable UUID id) {
+        try {
+            UUID userId = getCurrentUserId();
+            AppointmentResponse appointment = appointmentService.getAppointmentById(id, userId);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when getting appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "error", "forbidden", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Confirm/start an appointment (change status to IN_PROCESS)
+     * @param id - Appointment ID
+     * @return Updated appointment details
+     */
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> confirmAppointment(@PathVariable UUID id) {
+        try {
+            UUID doctorId = getCurrentUserId();
+            
+            // Validate that current user is a doctor
+            UserAccount doctor = userAccountRepository.findById(doctorId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (doctor.getRole() == null || !"DOCTOR".equalsIgnoreCase(doctor.getRole().getValue())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only doctors can confirm appointments"));
+            }
+            
+            AppointmentResponse appointment = appointmentService.confirmAppointment(id, doctorId);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found when confirming: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when confirming appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error confirming appointment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }

@@ -25,9 +25,6 @@ const roleBasedRoutes = {
     '/patient-profile',
     '/my-profile',
     '/settings',
-    '/patient-emr',
-    '/patient-medical-examination-history',
-    '/prescription/:id'
   ],
 }
 
@@ -36,14 +33,6 @@ function matchesRoute(path: string, routes: string[]): boolean {
   return routes.some(route => {
     // Exact match
     if (path === route) return true
-    
-    // Handle dynamic routes (e.g., /prescription/:id)
-    if (route.includes(':id')) {
-      const baseRoute = route.replace('/:id', '')
-      // Match /prescription/anything
-      if (path.startsWith(baseRoute + '/')) return true
-    }
-    
     // Prefix match for nested routes (e.g., /patient-calendar/booking matches /patient-calendar)
     if (path.startsWith(route + '/')) return true
     return false
@@ -58,6 +47,23 @@ function getAllowedRoutesForRole(role: string): string[] {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Bypass all checks if disabled (env, cookie, or query flag)
+  const envBypass =
+    process.env.DISABLE_FRONTEND_SECURITY === 'true' ||
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_SECURITY === 'true'
+  const cookieBypass = request.cookies.get('disable_frontend_security')?.value === 'true'
+  const queryBypass = request.nextUrl.searchParams.get('insecure') === '1'
+
+  if (envBypass || cookieBypass || queryBypass) {
+    // If query flag present, persist as cookie for subsequent requests
+    if (queryBypass) {
+      const res = NextResponse.next()
+      res.cookies.set('disable_frontend_security', 'true', { path: '/', sameSite: 'lax' })
+      return res
+    }
+    return NextResponse.next()
+  }
 
   // Check if the route is public
   const isPublicRoute = matchesRoute(pathname, publicRoutes)

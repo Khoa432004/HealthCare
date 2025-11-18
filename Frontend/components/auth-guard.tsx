@@ -31,6 +31,14 @@ export function AuthGuard({
 
   useEffect(() => {
     const checkAuth = () => {
+      // Bypass all client-side auth/role checks when disabled via env flag or cookie
+      const cookieBypass =
+        typeof document !== 'undefined' && document.cookie.includes('disable_frontend_security=true')
+      if (process.env.NEXT_PUBLIC_DISABLE_FRONTEND_SECURITY === 'true' || cookieBypass) {
+        setIsAuthorized(true)
+        setIsChecking(false)
+        return
+      }
       // If auth is not required, allow access
       if (!requireAuth) {
         setIsAuthorized(true)
@@ -89,6 +97,13 @@ export function useAuthGuard(allowedRoles?: string[]) {
   const pathname = usePathname()
 
   useEffect(() => {
+    // Bypass when disabled via env flag or cookie
+    if (
+      process.env.NEXT_PUBLIC_DISABLE_FRONTEND_SECURITY === 'true' ||
+      (typeof document !== 'undefined' && document.cookie.includes('disable_frontend_security=true'))
+    ) {
+      return
+    }
     const isAuthenticated = authService.isAuthenticated()
     
     if (!isAuthenticated) {

@@ -66,24 +66,24 @@ function PatientDashboardContent() {
       <PatientSidebar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
-        <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '12px' }}>
+        <header className="bg-white py-3 mx-3 mb-3" style={{ borderRadius: '14px', paddingLeft: '24px', paddingRight: '20px' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <LayoutDashboard className="w-5 h-5 text-gray-700" />
-                <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+                <LayoutDashboard className="w-4 h-4 text-gray-700" />
+                <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {/* Search */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                 <Input 
                   type="search"
                   placeholder="Search..." 
-                  className="pl-10 bg-gray-50 border-gray-200" 
+                  className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm" 
                 />
               </div>
 
@@ -93,26 +93,26 @@ function PatientDashboardContent() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
+                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+                    <Avatar className="w-7 h-7">
                       <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
+                      <AvatarFallback className="text-xs">{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
                     </Avatar>
                     <div className="text-left">
-                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
-                      <p className="text-xs text-gray-500">Bệnh nhân</p>
+                      <p className="text-xs font-medium">{userInfo?.fullName || 'Patient'}</p>
+                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
+                    <User className="mr-2 h-3.5 w-3.5" />
+                    <span className="text-sm">My Profile</span>
                     </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
+                    <LogOut className="mr-2 h-3.5 w-3.5" />
+                    <span className="text-sm">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -123,54 +123,54 @@ function PatientDashboardContent() {
         {/* Dashboard Content */}
         <div className="flex-1 flex">
           {/* Main Dashboard Area */}
-          <div className="flex-1 px-6 pb-6">
+          <div className="flex-1 px-4 pb-4">
             <PatientMetricsCards />
 
             {/* Charts and Updates Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
               <div className="lg:col-span-1">
                 <HealthMetricsChart />
               </div>
 
               <div className="lg:col-span-2">
-                <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 h-full">
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Health Updates</h3>
+                <div className="glass rounded-2xl shadow-soft-lg border-white/50 p-4 h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Health Updates</h3>
                 </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 glass rounded-2xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium">New Lab Results</span>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
+                      <span className="text-gray-700 font-medium text-sm">New Lab Results</span>
                         <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft">
+                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
                           3
                           </Badge>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                       </div>
                           </div>
 
-                    <div className="flex items-center justify-between p-4 glass rounded-2xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium">Upcoming Appointments</span>
+                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
+                      <span className="text-gray-700 font-medium text-sm">Upcoming Appointments</span>
                       <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft">
+                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
                           2
                         </Badge>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 glass rounded-2xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium">Medication Reminders</span>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
+                      <span className="text-gray-700 font-medium text-sm">Medication Reminders</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 glass rounded-2xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium">Health Tips</span>
+                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
+                      <span className="text-gray-700 font-medium text-sm">Health Tips</span>
                       <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft">
+                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
                           5
                         </Badge>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                       </div>
                     </div>
                   </div>
@@ -180,32 +180,32 @@ function PatientDashboardContent() {
 
             <MedicalHistoryTable />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
                   <LatestMeasurements />
 
-              <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Quick Actions</h3>
+              <div className="glass rounded-2xl shadow-soft-lg border-white/50 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Quick Actions</h3>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <Link href="/patient-calendar/booking">
-                    <Button className="h-20 flex flex-col items-center justify-center glass hover:bg-white transition-smooth w-full">
-                      <Calendar className="w-6 h-6 mb-2 text-[#16a1bd]" />
-                      <span className="text-sm font-medium">Book Appointment</span>
+                    <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth w-full">
+                      <Calendar className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
+                      <span className="text-xs font-medium">Book Appointment</span>
                     </Button>
                   </Link>
-                  <Button className="h-20 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <MessageSquare className="w-6 h-6 mb-2 text-[#16a1bd]" />
-                    <span className="text-sm font-medium">Chat with Doctor</span>
+                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
+                    <MessageSquare className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
+                    <span className="text-xs font-medium">Chat with Doctor</span>
                   </Button>
-                  <Button className="h-20 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <FileText className="w-6 h-6 mb-2 text-[#16a1bd]" />
-                    <span className="text-sm font-medium">View Reports</span>
+                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
+                    <FileText className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
+                    <span className="text-xs font-medium">View Reports</span>
                   </Button>
-                  <Button className="h-20 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <Activity className="w-6 h-6 mb-2 text-[#16a1bd]" />
-                    <span className="text-sm font-medium">Health Tracking</span>
+                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
+                    <Activity className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
+                    <span className="text-xs font-medium">Health Tracking</span>
                   </Button>
                 </div>
               </div>
