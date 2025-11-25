@@ -52,6 +52,8 @@ export const API_ENDPOINTS = {
   PATIENTS:{
     GET_MEDICAL_HISTORY: (patientId: string) => `/api/medicalexaminationhistory/${patientId}`,
     GET_MEDICAL_HISTORY_DETAIL: (appointmentId: string) => `/api/medicalexaminationhistory/detail/${appointmentId}`,
+    POST_PAYMENT: (orderTotal: number,orderInfo: string) => `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`,
+
   },
   MEDICAL_EXAMINATION_HISTORY: {
     GET_BY_PATIENT: (patientId: string) => `/api/medicalExaminationHistory/medicalexaminationhistory/${patientId}`,

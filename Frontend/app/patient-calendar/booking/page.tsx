@@ -107,7 +107,8 @@ export default function BookingPage() {
     agreeToShare: false,
   })
   const [fileName, setFileName] = useState("No file chosen")
-
+  const [confirmTerms, setConfirmTerms] = useState(false)
+API_ENDPOINTS
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
@@ -225,72 +226,40 @@ export default function BookingPage() {
       setFileName(file.name)
     }
   }
-
 const handleConfirmAppointment = async () => {
-    // 1. Chuẩn bị dữ liệu để gửi đi
-    const paymentData = new URLSearchParams();
-    paymentData.append('amount', amount.toString());
-    paymentData.append('orderInfo', orderInfo);
+  try {
+    const orderTotal = 100000; // đơn vị: VND
+    const orderInfo = "Thanh toan lich hen kham benh - Ma lich: ABC123";
+
+    // Prepare appointment data for storage
+    const time = selectedTime[selectedDoctor!] || '09:00';
+    const [hours, minutes] = time.split(':').map(Number);
+    const endHours = (hours + 1) % 24; // Add 1 hour for appointment duration
     
-    // Nếu backend của bạn yêu cầu JSON thay vì x-www-form-urlencoded:
-    // const paymentData = { amount, orderInfo }; 
-    // và đặt header 'Content-Type': 'application/json'
+    const appointmentData = {
+      doctorId: selectedDoctor,
+      // Format: ISO 8601 with timezone offset (e.g., 2025-11-08T14:00:00+07:00)
+      scheduledStart: selectedDate ? new Date(`${selectedDate}T${time}:00`).toISOString().replace('Z', '+07:00') : null,
+      scheduledEnd: selectedDate ? new Date(`${selectedDate}T${String(endHours).padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`).toISOString().replace('Z', '+07:00') : null,
+      reason: formData.appointmentReason,
+      symptomsOns: formData.symptomStartDate,
+      symptomsSever: formData.symptomSeverity,
+      currentMedication: formData.medication,
+    };
 
-    try {
-        // 2. Gửi yêu cầu đến Backend (endpoint /submitOrder của Controller Java)
-        const response = await fetch('/submitOrder', { // Thay bằng URL chính xác của backend
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded', // Hoặc 'application/json'
-            },
-            body: paymentData.toString(), // Hoặc JSON.stringify(paymentData)
-            redirect: 'follow' // Quan trọng nếu server trả về redirect
-        });
-        
-        // 3. Xử lý phản hồi từ server
-        if (response.ok) {
-            // Trường hợp 1: Backend (Controller Java) đã trả về một lệnh redirect
-            // Trình duyệt sẽ tự động theo dõi redirect đó,
-            // nhưng nếu bạn cần lấy URL từ response:
-            
-            // Cách phổ biến khi sử dụng Spring: Server đã thực hiện redirect.
-            // Nếu bạn muốn lấy URL chuyển hướng cuối cùng từ Response Headers:
-            const vnpayUrl = response.url; // Đây là URL cuối cùng sau redirect (có thể không chính xác 100% nếu server trả về lệnh redirect 302)
+    // Store appointment data in localStorage to be used after payment
+    localStorage.setItem("pendingAppointment", JSON.stringify(appointmentData));
 
-            // Cách an toàn hơn: Nếu backend trả về trực tiếp URL VNPay trong body (ví dụ: { vnpayUrl: "..." })
-            // const data = await response.json();
-            // const vnpayUrl = data.vnpayUrl;
-            
-            // Nếu backend chỉ trả về một lệnh redirect:
-            // Bạn chỉ cần đảm bảo hàm fetch được gọi, và trình duyệt sẽ tự động chuyển hướng.
-            
-            // CÁCH TỐT NHẤT: Kiểm tra xem server có trả về một URL rõ ràng hay không.
-            
-            // Vì Controller Java trả về `return "redirect:" + vnpayUrl;`,
-            // thông thường, bạn chỉ cần gọi fetch và trình duyệt sẽ tự động được chuyển hướng đến VNPay.
-            
-            // Nếu server đã chuyển hướng (HTTP 302), không cần thao tác gì thêm.
-            // Nếu server trả về URL trong body, bạn cần:
-            // window.location.href = vnpayUrl;
-            
-            // Kiểm tra trạng thái chuyển hướng
-            if (response.redirected) {
-                console.log("Đã được chuyển hướng tự động đến VNPay.");
-                // Không cần làm gì thêm
-            } else {
-                 // Xử lý nếu backend trả về URL trong body (ít phổ biến trong trường hợp này)
-                 // const data = await response.json();
-                 // window.location.href = data.vnpayUrl;
-            }
-
-        } else {
-            console.error("Lỗi khi tạo yêu cầu thanh toán:", response.statusText);
-            alert("Lỗi: Không thể khởi tạo thanh toán.");
-        }
-    } catch (error) {
-        console.error("Lỗi kết nối:", error);
-        alert("Lỗi kết nối server. Vui lòng thử lại.");
-    }
+    // Use full-page navigation (GET) to avoid CORS issues with redirects.
+    // The browser will naturally follow the server's redirect to VNPay.
+    const submitUrl = `http://localhost:8080/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`;
+    
+    // Open in the same window so user is redirected to VNPay
+    window.location.href = submitUrl;
+  } catch (error: any) {
+    console.error("Lỗi thanh toán:", error);
+    alert("Không thể kết nối tới cổng thanh toán. Vui lòng thử lại!\nChi tiết: " + error.message);
+  }
 };
   const filteredDoctors = doctors
   .filter((doc) => {
@@ -862,7 +831,7 @@ const handleConfirmAppointment = async () => {
               </div>
             ) : (
               // STEP 3: Confirm Appointment
-              <div className="mb-8">
+              <div className="mb-8 pb-32">
                 <div className="space-y-6">
                   {/* Appointment Summary Card */}
                   <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-2xl p-6 flex items-start justify-between border border-cyan-200">
@@ -1032,38 +1001,16 @@ const handleConfirmAppointment = async () => {
                     </div>
                   </div>
 
-                  {/* Payment Method */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900 mb-4">Payment method</p>
-                    <div className="space-y-3">
-                      {[
-                        { id: "momo", label: "MOMO", icon: "💳" },
-                        { id: "vnpay", label: "VNPAY", icon: "💳" },
-                        { id: "google", label: "GOOGLE PAY", icon: "🔵" },
-                        { id: "cash", label: "CASH AFTER VISIT", icon: "💵" },
-                      ].map((method) => (
-                        <div
-                          key={method.id}
-                          className="flex items-center justify-between p-3 hover:bg-blue-50 rounded-lg cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">{method.icon}</span>
-                            <span className="font-medium text-gray-900">{method.label}</span>
-                          </div>
-                          <input type="radio" name="payment" className="w-5 h-5 cursor-pointer" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Confirmation Checkbox */}
                   <div className="flex items-start gap-3 bg-white rounded-xl p-4 border border-gray-200">
                     <input
                       type="checkbox"
                       id="confirm-terms"
+                      checked={confirmTerms}
+                      onChange={(e) => setConfirmTerms(e.target.checked)}
                       className="w-5 h-5 rounded border-gray-300 text-[#16a1bd] cursor-pointer mt-0.5 flex-shrink-0"
                     />
-                    <label htmlFor="confirm-terms" className="text-sm text-gray-700 cursor-pointer">
+                    <label htmlFor="confirm-terms" className="text-sm text-gray-700 cursor-pointer flex-1">
                       I confirm{" "}
                       <Link href="#" className="text-[#16a1bd] hover:underline font-semibold">
                         Privacy Policy and Term of Use
@@ -1072,7 +1019,7 @@ const handleConfirmAppointment = async () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10">
+                  <div className="bg-white border-t border-gray-200 p-4 shadow-lg rounded-t-3xl mt-8">
                     <div className="flex gap-4 justify-center max-w-md mx-auto">
                       <Button
                         onClick={handlePreviousStep}
@@ -1083,8 +1030,8 @@ const handleConfirmAppointment = async () => {
                       </Button>
                       <Button
                         onClick={handleConfirmAppointment}
-                        className="flex-1 px-8 py-3 bg-[#16a1bd] hover:bg-[#0d6171] text-white rounded-full font-semibold disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                        disabled // Giữ nguyên logic disable của bạn
+                        className="flex-1 px-8 py-3 bg-[#16a1bd] hover:bg-[#0d6171] text-white rounded-full font-semibold disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+                        disabled={ !confirmTerms}
                       >
                         Confirm And Pay
                       </Button>
