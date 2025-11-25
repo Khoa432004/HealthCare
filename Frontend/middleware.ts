@@ -12,6 +12,7 @@ const publicRoutes = [
   '/forgot-password',
   '/reset-password',
   '/verify-otp',
+  '/payment-result',
 ]
 
 // Define role-based routes
@@ -28,7 +29,8 @@ const roleBasedRoutes = {
     '/patient-emr',
     '/patient-medical-examination-history',
     '/patient-medical-examination-history/[id]',
-    '/prescription'
+    '/prescription',
+    '/submitOrder'
   ],
 }
 

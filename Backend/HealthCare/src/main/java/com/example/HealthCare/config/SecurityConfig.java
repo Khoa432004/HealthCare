@@ -76,6 +76,8 @@ public class SecurityConfig {
 								"/api/auth/register/personal-info",
 								"/api/auth/register/personal-info/**",
 								"/api/auth/register/professional-info",
+									"/api/v1/vnpay/**",
+									"/vnpay-payment",
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
 								"/actuator/**",
