@@ -64,6 +64,42 @@ export default function PaymentResultPage() {
         throw new Error(errorData.message || "Failed to create appointment")
       }
 
+      // Parse created appointment to get its id
+      const respBody = await response.json()
+      const appointment = respBody?.data
+      const appointmentId = appointment?.id
+
+      // If VNPay params exist in URL, create payment record
+      const vnpTransactionNo = searchParams?.get("vnp_TransactionNo")
+      const vnpTxnRef = searchParams?.get("vnp_TxnRef")
+      const vnpPayDate = searchParams?.get("vnp_PayDate")
+      const vnpAmount = searchParams?.get("vnp_Amount")
+
+      if (appointmentId && vnpTransactionNo) {
+        try {
+          // VNPay amount is multiplied by 100 in the VNPay request
+          const totalAmount = vnpAmount ? Number(vnpAmount) / 100 : null
+
+          await fetch("http://localhost:8080/api/v1/payments", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+            body: JSON.stringify({
+              appointmentId,
+              totalAmount,
+              method: "vnpay",
+              status: "paid",
+              transactionId: vnpTransactionNo,
+              transactionRef: vnpTxnRef,
+            }),
+          })
+        } catch (payErr) {
+          console.error("Failed to persist payment record:", payErr)
+        }
+      }
+
       // Clear the stored appointment data
       localStorage.removeItem("pendingAppointment")
 

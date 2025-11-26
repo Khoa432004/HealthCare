@@ -232,15 +232,10 @@ const handleConfirmAppointment = async () => {
     const orderInfo = "Thanh toan lich hen kham benh - Ma lich: ABC123";
 
     // Prepare appointment data for storage
-    const time = selectedTime[selectedDoctor!] || '09:00';
-    const [hours, minutes] = time.split(':').map(Number);
-    const endHours = (hours + 1) % 24; // Add 1 hour for appointment duration
-    
     const appointmentData = {
       doctorId: selectedDoctor,
-      // Format: ISO 8601 with timezone offset (e.g., 2025-11-08T14:00:00+07:00)
-      scheduledStart: selectedDate ? new Date(`${selectedDate}T${time}:00`).toISOString().replace('Z', '+07:00') : null,
-      scheduledEnd: selectedDate ? new Date(`${selectedDate}T${String(endHours).padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`).toISOString().replace('Z', '+07:00') : null,
+      scheduledStart: selectedDate ? `${selectedDate}T${selectedTime[selectedDoctor!] || '09:00:00'}` : null,
+      scheduledEnd: selectedDate ? `${selectedDate}T${selectedTime[selectedDoctor!] ? String(parseInt(selectedTime[selectedDoctor!]?.split(':')[0] || '09') + 1).padStart(2, '0') + ':00:00' : '10:00:00'}` : null,
       reason: formData.appointmentReason,
       symptomsOns: formData.symptomStartDate,
       symptomsSever: formData.symptomSeverity,

@@ -48,6 +48,29 @@ public class DoctorScheduleRule extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", insertable = false, updatable = false)
     private UserAccount doctor;
+
+        /**
+         * Tiện ích: Lấy weekday từ java.time.LocalDate (1=Monday, 7=Sunday)
+         */
+        public static short getWeekdayFromDate(java.time.LocalDate date) {
+            int dayOfWeek = date.getDayOfWeek().getValue(); // 1=Monday, 7=Sunday
+            return (short) dayOfWeek;
+        }
+
+        /**
+         * @param rules Danh sách rule của bác sĩ
+         * @param date Ngày cần kiểm tra
+         * @return DoctorScheduleRule nếu có rảnh, null nếu không
+         */
+        public static DoctorScheduleRule getAvailableRuleForDate(java.util.List<DoctorScheduleRule> rules, java.time.LocalDate date) {
+            short weekday = getWeekdayFromDate(date);
+            for (DoctorScheduleRule rule : rules) {
+                if (rule.getWeekday() == weekday) {
+                    return rule;
+                }
+            }
+            return null;
+        }
 }
 
 

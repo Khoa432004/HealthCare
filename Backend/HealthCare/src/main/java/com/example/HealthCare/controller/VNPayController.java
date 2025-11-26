@@ -45,6 +45,7 @@ public class VNPayController {
         String paymentTime = request.getParameter("vnp_PayDate");
         String transactionId = request.getParameter("vnp_TransactionNo");
         String totalPrice = request.getParameter("vnp_Amount");
+        String txnRef = request.getParameter("vnp_TxnRef");
 
         model.addAttribute("orderId", orderInfo);
         model.addAttribute("totalPrice", totalPrice);
@@ -52,11 +53,18 @@ public class VNPayController {
         model.addAttribute("transactionId", transactionId);
 
         // Redirect user back to frontend with payment status so frontend can show a message
-        String frontendBase = "http://localhost:3000/patient-dashboard"; // adjust if your frontend runs on a different origin
+        // include VNPay params so frontend can persist payment history
+        String frontendBase = "http://localhost:3000/payment-result"; // adjust if your frontend runs on a different origin
         try {
             String encodedOrder = java.net.URLEncoder.encode(orderInfo == null ? "" : orderInfo, java.nio.charset.StandardCharsets.UTF_8.toString());
+            String encodedTxnId = java.net.URLEncoder.encode(transactionId == null ? "" : transactionId, java.nio.charset.StandardCharsets.UTF_8.toString());
+            String encodedTxnRef = java.net.URLEncoder.encode(txnRef == null ? "" : txnRef, java.nio.charset.StandardCharsets.UTF_8.toString());
+            String encodedPayDate = java.net.URLEncoder.encode(paymentTime == null ? "" : paymentTime, java.nio.charset.StandardCharsets.UTF_8.toString());
+            String encodedAmount = java.net.URLEncoder.encode(totalPrice == null ? "" : totalPrice, java.nio.charset.StandardCharsets.UTF_8.toString());
+
             String redirectUrl = frontendBase + (paymentStatus == 1 ? 
-                ("/?payment=success&orderInfo=" + encodedOrder) : ("/?payment=fail&orderInfo=" + encodedOrder));
+                ("?payment=success&orderInfo=" + encodedOrder + "&vnp_TransactionNo=" + encodedTxnId + "&vnp_TxnRef=" + encodedTxnRef + "&vnp_PayDate=" + encodedPayDate + "&vnp_Amount=" + encodedAmount)
+                : ("?payment=fail&orderInfo=" + encodedOrder));
             return "redirect:" + redirectUrl;
         } catch (Exception ex) {
             // Fallback to rendering local view if encoding fails
