@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
@@ -27,7 +27,9 @@ import { AuthGuard } from "@/components/auth-guard"
 
 function PatientDashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
+  const [paymentMessage, setPaymentMessage] = useState<string | null>(null)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -38,6 +40,27 @@ function PatientDashboardContent() {
       })
     }
   }, [])
+
+  // Show payment result notification if frontend was redirected with payment query
+  useEffect(() => {
+    try {
+      const payment = searchParams?.get('payment')
+      const orderInfo = searchParams?.get('orderInfo')
+      if (payment) {
+        if (payment === 'success') {
+          setPaymentMessage(`Thanh toán thành công${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`)
+        } else if (payment === 'fail') {
+          setPaymentMessage(`Thanh toán thất bại${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`)
+        }
+
+        // Remove query params from URL without reloading page
+        // replace to same path without query
+        router.replace('/patient-dashboard')
+      }
+    } catch (e) {
+      console.error('Error handling payment query params', e)
+    }
+  }, [searchParams, router])
 
   // Helper function to get initials from fullName
   const getInitials = (name: string): string => {
@@ -119,6 +142,21 @@ function PatientDashboardContent() {
             </div>
           </div>
         </header>
+
+        {/* Inline payment notification banner */}
+        {paymentMessage && (
+          <div className="mx-3 mb-3 p-3 rounded-lg shadow-sm bg-gradient-to-r from-green-50 to-green-100 border border-green-200 flex items-start justify-between">
+            <div className="text-sm font-medium text-green-800">{paymentMessage}</div>
+            <div>
+              <button
+                onClick={() => setPaymentMessage(null)}
+                className="text-sm text-green-700 font-semibold ml-4"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Content */}
         <div className="flex-1 flex">

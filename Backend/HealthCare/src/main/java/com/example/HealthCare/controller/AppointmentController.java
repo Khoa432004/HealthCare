@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HealthCare.dto.request.CreateAppointmentRequest;
+import com.example.HealthCare.dto.request.CreateAppointmentFromBookingRequest;
 import com.example.HealthCare.dto.response.AppointmentResponse;
 import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
@@ -186,6 +187,51 @@ public class AppointmentController {
                     .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
         } catch (Exception e) {
             log.error("Error confirming appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Patient booking endpoint - creates appointment from VNPay booking flow
+     * This endpoint is called by the frontend after successful payment
+     * @param request - Booking request with doctor ID, date, reason, symptoms etc.
+     * @return Created appointment
+     */
+    @PostMapping("/book-from-payment")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> bookAppointmentFromPayment(@RequestBody CreateAppointmentFromBookingRequest request) {
+        try {
+            UUID patientId = getCurrentUserId();
+            UserAccount patient = userAccountRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            
+            // Convert booking request to appointment creation request
+            CreateAppointmentRequest appointmentRequest = CreateAppointmentRequest.builder()
+                    .patientId(patientId)
+                    .scheduledStart(request.getScheduledStart())
+                    .scheduledEnd(request.getScheduledEnd())
+                    .reason(request.getReason())
+                    .symptomsOns(request.getSymptomsOns())
+                    .symptomsSever(request.getSymptomsSever())
+                    .currentMedication(request.getCurrentMedication())
+                    .build();
+            
+            // Create appointment with doctor ID as the appointment doctor
+            AppointmentResponse appointment = appointmentService.createAppointment(appointmentRequest, request.getDoctorId());
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ResponseSuccess(HttpStatus.CREATED, "Appointment created successfully", appointment));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when booking appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Not found when booking appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error booking appointment from payment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
