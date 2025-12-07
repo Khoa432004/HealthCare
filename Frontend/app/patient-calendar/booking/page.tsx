@@ -36,7 +36,7 @@ import {
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { PageLoadingSpinner } from "@/components/loading-spinner"
 import { apiClient } from "@/lib/api-client"
-import { API_ENDPOINTS } from "@/lib/api-config"
+import { API_ENDPOINTS, API_BASE_URL } from "@/lib/api-config"
 
 interface DoctorSummaryDto {
   id: string
@@ -228,28 +228,68 @@ API_ENDPOINTS
   }
 const handleConfirmAppointment = async () => {
   try {
-    const orderTotal = 100000; // đơn vị: VND
-    const orderInfo = "Thanh toan lich hen kham benh - Ma lich: ABC123";
+    // Compute order total from selected doctor's cost (fallback to example amount)
+    const parseCostToNumber = (costStr?: string) => {
+      if (!costStr) return 100000;
+      // Remove non-digit characters (commas, currency symbol) and parse
+      const numeric = costStr.replace(/[^0-9]/g, "");
+      const n = Number(numeric || 0);
+      return n > 0 ? n : 100000;
+    };
 
-    // Prepare appointment data for storage
+    const orderTotal = selectedDoctorData ? parseCostToNumber(selectedDoctorData.cost) : 100000; // VND
+    const orderInfo = `Thanh toan lich hen kham benh - Ma lich: ${selectedDoctor || 'N/A'}`;
+
+    // Helper: ensure time string has hours and minutes, return [hh, mm, ss]
+    const normalizeTimeParts = (time?: string) => {
+      if (!time) return ["09", "00", "00"];
+      const parts = time.split(":");
+      const hh = String(Number(parts[0] || "9")).padStart(2, "0");
+      const mm = String(Number(parts[1] || "0")).padStart(2, "0");
+      const ss = parts[2] ? String(Number(parts[2])).padStart(2, "0") : "00";
+      return [hh, mm, ss];
+    };
+
+    // Format to OffsetDateTime string with +07:00 (e.g., 2025-11-06T14:00:00+07:00)
+    const formatOffsetDateTime = (dateStr: string | null, timeStr?: string, offset = "+07:00") => {
+      if (!dateStr) return null;
+      const [hh, mm, ss] = normalizeTimeParts(timeStr);
+      return `${dateStr}T${hh}:${mm}:${ss}${offset}`;
+    };
+
+    const selectedTimeForDoctor = selectedDoctor ? selectedTime[selectedDoctor] || undefined : undefined;
+    // scheduledStart with seconds and offset
+    const scheduledStart = formatOffsetDateTime(selectedDate || null, selectedTimeForDoctor);
+
+    // scheduledEnd: add 1 hour to the start time (keep minutes/seconds)
+    let scheduledEnd = null;
+    if (selectedDate) {
+      const [hhStr, mmStr] = normalizeTimeParts(selectedTimeForDoctor);
+      const hh = (Number(hhStr) + 1) % 24;
+      const endH = String(hh).padStart(2, "0");
+      const endM = mmStr.padStart(2, "0");
+      scheduledEnd = `${selectedDate}T${endH}:${endM}:00+07:00`;
+    }
+
+    // Prepare appointment data for storage (use OffsetDateTime strings)
     const appointmentData = {
       doctorId: selectedDoctor,
-      scheduledStart: selectedDate ? `${selectedDate}T${selectedTime[selectedDoctor!] || '09:00:00'}` : null,
-      scheduledEnd: selectedDate ? `${selectedDate}T${selectedTime[selectedDoctor!] ? String(parseInt(selectedTime[selectedDoctor!]?.split(':')[0] || '09') + 1).padStart(2, '0') + ':00:00' : '10:00:00'}` : null,
+      scheduledStart,
+      scheduledEnd,
       reason: formData.appointmentReason,
       symptomsOns: formData.symptomStartDate,
       symptomsSever: formData.symptomSeverity,
       currentMedication: formData.medication,
+      // Include totalAmount so payment-result can persist Payment even if VNPay amount is missing
+      totalAmount: orderTotal,
     };
 
-    // Store appointment data in localStorage to be used after payment
     localStorage.setItem("pendingAppointment", JSON.stringify(appointmentData));
 
-    // Use full-page navigation (GET) to avoid CORS issues with redirects.
-    // The browser will naturally follow the server's redirect to VNPay.
-    const submitUrl = `http://localhost:8080/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`;
-    
-    // Open in the same window so user is redirected to VNPay
+
+    // Build full backend URL (API_ENDPOINTS are relative paths)
+    const submitUrl = `${API_BASE_URL}${API_ENDPOINTS.VNPAY.PAYMENT(orderTotal, orderInfo)}`;
+
     window.location.href = submitUrl;
   } catch (error: any) {
     console.error("Lỗi thanh toán:", error);
