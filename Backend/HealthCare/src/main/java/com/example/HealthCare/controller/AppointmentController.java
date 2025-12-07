@@ -26,6 +26,10 @@ import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.AppointmentService;
+import com.example.HealthCare.model.Payment;
+import com.example.HealthCare.enums.PaymentMethod;
+import com.example.HealthCare.enums.PaymentStatus;
+import com.example.HealthCare.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +42,9 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
     private final UserAccountRepository userAccountRepository;
+    private final PaymentRepository paymentRepository;
 
-    /**
-     * Get appointments for current user (doctor or patient)
-     * @param startDate - Optional start date filter (ISO 8601 format)
-     * @param endDate - Optional end date filter (ISO 8601 format)
-     * @return List of appointments
-     */
+
     @GetMapping("/my-appointments")
     @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
     public ResponseEntity<?> getMyAppointments(
@@ -87,11 +87,6 @@ public class AppointmentController {
         }
     }
 
-    /**
-     * Create a new appointment
-     * @param request - Appointment creation request
-     * @return Created appointment
-     */
     @PostMapping
     @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
     public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentRequest request) {
@@ -126,11 +121,7 @@ public class AppointmentController {
         }
     }
 
-    /**
-     * Get appointment by ID
-     * @param id - Appointment ID
-     * @return Appointment details
-     */
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
     public ResponseEntity<?> getAppointmentById(@PathVariable UUID id) {
@@ -219,7 +210,28 @@ public class AppointmentController {
             
             // Create appointment with doctor ID as the appointment doctor
             AppointmentResponse appointment = appointmentService.createAppointment(appointmentRequest, request.getDoctorId());
-            
+
+            // If payment information was provided in the booking request, persist a Payment record
+            try {
+                if (request.getTotalAmount() != null) {
+                    UUID appointmentId = appointment.getId();
+                    Payment payment = Payment.builder()
+                            .appointmentId(appointmentId)
+                            .amount(request.getTotalAmount())
+                            .discount(null)
+                            .tax(null)
+                            .totalAmount(request.getTotalAmount())
+                            .method(request.getMethod() != null ? PaymentMethod.fromValue(request.getMethod()) : PaymentMethod.VNPAY)
+                            .status(request.getStatus() != null ? PaymentStatus.fromValue(request.getStatus()) : PaymentStatus.PAID)
+                            .paymentTime(request.getPaymentTime() != null ? request.getPaymentTime() : OffsetDateTime.now())
+                            .build();
+
+                    paymentRepository.save(payment);
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to persist payment record after booking: {}", ex.getMessage());
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ResponseSuccess(HttpStatus.CREATED, "Appointment created successfully", appointment));
         } catch (com.example.HealthCare.exception.BadRequestException e) {

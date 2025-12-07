@@ -27,4 +27,12 @@ public class CreateAppointmentFromBookingRequest {
     private String symptomsOns;
     private String symptomsSever;
     private String currentMedication;
+    
+    // Optional payment fields (if provided, server will persist a Payment record)
+    private java.math.BigDecimal totalAmount;
+    private String method; // e.g., "vnpay"
+    private String status; // e.g., "paid"
+    private String transactionId;
+    private String transactionRef;
+    private OffsetDateTime paymentTime;
 }

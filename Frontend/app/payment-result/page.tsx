@@ -41,7 +41,37 @@ export default function PaymentResultPage() {
 
       const data = JSON.parse(appointmentData)
 
-      // Call the backend API to create appointment
+      // Extract VNPay params (if any) and include them in booking request so backend can persist Payment atomically
+      const vnpTransactionNo = searchParams?.get("vnp_TransactionNo")
+      const vnpTxnRef = searchParams?.get("vnp_TxnRef")
+      const vnpPayDate = searchParams?.get("vnp_PayDate")
+      const vnpAmount = searchParams?.get("vnp_Amount")
+
+      // VNPay amount is multiplied by 100 in the VNPay request
+      // Fallback to stored appointment totalAmount if VNPay didn't provide amount
+      const totalAmount = vnpAmount ? Number(vnpAmount) / 100 : (data.totalAmount ?? null)
+
+      // Try to parse VNPay pay date to an ISO datetime if possible; otherwise leave null
+      let paymentTime = null
+      if (vnpPayDate) {
+        try {
+          // VNPay typically returns vnp_PayDate in format yyyyMMddHHmmss
+          const s = vnpPayDate
+          if (/^\d{14}$/.test(s)) {
+            const y = s.substring(0, 4)
+            const m = s.substring(4, 6)
+            const d = s.substring(6, 8)
+            const hh = s.substring(8, 10)
+            const mm = s.substring(10, 12)
+            const ss = s.substring(12, 14)
+            paymentTime = `${y}-${m}-${d}T${hh}:${mm}:${ss}+07:00`
+          }
+        } catch (err) {
+          console.warn('Failed to parse vnp_PayDate', err)
+        }
+      }
+
+      // Call the backend API to create appointment (and optionally persist payment)
       const response = await fetch("http://localhost:8080/api/v1/appointments/book-from-payment", {
         method: "POST",
         headers: {
@@ -56,6 +86,13 @@ export default function PaymentResultPage() {
           symptomsOns: data.symptomsOns,
           symptomsSever: data.symptomsSever,
           currentMedication: data.currentMedication,
+          // payment fields
+          totalAmount,
+          method: vnpTransactionNo ? "vnpay" : undefined,
+          status: vnpTransactionNo ? "paid" : undefined,
+          transactionId: vnpTransactionNo || undefined,
+          transactionRef: vnpTxnRef || undefined,
+          paymentTime: paymentTime || undefined,
         }),
       })
 
@@ -69,36 +106,7 @@ export default function PaymentResultPage() {
       const appointment = respBody?.data
       const appointmentId = appointment?.id
 
-      // If VNPay params exist in URL, create payment record
-      const vnpTransactionNo = searchParams?.get("vnp_TransactionNo")
-      const vnpTxnRef = searchParams?.get("vnp_TxnRef")
-      const vnpPayDate = searchParams?.get("vnp_PayDate")
-      const vnpAmount = searchParams?.get("vnp_Amount")
-
-      if (appointmentId && vnpTransactionNo) {
-        try {
-          // VNPay amount is multiplied by 100 in the VNPay request
-          const totalAmount = vnpAmount ? Number(vnpAmount) / 100 : null
-
-          await fetch("http://localhost:8080/api/v1/payments", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-            body: JSON.stringify({
-              appointmentId,
-              totalAmount,
-              method: "vnpay",
-              status: "paid",
-              transactionId: vnpTransactionNo,
-              transactionRef: vnpTxnRef,
-            }),
-          })
-        } catch (payErr) {
-          console.error("Failed to persist payment record:", payErr)
-        }
-      }
+      // previously we used a separate /payments endpoint; now payment info is included in booking request
 
       // Clear the stored appointment data
       localStorage.removeItem("pendingAppointment")

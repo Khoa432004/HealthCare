@@ -58,6 +58,10 @@ export const API_ENDPOINTS = {
   MEDICAL_EXAMINATION_HISTORY: {
     GET_BY_PATIENT: (patientId: string) => `/api/medicalExaminationHistory/medicalexaminationhistory/${patientId}`,
   },
+  VNPAY: {
+    PAYMENT: (orderTotal: number, orderInfo: string)  => `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`,
+  }
+
 } as const
 
 // Token storage keys

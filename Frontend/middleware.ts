@@ -30,7 +30,8 @@ const roleBasedRoutes = {
     '/patient-medical-examination-history',
     '/patient-medical-examination-history/[id]',
     '/prescription',
-    '/submitOrder'
+    '/submitOrder',
+    '/patient-payment-history'
   ],
 }
 

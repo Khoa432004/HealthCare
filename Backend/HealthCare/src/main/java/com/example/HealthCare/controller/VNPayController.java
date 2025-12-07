@@ -52,9 +52,8 @@ public class VNPayController {
         model.addAttribute("paymentTime", paymentTime);
         model.addAttribute("transactionId", transactionId);
 
-        // Redirect user back to frontend with payment status so frontend can show a message
-        // include VNPay params so frontend can persist payment history
-        String frontendBase = "http://localhost:3000/payment-result"; // adjust if your frontend runs on a different origin
+
+        String frontendBase = "http://localhost:3000/payment-result"; 
         try {
             String encodedOrder = java.net.URLEncoder.encode(orderInfo == null ? "" : orderInfo, java.nio.charset.StandardCharsets.UTF_8.toString());
             String encodedTxnId = java.net.URLEncoder.encode(transactionId == null ? "" : transactionId, java.nio.charset.StandardCharsets.UTF_8.toString());

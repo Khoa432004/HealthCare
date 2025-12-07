@@ -19,35 +19,30 @@ import {
   Calendar,
   ClipboardList,
   History,
+  CreditCard as PaymentIcon,
 } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
       <PatientSidebar />      {/* Header */}
-      {/* <header className="border-b border-border bg-card top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-primary">Hồ Sơ Bệnh Án Điện Tử</h1>
-              <p className="text-sm text-muted-foreground">Mã BN: P001</p>
-            </div>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <History className="mr-2 h-4 w-4" />
-              Lịch sử khám bệnh
-            </Button>
-          </div>
-        </div>
-      </header> */}
 
       <main className="container mx-auto px-6 py-8">
         <div className="space-y-6">
-          <Link href="/patient-medical-examination-history">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <History className="mr-2 h-4 w-4" />
+          <div className="flex gap-4">
+            <Link href="/patient-medical-examination-history">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <History className="mr-2 h-4 w-4" />
                 Lịch sử khám bệnh
-            </Button>
-          </Link>
+              </Button>
+            </Link>
+            <Link href="/patient-payment-history">
+              <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Lịch sử thanh toán
+              </Button>
+            </Link>
+          </div>
           {/* Thông tin cá nhân */}
           <Card>
             <CardHeader>
