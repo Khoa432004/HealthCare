@@ -198,5 +198,117 @@ export const appointmentService = {
       throw new Error(errorMessage);
     }
   },
+
+  /**
+   * Reschedule an appointment (change scheduled start and end times)
+   * @param appointmentId - Appointment ID
+   * @param scheduledStart - New scheduled start time (ISO 8601 date string)
+   * @param scheduledEnd - New scheduled end time (ISO 8601 date string)
+   * @returns Updated appointment details
+   */
+  async rescheduleAppointment(
+    appointmentId: string,
+    scheduledStart: string,
+    scheduledEnd: string
+  ): Promise<Appointment> {
+    try {
+      const response: any = await apiClient.put(`/api/v1/appointments/${appointmentId}/reschedule`, {
+        scheduledStart,
+        scheduledEnd,
+      });
+      
+      if (response.success && response.data) {
+        return response.data as Appointment;
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      console.error('Error rescheduling appointment:', error);
+      
+      // Extract error message from response
+      let errorMessage = 'Không thể đổi lịch khám. Vui lòng thử lại.';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Get available time slots for a doctor on a specific date
+   * @param doctorId - Doctor ID
+   * @param date - Date in format yyyy-MM-dd
+   * @param excludeAppointmentId - Optional appointment ID to exclude from conflicts (for rescheduling)
+   * @returns Available slots
+   */
+  async getAvailableSlots(
+    doctorId: string,
+    date: string, // yyyy-MM-dd format
+    excludeAppointmentId?: string
+  ): Promise<{ availableSlots: Array<{ startTime: string; endTime: string; displayTime: string }> }> {
+    try {
+      let url = `/api/v1/appointments/available-slots?doctorId=${doctorId}&date=${date}`;
+      if (excludeAppointmentId) {
+        url += `&excludeAppointmentId=${excludeAppointmentId}`;
+      }
+      
+      const response: any = await apiClient.get(url);
+      
+      if (response.success && response.data) {
+        return response.data;
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      console.error('Error getting available slots:', error);
+      
+      // Extract error message from response
+      let errorMessage = 'Không thể tải khung giờ trống. Vui lòng thử lại.';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Cancel an appointment (patient only)
+   * @param appointmentId - Appointment ID
+   * @param cancellationReason - Optional reason for cancellation
+   * @returns Updated appointment details
+   */
+  async cancelAppointment(
+    appointmentId: string,
+    cancellationReason?: string
+  ): Promise<Appointment> {
+    try {
+      const requestBody = cancellationReason ? { cancellationReason } : {};
+      const response: any = await apiClient.put(`/api/v1/appointments/${appointmentId}/cancel`, requestBody);
+      
+      if (response.success && response.data) {
+        return response.data as Appointment;
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      console.error('Error canceling appointment:', error);
+      
+      // Extract error message from response
+      let errorMessage = 'Không thể hủy lịch khám. Vui lòng thử lại.';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
 };
 

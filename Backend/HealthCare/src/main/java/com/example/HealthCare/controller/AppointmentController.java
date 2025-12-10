@@ -1,5 +1,6 @@
 package com.example.HealthCare.controller;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HealthCare.dto.request.CreateAppointmentRequest;
 import com.example.HealthCare.dto.request.CreateAppointmentFromBookingRequest;
+import com.example.HealthCare.dto.request.RescheduleAppointmentRequest;
 import com.example.HealthCare.dto.response.AppointmentResponse;
+import com.example.HealthCare.dto.response.AvailableSlotsResponse;
 import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.UserAccountRepository;
@@ -244,6 +248,108 @@ public class AppointmentController {
                     .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
         } catch (Exception e) {
             log.error("Error booking appointment from payment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get available time slots for a doctor on a specific date
+     * @param doctorId - Doctor ID
+     * @param date - Date in format yyyy-MM-dd
+     * @param excludeAppointmentId - Optional appointment ID to exclude from conflicts (for rescheduling)
+     * @return Available slots
+     */
+    @GetMapping("/available-slots")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> getAvailableSlots(
+            @RequestParam UUID doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) UUID excludeAppointmentId) {
+        try {
+            AvailableSlotsResponse response = appointmentService.getAvailableSlots(doctorId, date, excludeAppointmentId);
+            return ResponseEntity.ok(Map.of("success", true, "data", response));
+        } catch (Exception e) {
+            log.error("Error getting available slots", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Cancel an appointment (patient only)
+     * @param id - Appointment ID
+     * @param request - Cancel request with optional cancellation reason
+     * @return Updated appointment details
+     */
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> cancelAppointment(@PathVariable UUID id, @RequestBody(required = false) Map<String, String> request) {
+        try {
+            UUID patientId = getCurrentUserId();
+            
+            // Validate that current user is a patient
+            UserAccount user = userAccountRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (user.getRole() == null || !"PATIENT".equalsIgnoreCase(user.getRole().getValue())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only patients can cancel appointments"));
+            }
+            
+            String cancellationReason = request != null ? request.get("cancellationReason") : null;
+            AppointmentResponse appointment = appointmentService.cancelAppointment(id, patientId, cancellationReason);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found when canceling: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when canceling appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error canceling appointment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Reschedule an appointment (patient only)
+     * @param id - Appointment ID
+     * @param request - Reschedule request with new scheduled start and end times
+     * @return Updated appointment details
+     */
+    @PutMapping("/{id}/reschedule")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    public ResponseEntity<?> rescheduleAppointment(@PathVariable UUID id, @RequestBody RescheduleAppointmentRequest request) {
+        try {
+            UUID patientId = getCurrentUserId();
+            
+            // Validate that current user is a patient
+            UserAccount user = userAccountRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (user.getRole() == null || !"PATIENT".equalsIgnoreCase(user.getRole().getValue())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Only patients can reschedule appointments"));
+            }
+            
+            AppointmentResponse appointment = appointmentService.rescheduleAppointment(id, patientId, request);
+            
+            return ResponseEntity.ok(Map.of("success", true, "data", appointment));
+        } catch (com.example.HealthCare.exception.NotFoundException e) {
+            log.error("Appointment not found when rescheduling: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "not_found", "message", e.getMessage()));
+        } catch (com.example.HealthCare.exception.BadRequestException e) {
+            log.error("Bad request when rescheduling appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "error", "bad_request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error rescheduling appointment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
