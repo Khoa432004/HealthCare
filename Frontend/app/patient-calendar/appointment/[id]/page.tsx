@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets } from "lucide-react"
+import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Clock, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import MedicalReportTab from "@/components/medical-report-tab"
+import { RescheduleAppointmentModal } from "@/components/reschedule-appointment-modal"
+import { CancelAppointmentModal } from "@/components/cancel-appointment-modal"
 import { appointmentService, type Appointment } from "@/services/appointment.service"
 import { authService } from "@/services/auth.service"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -37,6 +39,8 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string; fullName: string } | null>(null)
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
   
   // Unwrap params using React.use()
   const { id } = use(params)
@@ -122,6 +126,64 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
     return name.substring(0, 2).toUpperCase()
   }
 
+  // Check if reschedule button should be shown
+  // Button is shown when: status = SCHEDULED, user is patient, and >= 4 hours before scheduled start
+  const canReschedule = (): boolean => {
+    if (!appointment) return false
+    
+    // Status must be SCHEDULED
+    const status = appointment.status?.toUpperCase()
+    if (status !== 'SCHEDULED') {
+      return false
+    }
+    
+    // Must be at least 4 hours before scheduled start
+    const now = new Date()
+    const scheduledStart = new Date(appointment.scheduledStart)
+    const hoursUntilAppointment = (scheduledStart.getTime() - now.getTime()) / (1000 * 60 * 60)
+    
+    if (hoursUntilAppointment < 4) {
+      return false
+    }
+    
+    return true
+  }
+
+  // Check if cancel button should be shown
+  // Button is shown when: status = SCHEDULED, user is patient, and >= 8 hours before scheduled start
+  const canCancel = (): boolean => {
+    if (!appointment) return false
+    
+    // Status must be SCHEDULED
+    const status = appointment.status?.toUpperCase()
+    if (status !== 'SCHEDULED') {
+      return false
+    }
+    
+    // Must be at least 8 hours before scheduled start
+    const now = new Date()
+    const scheduledStart = new Date(appointment.scheduledStart)
+    const hoursUntilAppointment = (scheduledStart.getTime() - now.getTime()) / (1000 * 60 * 60)
+    
+    if (hoursUntilAppointment < 8) {
+      return false
+    }
+    
+    return true
+  }
+
+  // Handle reschedule success
+  const handleRescheduleSuccess = (updatedAppointment: Appointment) => {
+    setAppointment(updatedAppointment)
+    setShowRescheduleModal(false)
+  }
+
+  // Handle cancel success
+  const handleCancelSuccess = (updatedAppointment: Appointment) => {
+    setAppointment(updatedAppointment)
+    setShowCancelModal(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
@@ -196,6 +258,29 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                 <Badge className={`${statusBadge.className} rounded-full px-4 py-1.5 text-sm font-medium`}>
                   {statusBadge.label}
                 </Badge>
+                {/* Reschedule Button (only for patient, when conditions are met) */}
+                {canReschedule() && (
+                  <Button 
+                    onClick={() => setShowRescheduleModal(true)}
+                    className="ml-2 bg-teal-600 hover:bg-teal-700 text-white"
+                    size="sm"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Đổi lịch khám
+                  </Button>
+                )}
+                {/* Cancel Button (only for patient, when conditions are met) */}
+                {canCancel() && (
+                  <Button 
+                    onClick={() => setShowCancelModal(true)}
+                    variant="destructive"
+                    className="ml-2 bg-red-600 hover:bg-red-700 text-white"
+                    size="sm"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Hủy lịch khám
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -617,6 +702,24 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
           </div>
         </div>
       </div>
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && appointment && (
+        <RescheduleAppointmentModal
+          appointment={appointment}
+          onClose={() => setShowRescheduleModal(false)}
+          onSuccess={handleRescheduleSuccess}
+        />
+      )}
+
+      {/* Cancel Modal */}
+      {showCancelModal && appointment && (
+        <CancelAppointmentModal
+          appointment={appointment}
+          onClose={() => setShowCancelModal(false)}
+          onSuccess={handleCancelSuccess}
+        />
+      )}
     </div>
   )
 }

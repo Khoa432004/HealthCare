@@ -54,6 +54,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     // For Medical Examination History
     // UC-17: Get completed appointments with completed medical reports, sorted by completed_at DESC
+    // Query ensures: appointment.status = 'completed' AND medical_report.status = 'COMPLETED'
+    // Note: medical_report.status is stored as enum name 'COMPLETED' in database
     @Query("""
         SELECT DISTINCT a FROM Appointment a
         JOIN FETCH a.doctor d

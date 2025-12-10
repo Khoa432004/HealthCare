@@ -4,8 +4,12 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import java.time.LocalDate;
+
 import com.example.HealthCare.dto.request.CreateAppointmentRequest;
+import com.example.HealthCare.dto.request.RescheduleAppointmentRequest;
 import com.example.HealthCare.dto.response.AppointmentResponse;
+import com.example.HealthCare.dto.response.AvailableSlotsResponse;
 
 public interface AppointmentService {
     /**
@@ -46,5 +50,36 @@ public interface AppointmentService {
      * @throws BadRequestException if validation fails (not doctor, not assigned doctor, wrong status, wrong time)
      */
     AppointmentResponse confirmAppointment(UUID appointmentId, UUID doctorId);
+    
+    /**
+     * Reschedule an appointment (change scheduled start and end times)
+     * @param appointmentId - Appointment ID
+     * @param patientId - ID of the patient rescheduling (must be the owner)
+     * @param request - Reschedule request with new scheduled start and end times
+     * @return Updated appointment response
+     * @throws NotFoundException if appointment not found
+     * @throws BadRequestException if validation fails (not patient owner, wrong status, conflicts, less than 4 hours before)
+     */
+    AppointmentResponse rescheduleAppointment(UUID appointmentId, UUID patientId, RescheduleAppointmentRequest request);
+    
+    /**
+     * Get available time slots for a doctor on a specific date
+     * @param doctorId - Doctor ID
+     * @param date - Date to get available slots for
+     * @param excludeAppointmentId - Optional appointment ID to exclude from conflicts (for rescheduling)
+     * @return Available slots response
+     */
+    AvailableSlotsResponse getAvailableSlots(UUID doctorId, LocalDate date, UUID excludeAppointmentId);
+    
+    /**
+     * Cancel an appointment (patient only)
+     * @param appointmentId - Appointment ID
+     * @param patientId - ID of the patient canceling (must be the owner)
+     * @param cancellationReason - Optional reason for cancellation
+     * @return Updated appointment response
+     * @throws NotFoundException if appointment not found
+     * @throws BadRequestException if validation fails (not patient owner, wrong status, less than 8 hours before)
+     */
+    AppointmentResponse cancelAppointment(UUID appointmentId, UUID patientId, String cancellationReason);
 }
 
