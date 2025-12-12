@@ -25,5 +25,7 @@ public interface DoctorScheduleRuleRepository extends JpaRepository<DoctorSchedu
     // UC-22: Get average appointment cost for a doctor (or default if no rules exist)
     @Query("SELECT COALESCE(AVG(r.appointmentCost), 150000) FROM DoctorScheduleRule r WHERE r.doctorId = :doctorId")
     BigDecimal getAverageAppointmentCostByDoctorId(@Param("doctorId") UUID doctorId);
+
+    List<DoctorScheduleRule> findAllById(UUID doctorId);
 }
 

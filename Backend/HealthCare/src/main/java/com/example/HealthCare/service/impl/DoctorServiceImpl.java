@@ -6,8 +6,10 @@ import com.example.HealthCare.dto.request.UpdateProfessionalInfoRequest;
 import com.example.HealthCare.dto.response.ProfessionalInfoResponse;
 import com.example.HealthCare.model.DoctorExperience;
 import com.example.HealthCare.model.DoctorProfile;
+import com.example.HealthCare.model.DoctorScheduleRule;
 import com.example.HealthCare.repository.DoctorExperienceRepository;
 import com.example.HealthCare.repository.DoctorProfileRepository;
+import com.example.HealthCare.repository.DoctorScheduleRuleRepository;
 import com.example.HealthCare.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,17 +30,36 @@ public class DoctorServiceImpl implements DoctorService {
 
         private final DoctorProfileRepository doctorProfileRepository;
         private final DoctorExperienceRepository doctorExperienceRepository;
+        private final DoctorScheduleRuleRepository doctorScheduleRuleRepository;
 
 
         private String formatPrice(BigDecimal price) {
         if (price == null) return "0đ";
         NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
         return formatter.format(price) + "đ / visit";
-    }
+        }
+        private List<String> generateAvailableTimes(UUID doctorId, LocalDate date) {
+            if (date == null) {
+                return List.of();
+            }
 
+            List<DoctorScheduleRule> rules = doctorScheduleRuleRepository
+                .findByDoctorIdOrderByWeekdayAscStartTimeAsc(doctorId);
+
+            List<DoctorScheduleRule> matchingRules = DoctorScheduleRule.getAvailableRulesForDate(rules, date);
+            if (matchingRules.isEmpty()) {
+                return List.of();
+            }
+            return matchingRules.stream()
+                .map(rule -> rule.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")))
+                .sorted()
+                .toList(); 
+        }
+        
         @Override
-        public List getAllDoctors(String searchQuery) {
+        public List getAllDoctors(String searchQuery, LocalDate datetime) {
                 List<DoctorProfile> doctors;
+                // LocalDate testDate = LocalDate.of(2025, 12, 2); // 15-2-2025
 
                 if (searchQuery == null || searchQuery.trim().isEmpty()) {
                 doctors = doctorProfileRepository.findAll();
@@ -56,14 +79,14 @@ public class DoctorServiceImpl implements DoctorService {
                                 .reviews(100)
                                 .title(doc.getTitle())
                                 .clinic(doc.getWorkplaceName())
-                        
                                 .cost(formatPrice(doc.getConsultationFee()))
-                                .availableTimes(List.of("10:00", "10:30", "14:00"))
+                                .availableTimes(generateAvailableTimes(doc.getUserId(), datetime))
                                 .experience(doc.getGraduationYear() != null ?
                                         (java.time.Year.now().getValue() - doc.getGraduationYear()) + " years" : "N/A")
                                 .consultations("30 visits")
                                 .build();
                         })
+                        .filter(dto -> dto.getAvailableTimes() != null && !dto.getAvailableTimes().isEmpty())
                         .collect(Collectors.toList());
         }
 

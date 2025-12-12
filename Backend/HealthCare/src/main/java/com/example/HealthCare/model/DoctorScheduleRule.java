@@ -1,8 +1,11 @@
 package com.example.HealthCare.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -62,14 +65,15 @@ public class DoctorScheduleRule extends BaseEntity {
          * @param date Ngày cần kiểm tra
          * @return DoctorScheduleRule nếu có rảnh, null nếu không
          */
-        public static DoctorScheduleRule getAvailableRuleForDate(java.util.List<DoctorScheduleRule> rules, java.time.LocalDate date) {
-            short weekday = getWeekdayFromDate(date);
-            for (DoctorScheduleRule rule : rules) {
-                if (rule.getWeekday() == weekday) {
-                    return rule;
-                }
+        public static List<DoctorScheduleRule> getAvailableRulesForDate(List<DoctorScheduleRule> rules, LocalDate date) {
+            if (date == null || rules == null || rules.isEmpty()) {
+                return List.of();
             }
-            return null;
+
+            short weekday = getWeekdayFromDate(date);
+            return rules.stream()
+                        .filter(rule -> rule.getWeekday() == weekday)
+                        .collect(Collectors.toList());
         }
 }
 

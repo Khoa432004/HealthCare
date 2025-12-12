@@ -1,5 +1,6 @@
 package com.example.HealthCare.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -48,11 +49,14 @@ public class DoctorController {
     private final UserAccountRepository userAccountRepository;
 
     // GET /api/doctors?search=Le
-    @GetMapping
+    @GetMapping("/available")
     @PreAuthorize("hasAuthority('VIEW_DOCTORS')")
     public ResponseEntity<List<DoctorSummaryDto>> getDoctors(
-            @RequestParam(required = false) String search) {
-        List<DoctorSummaryDto> doctors = doctorService.getAllDoctors(search);
+            @RequestParam(required = false) String search,
+         @RequestParam(required = false) LocalDate datetime
+        ) {
+            System.out.println("dsdsds" + datetime);
+        List<DoctorSummaryDto> doctors = doctorService.getAllDoctors(search,datetime);
         return ResponseEntity.ok(doctors);
     }
 
