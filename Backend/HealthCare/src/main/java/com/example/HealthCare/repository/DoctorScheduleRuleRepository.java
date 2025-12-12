@@ -3,13 +3,12 @@ package com.example.HealthCare.repository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import java.util.Optional;
 import com.example.HealthCare.model.DoctorScheduleRule;
 
 @Repository
@@ -27,5 +26,7 @@ public interface DoctorScheduleRuleRepository extends JpaRepository<DoctorSchedu
     BigDecimal getAverageAppointmentCostByDoctorId(@Param("doctorId") UUID doctorId);
 
     List<DoctorScheduleRule> findAllById(UUID doctorId);
+
+    Optional<DoctorScheduleRule> findFirstByDoctorId(UUID doctorId);
 }
 
