@@ -46,7 +46,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/api/v1/appointments/${id}`,
   },
   DOCTORS: {
-    GET_ALL: '/api/doctors',
+    GET_ALL_AVAILABLE: '/api/doctors/available',
     GET_BY_ID: (id: string) => `/api/doctors/${id}`,
   },
   PATIENTS:{

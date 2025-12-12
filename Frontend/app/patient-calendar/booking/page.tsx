@@ -84,13 +84,18 @@ export default function BookingPage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+  const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [selectedTime, setSelectedTime] = useState<Record<string, string | null>>({})
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [doctors, setDoctors] = useState<DoctorSummaryDto[]>([])
   const [selectedDoctorData, setSelectedDoctorData] = useState<DoctorDetailDto | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [selectedFilterDate, setSelectedFilterDate] = useState<string>("")
+
   const [filters, setFilters] = useState({
     province: "",
     specialty: "",
@@ -163,9 +168,20 @@ API_ENDPOINTS
     const loadDoctors = async () => {
       setIsLoadingSpecialists(true) // Chỉ loading phần specialists
       try {
-        const endpoint = searchQuery 
-          ? `${API_ENDPOINTS.DOCTORS.GET_ALL}?search=${encodeURIComponent(searchQuery)}`
-          : API_ENDPOINTS.DOCTORS.GET_ALL
+        // 1. Khởi tạo params
+      const params = new URLSearchParams();
+      
+      // Thêm search nếu có gõ
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      
+      // 2. Đồng bộ với tham số 'datetime' của Backend
+      // selectedDate từ <input type="date"> mặc định là "YYYY-MM-DD"
+      if (selectedDate) {
+        params.append('datetime', selectedDate); 
+      }
+        const endpoint = `${API_ENDPOINTS.DOCTORS.GET_ALL_AVAILABLE}${params.toString() ? `?${params.toString()}` : ''}`;
         
         const summaryRes: DoctorSummaryDto[] = await apiClient.get(endpoint)
         setDoctors(Array.isArray(summaryRes) ? summaryRes : [])
@@ -185,7 +201,7 @@ API_ENDPOINTS
     }
 
     loadDoctors()
-  }, [searchQuery])
+  }, [searchQuery, selectedDate])
 
   useEffect(() => {
     if (!selectedDoctor) {
@@ -514,6 +530,13 @@ const handleConfirmAppointment = async () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Our Specialists</h2>
                   <div className="flex items-center space-x-4">
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        // className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                        placeholder="DD/MM/YYYY"
+                      />
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 z-10" />
                       <Input
@@ -589,6 +612,17 @@ const handleConfirmAppointment = async () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {filteredDoctors.length === 0 && (
+                      <div className="col-span-full py-10 text-center glass rounded-2xl border-2 border-dashed border-slate-200">
+                        <p className="text-gray-500">Rất tiếc, không có bác sĩ nào có lịch trống vào ngày này.</p>
+                        <button 
+                          onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                          className="text-[#16a1bd] font-semibold mt-2 underline"
+                        >
+                          Xem lịch hôm nay
+                        </button>
+                      </div>
+                    )}
                   {filteredDoctors.map((doctor) => (
                     <div
                       key={doctor.id}
@@ -735,7 +769,8 @@ const handleConfirmAppointment = async () => {
                       <input
                         type="date"
                         value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        readOnly
+                        
                         className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
                         placeholder="DD/MM/YYYY"
                       />
