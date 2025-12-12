@@ -29,11 +29,13 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
     public List<MedicalExaminationHistorySummaryDto> getHistoryByPatientId(UUID patientId) {
         // UC-17: Get completed appointments with completed medical reports
         // Sorted by completed_at DESC (default), then by scheduledStart DESC
+        // Query: appointment.status = 'completed' AND medical_report.status = 'completed'
+        // JPA will automatically convert enum to string using converter when comparing with database
         System.out.println("MedicalExaminationHistoryService: Getting history for patientId: " + patientId);
         List<Appointment> appointments = appointmentRepository.findCompletedByPatientId(
             patientId, 
-            AppointmentStatus.completed, 
-            ReportStatus.completed
+            AppointmentStatus.COMPLETED,  // Enum value - converter will convert to "completed" string
+            ReportStatus.COMPLETED       // Enum value - converter will convert to "completed" string
         );
         System.out.println("MedicalExaminationHistoryService: Found " + appointments.size() + " completed appointments");
 
