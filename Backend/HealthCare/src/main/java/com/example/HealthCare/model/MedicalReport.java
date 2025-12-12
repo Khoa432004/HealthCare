@@ -5,11 +5,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.example.HealthCare.enums.ReportStatus;
+import com.example.HealthCare.converter.ReportStatusConverter;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -36,7 +36,7 @@ public class MedicalReport extends BaseEntity {
     @Column(name = "doctor_id", nullable = false)
     private UUID doctorId;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ReportStatusConverter.class)
     @Column(name = "status", nullable = false)
     @lombok.Builder.Default
     private ReportStatus status = ReportStatus.DRAFT;
