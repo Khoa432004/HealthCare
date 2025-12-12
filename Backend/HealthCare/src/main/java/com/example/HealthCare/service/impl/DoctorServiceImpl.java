@@ -12,6 +12,8 @@ import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.repository.DoctorScheduleRuleRepository;
 import com.example.HealthCare.service.DoctorService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,7 +72,9 @@ public class DoctorServiceImpl implements DoctorService {
                 return doctors.stream()
                         .map(doc -> {
                         String fullName = doc.getUserAccount() != null ? doc.getUserAccount().getFullName() : "Unknown Doctor";
-
+                        BigDecimal cost = doctorScheduleRuleRepository.findFirstByDoctorId(doc.getUserId()) // lấy giá từ doctorScheduleRule
+                                                                    .map(DoctorScheduleRule::getAppointmentCost)
+                                                                    .orElse(new BigDecimal("150000"));       
                         return DoctorSummaryDto.builder()
                                 .id(doc.getUserId().toString())
                                 .name(doc.getTitle() + " " + fullName)
@@ -79,7 +83,7 @@ public class DoctorServiceImpl implements DoctorService {
                                 .reviews(100)
                                 .title(doc.getTitle())
                                 .clinic(doc.getWorkplaceName())
-                                .cost(formatPrice(doc.getConsultationFee()))
+                                .cost(formatPrice(cost))
                                 .availableTimes(generateAvailableTimes(doc.getUserId(), datetime))
                                 .experience(doc.getGraduationYear() != null ?
                                         (java.time.Year.now().getValue() - doc.getGraduationYear()) + " years" : "N/A")
