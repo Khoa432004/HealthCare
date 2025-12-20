@@ -48,6 +48,9 @@ public class Payment extends BaseEntity {
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "appointment_cost")
+    private BigDecimal appointmentCost;
+
     @Convert(converter = PaymentMethodConverter.class)
     @Column(name = "method", nullable = false)
     private PaymentMethod method;

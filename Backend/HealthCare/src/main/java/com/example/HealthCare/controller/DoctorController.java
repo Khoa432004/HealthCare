@@ -32,6 +32,8 @@ import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.DoctorService;
+import com.example.HealthCare.service.DoctorScheduleService;
+import com.example.HealthCare.dto.response.WorkScheduleResponse;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
 import com.example.HealthCare.service.UserService;
 
@@ -45,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DoctorController {
 
     private final DoctorService doctorService;
+    private final DoctorScheduleService doctorScheduleService;
     private final UserService userService;
     private final UserAccountRepository userAccountRepository;
 
@@ -138,6 +141,14 @@ public class DoctorController {
     public ResponseEntity<DoctorDetailDto> getDoctorDetail(@PathVariable String id) {
         DoctorDetailDto doctor = doctorService.getDoctorDetail(UUID.fromString(id));
         return ResponseEntity.ok(doctor);
+    }
+
+    // GET /api/doctors/{id}/work-schedule
+    @GetMapping("/{id}/work-schedule")
+    @PreAuthorize("hasAuthority('VIEW_DOCTORS')")
+    public ResponseEntity<WorkScheduleResponse> getDoctorWorkSchedule(@PathVariable String id) {
+        WorkScheduleResponse schedule = doctorScheduleService.getWorkSchedule(UUID.fromString(id));
+        return ResponseEntity.ok(schedule);
     }
 
     // GET /api/doctors/me/personal-info

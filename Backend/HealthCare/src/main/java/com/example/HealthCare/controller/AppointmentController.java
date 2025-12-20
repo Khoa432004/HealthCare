@@ -47,6 +47,7 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
     private final UserAccountRepository userAccountRepository;
     private final PaymentRepository paymentRepository;
+    private final com.example.HealthCare.repository.DoctorScheduleRuleRepository doctorScheduleRuleRepository;
 
 
     @GetMapping("/my-appointments")
@@ -219,18 +220,39 @@ public class AppointmentController {
             try {
                 if (request.getTotalAmount() != null) {
                     UUID appointmentId = appointment.getId();
-                    Payment payment = Payment.builder()
+
+                    // Compute server-side appointment amount using doctor's schedule rules for the scheduled date
+                    java.math.BigDecimal paymentAmount = null;
+                    try {
+                        var schedRules = doctorScheduleRuleRepository.findByDoctorIdOrderByWeekdayAscStartTimeAsc(request.getDoctorId());
+                        short weekday = (short) request.getScheduledStart().toLocalDate().getDayOfWeek().getValue(); // 1=Mon..7=Sun
+                        var matching = schedRules.stream()
+                                .filter(r -> r.getWeekday() == weekday)
+                                .findFirst();
+                        if (matching.isPresent()) {
+                            paymentAmount = matching.get().getAppointmentCost();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to compute schedule-based payment amount: {}", e.getMessage());
+                    }
+
+                    if (paymentAmount == null) {
+                        paymentAmount = request.getTotalAmount(); // fallback to client amount if schedule not found
+                    }
+
+                        Payment payment = Payment.builder()
                             .appointmentId(appointmentId)
-                            .amount(request.getTotalAmount())
+                            .amount(paymentAmount)
+                            .appointmentCost(paymentAmount)
                             .discount(null)
                             .tax(null)
-                            .totalAmount(request.getTotalAmount())
+                            .totalAmount(paymentAmount)
                             .method(request.getMethod() != null ? PaymentMethod.fromValue(request.getMethod()) : PaymentMethod.VNPAY)
                             .status(request.getStatus() != null ? PaymentStatus.fromValue(request.getStatus()) : PaymentStatus.PAID)
                             .paymentTime(request.getPaymentTime() != null ? request.getPaymentTime() : OffsetDateTime.now())
                             .build();
 
-                    paymentRepository.save(payment);
+                        paymentRepository.save(payment);
                 }
             } catch (Exception ex) {
                 log.warn("Failed to persist payment record after booking: {}", ex.getMessage());

@@ -14,7 +14,9 @@ public class DoctorSummaryDto {
     private Integer reviews ;
     private String clinic;
     private String cost;
+    private java.math.BigDecimal appointmentCost;
     private List<String> availableTimes;
+    private List<String> availableDays;
     private String experience;
     private String consultations;
     

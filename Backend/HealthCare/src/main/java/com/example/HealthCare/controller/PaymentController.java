@@ -40,6 +40,7 @@ public class PaymentController {
     private final PaymentRepository paymentRepository;
     private final AppointmentRepository appointmentRepository;
     private final UserAccountRepository userAccountRepository;
+    private final com.example.HealthCare.repository.DoctorScheduleRuleRepository doctorScheduleRuleRepository;
 
     @PostMapping
     @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
@@ -53,18 +54,41 @@ public class PaymentController {
                         .body(Map.of("success", false, "message", "Appointment not found"));
             }
 
-            Payment payment = Payment.builder()
+            // Determine payment amount server-side based on appointment's doctor and scheduled date
+            java.math.BigDecimal finalAmount = null;
+            try {
+                var appointment = appointmentRepository.findByIdWithRelations(appointmentId);
+                if (appointment != null) {
+                    var schedRules = doctorScheduleRuleRepository.findByDoctorIdOrderByWeekdayAscStartTimeAsc(appointment.getDoctorId());
+                    if (schedRules != null && !schedRules.isEmpty()) {
+                        short weekday = (short) appointment.getScheduledStart().toLocalDate().getDayOfWeek().getValue();
+                        var matching = schedRules.stream().filter(r -> r.getWeekday() == weekday).findFirst();
+                        if (matching.isPresent()) {
+                            finalAmount = matching.get().getAppointmentCost();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to compute payment amount from schedule: {}", e.getMessage());
+            }
+
+            if (finalAmount == null) {
+                finalAmount = request.getTotalAmount(); // fallback to client-provided
+            }
+
+                Payment payment = Payment.builder()
                     .appointmentId(appointmentId)
-                    .amount(request.getTotalAmount())
+                    .amount(finalAmount)
+                    .appointmentCost(finalAmount)
                     .discount(null)
                     .tax(null)
-                    .totalAmount(request.getTotalAmount())
+                    .totalAmount(finalAmount)
                     .method(request.getMethod() != null ? PaymentMethod.fromValue(request.getMethod()) : PaymentMethod.VNPAY)
                     .status(request.getStatus() != null ? PaymentStatus.fromValue(request.getStatus()) : PaymentStatus.PAID)
                     .paymentTime(request.getPaymentTime() != null ? request.getPaymentTime() : OffsetDateTime.now())
                     .build();
 
-            Payment saved = paymentRepository.save(payment);
+                Payment saved = paymentRepository.save(payment);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success", true, "data", saved));
         } catch (Exception e) {
@@ -122,6 +146,7 @@ public class PaymentController {
         map.put("id", payment.getId());
         map.put("appointmentId", payment.getAppointmentId());
         map.put("amount", payment.getAmount());
+        map.put("appointmentCost", payment.getAppointmentCost());
         map.put("totalAmount", payment.getTotalAmount());
         map.put("discount", payment.getDiscount());
         map.put("tax", payment.getTax());
