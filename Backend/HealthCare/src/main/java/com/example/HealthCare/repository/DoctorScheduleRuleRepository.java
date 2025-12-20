@@ -29,4 +29,3 @@ public interface DoctorScheduleRuleRepository extends JpaRepository<DoctorSchedu
 
     Optional<DoctorScheduleRule> findFirstByDoctorId(UUID doctorId);
 }
-

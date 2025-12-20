@@ -69,8 +69,8 @@ public class DoctorServiceImpl implements DoctorService {
                 doctors = doctorProfileRepository.searchByNameOrSpecialty(searchQuery.trim());
                 }
 
-                return doctors.stream()
-                        .map(doc -> {
+                List<DoctorSummaryDto> mapped = doctors.stream()
+                    .map(doc -> {
                         String fullName = doc.getUserAccount() != null ? doc.getUserAccount().getFullName() : "Unknown Doctor";
                         BigDecimal cost = doctorScheduleRuleRepository.findFirstByDoctorId(doc.getUserId()) // lấy giá từ doctorScheduleRule
                                                                     .map(DoctorScheduleRule::getAppointmentCost)
@@ -83,15 +83,24 @@ public class DoctorServiceImpl implements DoctorService {
                                 .reviews(100)
                                 .title(doc.getTitle())
                                 .clinic(doc.getWorkplaceName())
-                                .cost(formatPrice(cost))
+                            .cost(formatPrice(cost))
+                            .appointmentCost(cost)
                                 .availableTimes(generateAvailableTimes(doc.getUserId(), datetime))
                                 .experience(doc.getGraduationYear() != null ?
                                         (java.time.Year.now().getValue() - doc.getGraduationYear()) + " years" : "N/A")
                                 .consultations("30 visits")
                                 .build();
-                        })
+                    })
+                    .collect(Collectors.toList());
+
+                // If datetime was provided, only return doctors who have available times on that date.
+                if (datetime != null) {
+                    return mapped.stream()
                         .filter(dto -> dto.getAvailableTimes() != null && !dto.getAvailableTimes().isEmpty())
                         .collect(Collectors.toList());
+                }
+
+                return mapped;
         }
 
         @Override
@@ -149,6 +158,11 @@ public class DoctorServiceImpl implements DoctorService {
                 }
                 });
                 //Thông tin tổng hợp bác sĩ
+                // Prefer appointmentCost from DoctorScheduleRule when available (keeps Step 1 and booking consistent)
+                java.math.BigDecimal scheduleCost = doctorScheduleRuleRepository.findFirstByDoctorId(doctorId)
+                        .map(com.example.HealthCare.model.DoctorScheduleRule::getAppointmentCost)
+                        .orElse(doc.getConsultationFee() != null ? doc.getConsultationFee() : new java.math.BigDecimal("150000"));
+
                 return DoctorDetailDto.builder()
                         .id(doc.getUserId().toString())
                         .name(doc.getTitle() + " " + fullName)
@@ -159,7 +173,8 @@ public class DoctorServiceImpl implements DoctorService {
                         .workplace_name(doc.getWorkplaceName())
                         .province(doc.getProvince())
                         .clinic_address(doc.getClinicAddress())
-                        .cost(formatPrice(doc.getConsultationFee()))
+                        .cost(formatPrice(scheduleCost))
+                        .appointmentCost(scheduleCost)
                         .experience(doc.getGraduationYear() != null
                         ? (java.time.Year.now().getValue() - doc.getGraduationYear()) + " years"
                         : "N/A")

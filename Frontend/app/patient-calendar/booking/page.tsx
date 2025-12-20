@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import type React from "react"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Search,
   Bell,
@@ -46,6 +47,7 @@ interface DoctorSummaryDto {
   reviews: number
   clinic: string
   cost: string
+  appointmentCost?: number
   availableTimes: string[]
   experience: string
   consultations: string
@@ -66,6 +68,7 @@ interface DoctorDetailDto {
   clinic: string
   province: string
   cost: string
+  appointmentCost?: number
   experience: string
   consultations: string
   workplace_name: string
@@ -84,17 +87,17 @@ export default function BookingPage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-  const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<Record<string, string | null>>({})
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [doctors, setDoctors] = useState<DoctorSummaryDto[]>([])
   const [selectedDoctorData, setSelectedDoctorData] = useState<DoctorDetailDto | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [workSchedule, setWorkSchedule] = useState<any | null>(null)
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([])
   const [selectedFilterDate, setSelectedFilterDate] = useState<string>("")
+  const [monthOffset, setMonthOffset] = useState<number>(0)
 
   const [filters, setFilters] = useState({
     province: "",
@@ -113,6 +116,28 @@ export default function BookingPage() {
   })
   const [fileName, setFileName] = useState("No file chosen")
   const [confirmTerms, setConfirmTerms] = useState(false)
+  const router = useRouter()
+
+  const parseCostToNumber = (costStr?: string | number) => {
+    if (costStr == null) return 100000
+    if (typeof costStr === "number") return costStr
+    const numeric = String(costStr).replace(/[^0-9]/g, "")
+    const n = Number(numeric || 0)
+    return n > 0 ? n : 100000
+  }
+
+  const formatCurrency = (amount?: number) => {
+    const n = Number(amount ?? 0)
+    return new Intl.NumberFormat('vi-VN').format(n)
+  }
+
+  const handleTopBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((s) => (Math.max(1, (s as number) - 1)) as Step)
+      return
+    }
+    router.push('/patient-calendar')
+  }
 API_ENDPOINTS
   useEffect(() => {
     const loadData = async () => {
@@ -166,32 +191,19 @@ API_ENDPOINTS
 
   useEffect(() => {
     const loadDoctors = async () => {
-      setIsLoadingSpecialists(true) // Chỉ loading phần specialists
+      setIsLoadingSpecialists(true)
       try {
-        // 1. Khởi tạo params
-      const params = new URLSearchParams();
-      
-      // Thêm search nếu có gõ
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
-      }
-      
-      // 2. Đồng bộ với tham số 'datetime' của Backend
-      // selectedDate từ <input type="date"> mặc định là "YYYY-MM-DD"
-      if (selectedDate) {
-        params.append('datetime', selectedDate); 
-      }
-        const endpoint = `${API_ENDPOINTS.DOCTORS.GET_ALL_AVAILABLE}${params.toString() ? `?${params.toString()}` : ''}`;
-        
+        const params = new URLSearchParams()
+        if (searchQuery.trim()) params.append("search", searchQuery.trim())
+
+        const endpoint = `${API_ENDPOINTS.DOCTORS.GET_ALL_AVAILABLE}${params.toString() ? `?${params.toString()}` : ""}`
         const summaryRes: DoctorSummaryDto[] = await apiClient.get(endpoint)
         setDoctors(Array.isArray(summaryRes) ? summaryRes : [])
 
-        if (summaryRes.length > 0 && !selectedDoctor) {
-          setSelectedDoctor(summaryRes[0].id)
-        }
+        if (summaryRes.length > 0 && !selectedDoctor) setSelectedDoctor(summaryRes[0].id)
       } catch (error: any) {
         console.error("Lỗi kết nối đến backend:", error)
-        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        if (error.message?.includes("401") || error.message?.includes("Unauthorized")) {
           console.warn("Unauthorized: Token không hợp lệ hoặc thiếu.")
         }
         setDoctors([])
@@ -201,13 +213,18 @@ API_ENDPOINTS
     }
 
     loadDoctors()
-  }, [searchQuery, selectedDate])
+  }, [searchQuery])
 
   useEffect(() => {
     if (!selectedDoctor) {
       setSelectedDoctorData(null)
       return
     }
+
+    // Reset schedule and selections when doctor changes
+    setWorkSchedule(null)
+    setAvailableTimeSlots([])
+    setSelectedDate("")
 
     const fetchDoctorDetail = async () => {
       try {
@@ -222,9 +239,90 @@ API_ENDPOINTS
     fetchDoctorDetail()
   }, [selectedDoctor])
 
+
+  // Load work schedule for selected doctor
+  useEffect(() => {
+    const loadSchedule = async () => {
+      if (!selectedDoctor) return
+      try {
+        const sched = await apiClient.get(API_ENDPOINTS.DOCTORS.WORK_SCHEDULE(selectedDoctor))
+        setWorkSchedule(sched)
+      } catch (err) {
+        console.error("Failed to load work schedule:", err)
+        setWorkSchedule(null)
+      }
+    }
+
+    loadSchedule()
+  }, [selectedDoctor])
+
+  // Helpers: month-based dates (allow navigating across months)
+  const getMonthDates = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = today.getMonth() + monthOffset // zero-based
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const dates: { date: Date; dateStr: string; weekday: number; enabled: boolean }[] = []
+    for (let d = 1; d <= lastDay; d++) {
+      const dt = new Date(year, month, d)
+      const yyyy = dt.getFullYear()
+      const mm = String(dt.getMonth() + 1).padStart(2, "0")
+      const dd = String(dt.getDate()).padStart(2, "0")
+      const dateStr = `${yyyy}-${mm}-${dd}`
+      const jsDay = dt.getDay()
+      const backendWeekday = jsDay === 0 ? 7 : jsDay
+      const enabled = !!workSchedule?.days?.some((day: any) => Number(day.weekday) === backendWeekday && day.enabled)
+      dates.push({ date: dt, dateStr, weekday: backendWeekday, enabled })
+    }
+    return dates
+  }
+
+  const getMonthLabel = () => {
+    const dt = new Date()
+    dt.setMonth(dt.getMonth() + monthOffset)
+    return dt.toLocaleString(undefined, { month: "long", year: "numeric" })
+  }
+
+  const computeTimeSlotsForDate = (dateStr: string) => {
+    if (!workSchedule || !dateStr || !selectedDoctor) return []
+    const d = new Date(dateStr)
+    const jsDay = d.getDay()
+    const backendWeekday = jsDay === 0 ? 7 : jsDay
+    const daySchedule = workSchedule.days?.find((day: any) => Number(day.weekday) === backendWeekday)
+    if (!daySchedule || !daySchedule.enabled || !daySchedule.timeSlots || daySchedule.timeSlots.length === 0) return []
+
+    const session = Number(workSchedule.sessionDuration || 15)
+    const slots: string[] = []
+    for (const ts of daySchedule.timeSlots) {
+      const [sh, sm] = ts.startTime.split(":").map((s: string) => Number(s))
+      const [eh, em] = ts.endTime.split(":").map((s: string) => Number(s))
+      let startMinutes = sh * 60 + sm
+      const endMinutes = eh * 60 + em
+      while (startMinutes + session <= endMinutes) {
+        const hh = String(Math.floor(startMinutes / 60)).padStart(2, "0")
+        const mm = String(startMinutes % 60).padStart(2, "0")
+        slots.push(`${hh}:${mm}`)
+        startMinutes += session
+      }
+    }
+    return slots
+  }
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setAvailableTimeSlots([])
+      return
+    }
+    const slots = computeTimeSlotsForDate(selectedDate)
+    setAvailableTimeSlots(slots)
+    // reset selected time for this doctor
+    setSelectedTime((prev) => ({ ...prev, [selectedDoctor || ""]: null }))
+  }, [selectedDate, workSchedule, selectedDoctor])
+
   const handleNextStep = () => {
-    if (currentStep === 1 && (!selectedDoctor || !selectedTime)) return
-    if (currentStep === 2 && (!selectedDate || !selectedTime)) return
+    if (currentStep === 1 && !selectedDoctor) return
+    if (currentStep === 2 && (!selectedDate || !selectedTime[selectedDoctor || ""])) return
     setCurrentStep((prev) => Math.min(prev + 1, 3) as Step)
   }
 
@@ -244,16 +342,10 @@ API_ENDPOINTS
   }
 const handleConfirmAppointment = async () => {
   try {
-    // Compute order total from selected doctor's cost (fallback to example amount)
-    const parseCostToNumber = (costStr?: string) => {
-      if (!costStr) return 100000;
-      // Remove non-digit characters (commas, currency symbol) and parse
-      const numeric = costStr.replace(/[^0-9]/g, "");
-      const n = Number(numeric || 0);
-      return n > 0 ? n : 100000;
-    };
-
-    const orderTotal = selectedDoctorData ? parseCostToNumber(selectedDoctorData.cost) : 100000; // VND
+    // Prefer schedule-defined appointment cost (server-provided via workSchedule), then doctor detail appointmentCost, then formatted cost string, then fallback
+    const scheduleCost = workSchedule?.appointmentCost ? Number(workSchedule.appointmentCost) : undefined;
+    const docAppointmentCost = selectedDoctorData?.appointmentCost ? Number(selectedDoctorData.appointmentCost) : (selectedDoctorData ? parseCostToNumber(selectedDoctorData.cost) : undefined);
+    const orderTotal = scheduleCost ?? docAppointmentCost ?? 100000; // VND
     const orderInfo = `Thanh toan lich hen kham benh - Ma lich: ${selectedDoctor || 'N/A'}`;
 
     // Helper: ensure time string has hours and minutes, return [hh, mm, ss]
@@ -448,13 +540,13 @@ const handleConfirmAppointment = async () => {
         <div className="flex-1 flex gap-6 h-full px-6">
           {/* Left Column */}
           <div className="flex-1 h-full overflow-y-auto p-3 bg-white rounded-2xl shadow-lg [scrollbar-width:none] [-ms-overflow-style:none]">
-            <Link
-              href="/patient-calendar"
-              className="flex items-center space-x-2 text-[#16a1bd] hover:text-[#0d6171] transition-smooth"
+            <button
+              onClick={handleTopBack}
+              className="flex items-center space-x-2 text-[#16a1bd] hover:text-[#0d6171] transition-smooth bg-transparent border-0 p-0"
             >
               <ArrowLeft className="w-4 h-4 text-neutral-400" />
               <span className="text-base inline text-neutral-400 font-semibold">Back</span>
-            </Link>
+            </button>
             <span className="text-1rem font-bold text-[#0d6171]">Set a new appointment</span>
 
             {/* Steps Progress */}
@@ -530,13 +622,7 @@ const handleConfirmAppointment = async () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Our Specialists</h2>
                   <div className="flex items-center space-x-4">
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        // className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
-                        placeholder="DD/MM/YYYY"
-                      />
+                    {/* Removed date picker from step 1: choose doctor first, then date in step 2 */}
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 z-10" />
                       <Input
@@ -684,36 +770,16 @@ const handleConfirmAppointment = async () => {
                           </div>
                           <div>
                             <p className="text-sm text-gray-500 leading-none">Cost from (đ)</p>
-                            <span className="font-bold text-gray-900">{doctor.cost}</span>
+                            <span className="font-bold text-gray-900">
+                              {doctor.appointmentCost ? `${formatCurrency(Number(doctor.appointmentCost))} đ` : doctor.cost}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Available Times */}
                       <div className="mt-4">
-                        <p className="text-sm font-semibold text-gray-900 mb-3">Available Today</p>
-                        <div className="flex flex-wrap gap-2">
-                          {doctor.availableTimes.map((time) => (
-                            <button
-                              key={time}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedTime((prev) => ({
-                                  ...prev,
-                                  [doctor.id]: time,
-                                }))
-                                setSelectedDoctor(doctor.id)
-                              }}
-                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                selectedTime[doctor.id] === time
-                                  ? "bg-[#16a1bd] text-white"
-                                  : "bg-blue-50 text-[#16a1bd] hover:bg-blue-100"
-                              }`}
-                            >
-                              {time}
-                            </button>
-                          ))}
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">Schedule</p>
+                        <p className="text-sm text-gray-500">Select the doctor and click Next to pick date & time.</p>
                       </div>
                     </div>
                   ))}
@@ -732,7 +798,7 @@ const handleConfirmAppointment = async () => {
                   </div>
                   <Button
                     onClick={handleNextStep}
-                    disabled={!selectedDoctor || !selectedTime[selectedDoctor || ""]}
+                    disabled={!selectedDoctor}
                     className="bg-[#16a1bd] hover:bg-[#0d6171] text-white shadow-soft hover:shadow-soft-md transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
@@ -766,25 +832,62 @@ const handleConfirmAppointment = async () => {
                       <label className="block text-sm font-semibold text-gray-900 mb-3">
                         Date <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        readOnly
-                        
-                        className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
-                        placeholder="DD/MM/YYYY"
-                      />
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="text-sm font-medium">{getMonthLabel()}</div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setMonthOffset((m) => m - 1)}
+                            className="px-2 py-1 bg-white rounded-md border"
+                          >
+                            Prev
+                          </button>
+                          <button
+                            onClick={() => setMonthOffset((m) => m + 1)}
+                            className="px-2 py-1 bg-white rounded-md border"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2">
+                        {getMonthDates().map((d) => (
+                          <button
+                            key={d.dateStr}
+                            onClick={() => d.enabled && setSelectedDate(d.dateStr)}
+                            disabled={!d.enabled}
+                            className={`px-2 py-2 text-sm rounded-lg text-center transition-all ${
+                              selectedDate === d.dateStr ? "bg-[#16a1bd] text-white" : d.enabled ? "bg-white hover:bg-blue-50" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            }`}
+                          >
+                            <div className="font-medium">{d.date.getDate()}</div>
+                            <div className="text-xs">{d.date.toLocaleDateString(undefined, { weekday: 'short' })}</div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-3">
                         Visiting Hours <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="time"
-                        value={selectedDoctor ? selectedTime[selectedDoctor] || "" : ""}
-                        readOnly
-                        className="w-full px-4 py-3 border border-cyan-200 rounded-lg bg-gray-50 text-gray-600"
-                      />
+                      <div className="flex flex-wrap gap-2">
+                        {availableTimeSlots.length === 0 ? (
+                          <div className="text-sm text-gray-500">Chọn ngày để xem các khung giờ khả dụng.</div>
+                        ) : (
+                          availableTimeSlots.map((time) => (
+                            <button
+                              key={time}
+                              onClick={() => setSelectedTime((prev) => ({ ...prev, [selectedDoctor || ""]: time }))}
+                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                selectedTime[selectedDoctor || ""] === time
+                                  ? "bg-[#16a1bd] text-white"
+                                  : "bg-blue-50 text-[#16a1bd] hover:bg-blue-100"
+                              }`}
+                            >
+                              {time}
+                            </button>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1035,7 +1138,9 @@ const handleConfirmAppointment = async () => {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center pb-3 border-b border-blue-200">
                         <span className="text-gray-700 font-medium">Appointment fee</span>
-                        <span className="font-semibold text-gray-900">572,250 đ</span>
+                        <span className="font-semibold text-gray-900">{`${formatCurrency(
+                          workSchedule?.appointmentCost ? Number(workSchedule.appointmentCost) : selectedDoctorData?.appointmentCost ? Number(selectedDoctorData.appointmentCost) : (selectedDoctorData ? parseCostToNumber(selectedDoctorData.cost) : 100000)
+                        )} đ`}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-blue-200">
                         <div className="flex items-center gap-2">
@@ -1054,19 +1159,21 @@ const handleConfirmAppointment = async () => {
                             />
                           </svg>
                         </div>
-                        <span className="font-semibold text-gray-900">572,250 đ</span>
+                        <span className="font-semibold text-gray-900">0 đ</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-blue-200">
                         <span className="text-gray-700 font-medium">Discount</span>
-                        <span className="font-semibold text-gray-900">572,250 đ</span>
+                        <span className="font-semibold text-gray-900">0 đ</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b border-blue-200">
                         <span className="text-gray-700 font-medium">Tax included, where applicable</span>
-                        <span className="font-semibold text-gray-900">572,250 đ</span>
+                        <span className="font-semibold text-gray-900">0 đ</span>
                       </div>
                       <div className="flex justify-between items-center pt-2">
                         <span className="text-gray-900 font-bold">Total cost</span>
-                        <span className="text-lg font-bold text-red-600">572,250 đ</span>
+                        <span className="text-lg font-bold text-red-600">{`${formatCurrency(
+                          workSchedule?.appointmentCost ? Number(workSchedule.appointmentCost) : selectedDoctorData?.appointmentCost ? Number(selectedDoctorData.appointmentCost) : (selectedDoctorData ? parseCostToNumber(selectedDoctorData.cost) : 100000)
+                        )} đ`}</span>
                       </div>
                     </div>
                   </div>
