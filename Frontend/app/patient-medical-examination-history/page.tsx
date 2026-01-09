@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings, Filter, CalendarIcon, Download, Eye, ClipboardPenLine } from "lucide-react"
+import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings, Filter, CalendarIcon, Download, Eye, ClipboardPenLine, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,10 @@ import { format } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { apiClient } from "@/lib/api-client"
 import { API_ENDPOINTS } from "@/lib/api-config"
+import { pdf } from "@react-pdf/renderer"
+import MedicalReportPDF from "@/components/pdf/MedicalReportPDF"
+import { MedicalReport } from "@/types/medical-report"
+import { toast } from "sonner"
 
 interface Appointment {
   id: string
@@ -29,6 +33,7 @@ interface Appointment {
   doctor: string
   clinic: string
   reason: string
+  diagnosis?: string
 }
 
 export default function MedicalHistory() {
@@ -39,6 +44,7 @@ export default function MedicalHistory() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string; id: string } | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -74,10 +80,10 @@ export default function MedicalHistory() {
 
   const handleSearch = () => {
     let filtered = [...originalAppointments]
-    
+
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(apt => 
+      filtered = filtered.filter(apt =>
         apt.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.clinic.toLowerCase().includes(searchTerm.toLowerCase())
@@ -98,7 +104,7 @@ export default function MedicalHistory() {
         return true
       })
     }
-    
+
     setAppointments(filtered)
   }
 
@@ -107,9 +113,46 @@ export default function MedicalHistory() {
     router.push(`/patient-medical-examination-history/${id}`)
   }
 
-  const handleDownloadPDF = (id: string) => {
-    console.log("Download PDF for appointment:", id)
-    // TODO: Implement PDF download
+  const handleDownloadPDF = async (id: string) => {
+    try {
+      setDownloadingId(id)
+      console.log("Fetching detail for PDF:", id)
+
+      // Fetch full report details
+      const data: MedicalReport[] = await apiClient.get(
+        API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY_DETAIL(id)
+      )
+
+      if (!data || data.length === 0) {
+        toast.error("Không tìm thấy dữ liệu báo cáo")
+        return
+      }
+
+      const report = data[0]
+
+      // Generate PDF
+      const blob = await pdf(<MedicalReportPDF report={report} />).toBlob()
+      const url = URL.createObjectURL(blob)
+
+      // Create download link
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `BaoCaoYKhoa_${format(new Date(report.date), 'dd-MM-yyyy')}.pdf`
+      document.body.appendChild(link)
+      link.click()
+
+      // Cleanup
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast.success("Tải xuống hoàn tất")
+
+    } catch (error) {
+      console.error("Error downloading PDF:", error)
+      toast.error("Có lỗi xảy ra khi tải báo cáo")
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   useEffect(() => {
@@ -124,16 +167,36 @@ export default function MedicalHistory() {
         const data: Appointment[] = await apiClient.get(
           API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY(user.id)
         )
-        
+
         // Convert date strings to Date objects
         const mappedData = data.map((item) => ({
           ...item,
           date: typeof item.date === 'string' ? new Date(item.date) : item.date
         }))
-        
-        console.log("Fetched medical history:", mappedData)
-        setOriginalAppointments(mappedData)
-        setAppointments(mappedData)
+
+        // Fetch detailed MedicalReport for each appointment to get `diagnosis`
+        const diagnosisPromises = mappedData.map(async (item) => {
+          try {
+            const details: MedicalReport[] = await apiClient.get(
+              API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY_DETAIL(item.id)
+            )
+            return details && details.length > 0 ? details[0].diagnosis : item.reason
+          } catch (err) {
+            console.error('Error fetching report detail for', item.id, err)
+            return item.reason
+          }
+        })
+
+        const diagnoses = await Promise.all(diagnosisPromises)
+
+        const enriched = mappedData.map((item, idx) => ({
+          ...item,
+          diagnosis: diagnoses[idx]
+        }))
+
+        console.log("Fetched medical history (with diagnoses):", enriched)
+        setOriginalAppointments(enriched)
+        setAppointments(enriched)
       } catch (error) {
         console.error("Error fetching medical examination history:", error)
         setAppointments([])
@@ -163,10 +226,10 @@ export default function MedicalHistory() {
               {/* Search */}
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input 
+                <Input
                   type="search"
-                  placeholder="Search..." 
-                  className="pl-10 bg-gray-50 border-gray-200" 
+                  placeholder="Search..."
+                  className="pl-10 bg-gray-50 border-gray-200"
                 />
               </div>
 
@@ -251,8 +314,8 @@ export default function MedicalHistory() {
                         </div>
 
                         {/* Apply Filter Button */}
-                        <Button 
-                          onClick={handleSearch} 
+                        <Button
+                          onClick={handleSearch}
                           className="w-full mt-3"
                         >
                           Áp dụng bộ lọc
@@ -261,8 +324,8 @@ export default function MedicalHistory() {
                     </PopoverContent>
                   </Popover>
                   {/* Reset Filters Button */}
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setDateFrom(undefined)
                       setDateTo(undefined)
@@ -320,7 +383,7 @@ export default function MedicalHistory() {
                       {/* reason */}
                       <div className="flex items-start gap-2">
                         <span className="text-sm font-medium text-muted-foreground">Chẩn đoán:</span>
-                        <span className="text-sm text-foreground">{appointment.reason}</span>
+                        <span className="text-sm text-foreground">{appointment.diagnosis ?? appointment.reason}</span>
                       </div>
                     </div>
 
@@ -338,8 +401,13 @@ export default function MedicalHistory() {
                         variant="outline"
                         className="flex-1 md:flex-none"
                         onClick={() => handleDownloadPDF(appointment.id)}
+                        disabled={downloadingId === appointment.id}
                       >
-                        <Download className="h-4 w-4 mr-2" />
+                        {downloadingId === appointment.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4 mr-2" />
+                        )}
                         Tải PDF
                       </Button>
                     </div>
@@ -361,3 +429,4 @@ export default function MedicalHistory() {
     </div>
   )
 }
+
