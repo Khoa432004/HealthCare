@@ -27,7 +27,7 @@ interface PrescriptionItem {
 }
 interface ClinicalDiagnosis {
   signType: string
-  signValue: string 
+  signValue: string
   unit: string
 }
 
@@ -42,7 +42,7 @@ interface MedicalReport {
   timeOut: string
   patientName: string | null
   gender: string | null
-  birthDateTime: string 
+  birthDateTime: string
   reason: string
   diagnosis: string
   clinicalDiagnosis: ClinicalDiagnosis[]
@@ -62,7 +62,7 @@ interface FDADrugResult {
   warnings?: string[]
   dosage_and_administration?: string[]
   contraindications?: string[]
-  adverse_reactions?: string[] 
+  adverse_reactions?: string[]
   storage_and_handling?: string[]
   inactive_ingredient?: string[]
   active_ingredient?: string[]
@@ -95,7 +95,7 @@ export default function PrescriptionDetail() {
   const [drugImage, setDrugImage] = useState<string | null>(null)
   const [loadingDrug, setLoadingDrug] = useState(false)
   const [loadingImage, setLoadingImage] = useState(false)
-  
+
   const handleDrugClick = async (drugName: string) => {
     setLoadingDrug(true)
     setLoadingImage(true)
@@ -113,7 +113,7 @@ export default function PrescriptionDetail() {
       if (fdaData.results && fdaData.results.length > 0) {
         const result = fdaData.results[0]
 
-        const extracted: DrugInfo = {
+        let extracted: DrugInfo = {
           name: result.openfda.brand_name?.[0] || drugName,
           genericName: result.openfda.generic_name?.[0] || "Không rõ",
           category: "Thuốc kê đơn (OTC)",
@@ -126,6 +126,46 @@ export default function PrescriptionDetail() {
           dosage: result.dosage_and_administration?.[0] || "Theo chỉ định bác sĩ",
           warning: result.warnings?.[0]?.split("Do not use")[0]?.trim() || "Xem kỹ hướng dẫn",
           storage: result.storage_and_handling?.[0] || "Nơi khô ráo, nhiệt độ phòng"
+        }
+
+        // === CALL TRANSLATION API ===
+        try {
+          const fieldsToTranslate = [
+            extracted.category !== "Thuốc kê đơn (OTC)" ? extracted.category : "Thuốc kê đơn (OTC)", // 0
+            extracted.form,                                // 1
+            extracted.indications,                         // 2
+            extracted.contraindications,                   // 3
+            extracted.sideEffects,                         // 4
+            extracted.dosage,                              // 5
+            extracted.warning,                             // 6
+            extracted.storage                              // 7
+          ];
+
+          const translateRes = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: fieldsToTranslate })
+          });
+
+          if (translateRes.ok) {
+            const { translated } = await translateRes.json();
+            if (Array.isArray(translated) && translated.length === 8) {
+              extracted = {
+                ...extracted,
+                category: translated[0],
+                form: translated[1],
+                indications: translated[2],
+                contraindications: translated[3],
+                sideEffects: translated[4],
+                dosage: translated[5],
+                warning: translated[6],
+                storage: translated[7]
+              };
+            }
+          }
+        } catch (transErr) {
+          console.error("Translation error:", transErr);
+          // Ignore error, use original text
         }
 
         setDrugInfo(extracted)
@@ -182,29 +222,29 @@ export default function PrescriptionDetail() {
     }
   }
 
-    useEffect(() => {
-      const fetchReport = async () => {
-        try {
-          setLoading(true)
-          setError(null)
-  
-          const data: MedicalReport[] = await apiClient.get(
-            API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY_DETAIL(appointmentId)
-          )
-  
-          if (data.length === 0) throw new Error("Không tìm thấy báo cáo")
-  
-          setReport(data[0])
-        } catch (err: any) {
-          setError(err.message || "Lỗi kết nối")
-          console.error("API Error:", err)
-        } finally {
-          setLoading(false)
-        }
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const data: MedicalReport[] = await apiClient.get(
+          API_ENDPOINTS.PATIENTS.GET_MEDICAL_HISTORY_DETAIL(appointmentId)
+        )
+
+        if (data.length === 0) throw new Error("Không tìm thấy báo cáo")
+
+        setReport(data[0])
+      } catch (err: any) {
+        setError(err.message || "Lỗi kết nối")
+        console.error("API Error:", err)
+      } finally {
+        setLoading(false)
       }
-  
-      if (appointmentId) fetchReport()
-    }, [appointmentId])
+    }
+
+    if (appointmentId) fetchReport()
+  }, [appointmentId])
 
   if (loading) return <ReportSkeleton />
   if (error) return <ErrorState message={error} />
@@ -215,8 +255,8 @@ export default function PrescriptionDetail() {
         <div className="max-w-5xl mx-auto">
           {/* Back Button */}
           <Link
-              href={`/patient-medical-examination-history/${appointmentId}`}            
-              className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
+            href={`/patient-medical-examination-history/${appointmentId}`}
+            className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
@@ -389,10 +429,10 @@ export default function PrescriptionDetail() {
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-200 shadow-md">                
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-200 shadow-md">
                 <div>
                   <h4 className="font-semibold text-gray-700 mb-2">Thông tin cơ bản</h4>
-                  
+
                   {/* Hiển thị ảnh thuốc */}
                   <div className="mb-4">
                     {loadingImage ? (
@@ -415,27 +455,27 @@ export default function PrescriptionDetail() {
 
                   {/* Danh sách thông tin */}
                   <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Tên generic:</span>
-                        <span className="font-medium">{DrugInfo?.genericName}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Nhóm thuốc:</span>
-                        <span className="font-medium">{DrugInfo?.category}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Dạng bào chế:</span>
-                        <span className="font-medium">{DrugInfo?.form}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Hàm lượng:</span>
-                        <span className="font-medium">{DrugInfo?.strength}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Hãng sản xuất:</span>
-                        <span className="font-medium">{DrugInfo?.manufacturer}</span>
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Tên generic:</span>
+                      <span className="font-medium">{DrugInfo?.genericName}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Nhóm thuốc:</span>
+                      <span className="font-medium">{DrugInfo?.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Dạng bào chế:</span>
+                      <span className="font-medium">{DrugInfo?.form}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Hàm lượng:</span>
+                      <span className="font-medium">{DrugInfo?.strength}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Hãng sản xuất:</span>
+                      <span className="font-medium">{DrugInfo?.manufacturer}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <Separator />
