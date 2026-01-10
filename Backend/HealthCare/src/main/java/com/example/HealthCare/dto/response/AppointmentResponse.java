@@ -41,5 +41,6 @@ public class AppointmentResponse {
     private String doctorPhoneNumber;
     private String doctorWorkplace;
     private String doctorSpecialties; // Comma-separated string
+    private String doctorClinicAddress;
 }
 

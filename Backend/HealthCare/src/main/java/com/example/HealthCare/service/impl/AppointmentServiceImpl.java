@@ -23,6 +23,7 @@ import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.Appointment;
 import com.example.HealthCare.model.DoctorScheduleRule;
 import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.model.DoctorProfile;
 import com.example.HealthCare.model.AppointmentStatusHistory;
 import com.example.HealthCare.repository.AppointmentRepository;
 import com.example.HealthCare.repository.AppointmentStatusHistoryRepository;
@@ -148,6 +149,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .doctorPhoneNumber(doctorPhoneNumber)
                 .doctorWorkplace(doctorWorkplace)
                 .doctorSpecialties(doctorSpecialties)
+                .doctorClinicAddress(appointment.getDoctor() != null && appointment.getDoctorId() != null ? 
+                    doctorProfileRepository.findByUserId(appointment.getDoctorId())
+                        .map(DoctorProfile::getClinicAddress).orElse(null) : null)
                 .build();
     }
 

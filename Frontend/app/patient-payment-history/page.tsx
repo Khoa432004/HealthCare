@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import Link from "next/link"
-import { ArrowLeft, Calendar, DollarSign, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { ArrowLeft, Calendar, DollarSign, FileText, CheckCircle, Clock, AlertCircle, MapPin } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import { API_ENDPOINTS } from "@/lib/api-config"
 
@@ -30,6 +30,7 @@ interface AppointmentInfo {
   specialty?: string
   scheduledStart?: string
   reason?: string
+  clinicAddress?: string // New field
 }
 
 const PaymentHistoryPage = () => {
@@ -57,6 +58,7 @@ const PaymentHistoryPage = () => {
             specialty: apt.doctorSpecialties,
             scheduledStart: apt.scheduledStart,
             reason: apt.reason,
+            clinicAddress: apt.doctorClinicAddress, // Mapped from backend
           })
         })
         setAppointments(appointmentMap)
@@ -182,20 +184,32 @@ const PaymentHistoryPage = () => {
                               <DollarSign className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-900">
-                                {appointmentInfo?.doctorName ? `Khám với ${appointmentInfo.doctorName}` : "Khám bệnh"}
+                              <p className="font-semibold text-gray-900 text-lg">
+                                {appointmentInfo?.doctorName ? `BS. ${appointmentInfo.doctorName}` : "Khám bệnh"}
                               </p>
                               {appointmentInfo?.specialty && (
-                                <p className="text-sm text-gray-600 mt-1">{appointmentInfo.specialty}</p>
+                                <p className="text-sm text-gray-600">{appointmentInfo.specialty}</p>
                               )}
-                              {appointmentInfo?.scheduledStart && (
-                                <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{formatDate(appointmentInfo.scheduledStart)}</span>
+
+                              <div className="mt-3 space-y-1">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Calendar className="w-4 h-4 text-blue-500" />
+                                  <span className="font-medium text-gray-700">Ngày thanh toán:</span>
+                                  <span>{payment.paymentTime ? formatDate(payment.paymentTime) : "N/A"}</span>
                                 </div>
-                              )}
+                                {appointmentInfo?.clinicAddress && (
+                                  <div className="flex items-start gap-2 text-sm text-gray-600 mt-1">
+                                    <MapPin className="w-4 h-4 text-red-500 mt-0.5" />
+                                    <span className="font-medium text-gray-700 whitespace-nowrap">Địa chỉ:</span>
+                                    <span>{appointmentInfo.clinicAddress}</span>
+                                  </div>
+                                )}
+                              </div>
+
                               {appointmentInfo?.reason && (
-                                <p className="text-sm text-gray-600 mt-1 italic">Lý do: {appointmentInfo.reason}</p>
+                                <p className="text-sm text-gray-500 mt-2 italic border-l-2 border-gray-200 pl-2">
+                                  Lý do khám: {appointmentInfo.reason}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -207,10 +221,10 @@ const PaymentHistoryPage = () => {
                             <p className="text-sm text-gray-600 mb-1">Số tiền</p>
                             <p className="text-2xl font-bold text-gray-900">{formatCurrency(payment.totalAmount)}</p>
                           </div>
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-2 items-end">
                             {getStatusBadge(payment.status)}
                             <p className="text-xs text-gray-500">
-                              {payment.method || "VNPAY"} • {formatDate(payment.paymentTime)}
+                              {payment.method || "VNPAY"}
                             </p>
                           </div>
                         </div>
