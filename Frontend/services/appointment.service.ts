@@ -28,6 +28,7 @@ export interface Appointment {
   doctorPhoneNumber?: string;
   doctorWorkplace?: string;
   doctorSpecialties?: string; // Comma-separated string
+  doctorClinicAddress?: string;
 }
 
 export interface AppointmentResponse {
@@ -46,24 +47,24 @@ export const appointmentService = {
     try {
       let url = '/api/v1/appointments/my-appointments';
       const params = new URLSearchParams();
-      
+
       if (startDate) {
         params.append('startDate', startDate);
       }
       if (endDate) {
         params.append('endDate', endDate);
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
 
       const response: any = await apiClient.get(url);
-      
+
       if (response.success && response.data) {
         return response.data as Appointment[];
       }
-      
+
       return [];
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -98,22 +99,22 @@ export const appointmentService = {
   }): Promise<Appointment> {
     try {
       const response: any = await apiClient.post('/api/v1/appointments', appointmentData);
-      
+
       // Handle ResponseSuccess format: { status, message, data, timestamp }
       if (response.data) {
         return response.data as Appointment;
       }
-      
+
       // Handle direct response
       if (response.id) {
         return response as Appointment;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       // Extract error message from response
       let errorMessage = 'Không thể tạo lịch hẹn. Vui lòng thử lại.';
-      
+
       // Error from api-client already has message extracted
       if (error.message) {
         errorMessage = error.message;
@@ -122,18 +123,18 @@ export const appointmentService = {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       // Check if this is a conflict error
-      const isConflict = error.isConflict || 
-                        errorMessage.includes('đã có lịch hẹn') || 
-                        errorMessage.includes('trùng') || 
-                        errorMessage.includes('conflict');
-      
+      const isConflict = error.isConflict ||
+        errorMessage.includes('đã có lịch hẹn') ||
+        errorMessage.includes('trùng') ||
+        errorMessage.includes('conflict');
+
       // Only log non-conflict errors to avoid console noise
       if (!isConflict) {
         console.error('Error creating appointment:', error);
       }
-      
+
       // Preserve conflict flag when re-throwing
       const newError = new Error(errorMessage);
       (newError as any).isConflict = isConflict;
@@ -149,15 +150,15 @@ export const appointmentService = {
   async getAppointmentById(appointmentId: string): Promise<Appointment> {
     try {
       const response: any = await apiClient.get(`/api/v1/appointments/${appointmentId}`);
-      
+
       if (response.success && response.data) {
         return response.data as Appointment;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       console.error('Error fetching appointment:', error);
-      
+
       // Extract error message from response
       let errorMessage = 'Không thể tải thông tin lịch hẹn. Vui lòng thử lại.';
       if (error.message) {
@@ -165,7 +166,7 @@ export const appointmentService = {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       throw new Error(errorMessage);
     }
   },
@@ -178,15 +179,15 @@ export const appointmentService = {
   async confirmAppointment(appointmentId: string): Promise<Appointment> {
     try {
       const response: any = await apiClient.post(`/api/v1/appointments/${appointmentId}/confirm`);
-      
+
       if (response.success && response.data) {
         return response.data as Appointment;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       console.error('Error confirming appointment:', error);
-      
+
       // Extract error message from response
       let errorMessage = 'Không thể xác nhận khám. Vui lòng thử lại.';
       if (error.message) {
@@ -194,7 +195,7 @@ export const appointmentService = {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       throw new Error(errorMessage);
     }
   },
@@ -216,15 +217,15 @@ export const appointmentService = {
         scheduledStart,
         scheduledEnd,
       });
-      
+
       if (response.success && response.data) {
         return response.data as Appointment;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       console.error('Error rescheduling appointment:', error);
-      
+
       // Extract error message from response
       let errorMessage = 'Không thể đổi lịch khám. Vui lòng thử lại.';
       if (error.message) {
@@ -232,7 +233,7 @@ export const appointmentService = {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       throw new Error(errorMessage);
     }
   },
@@ -254,17 +255,17 @@ export const appointmentService = {
       if (excludeAppointmentId) {
         url += `&excludeAppointmentId=${excludeAppointmentId}`;
       }
-      
+
       const response: any = await apiClient.get(url);
-      
+
       if (response.success && response.data) {
         return response.data;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       console.error('Error getting available slots:', error);
-      
+
       // Extract error message from response
       let errorMessage = 'Không thể tải khung giờ trống. Vui lòng thử lại.';
       if (error.message) {
@@ -272,7 +273,7 @@ export const appointmentService = {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       throw new Error(errorMessage);
     }
   },
@@ -290,15 +291,15 @@ export const appointmentService = {
     try {
       const requestBody = cancellationReason ? { cancellationReason } : {};
       const response: any = await apiClient.put(`/api/v1/appointments/${appointmentId}/cancel`, requestBody);
-      
+
       if (response.success && response.data) {
         return response.data as Appointment;
       }
-      
+
       throw new Error('Invalid response format from server');
     } catch (error: any) {
       console.error('Error canceling appointment:', error);
-      
+
       // Extract error message from response
       let errorMessage = 'Không thể hủy lịch khám. Vui lòng thử lại.';
       if (error.message) {
@@ -306,7 +307,7 @@ export const appointmentService = {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       throw new Error(errorMessage);
     }
   },
