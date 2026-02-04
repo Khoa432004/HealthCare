@@ -51,5 +51,27 @@ public interface OtpTokenRepository extends JpaRepository<OtpToken, UUID> {
      * Count unconsumed OTPs for user
      */
     long countByUserIdAndConsumedAtIsNull(UUID userId);
+    
+    /**
+     * Find valid OTP token by email, code, and purpose (for email verification during registration)
+     * This uses a join with UserAccount to find OTP by email
+     */
+    @Query("SELECT o FROM OtpToken o JOIN UserAccount u ON o.userId = u.id WHERE " +
+           "u.email = :email AND " +
+           "o.code = :code AND " +
+           "o.purpose = :purpose AND " +
+           "o.consumedAt IS NULL AND " +
+           "o.expiresAt > :now AND " +
+           "o.attemptCount < o.maxAttempts")
+    Optional<OtpToken> findValidOtpByEmail(String email, String code, OtpPurpose purpose, OffsetDateTime now);
+    
+    /**
+     * Find latest OTP by email and purpose (for email verification during registration)
+     */
+    @Query("SELECT o FROM OtpToken o JOIN UserAccount u ON o.userId = u.id WHERE " +
+           "u.email = :email AND " +
+           "o.purpose = :purpose " +
+           "ORDER BY o.createdAt DESC")
+    Optional<OtpToken> findFirstByEmailAndPurposeOrderByCreatedAtDesc(String email, OtpPurpose purpose);
 }
 
