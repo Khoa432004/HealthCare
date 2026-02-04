@@ -30,6 +30,10 @@ public interface AuthService {
 	void forgetPassword(String email);
 	void resetPassword(String email, String otp, String newPassword);
 	
+	// Email verification for registration
+	void sendVerificationEmail(String email);
+	boolean verifyEmailOtp(String email, String otp);
+	
 	// Registration
 	Map<String, Object> register(RegisterRequest registerRequest);
 	

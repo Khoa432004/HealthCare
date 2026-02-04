@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.HealthCare.dto.request.ChangePasswordRequest;
 import com.example.HealthCare.dto.request.FirstLoginPasswordChangeRequest;
 import com.example.HealthCare.dto.request.ForgetPasswordRequest;
+import com.example.HealthCare.dto.request.SendVerificationEmailRequest;
 import com.example.HealthCare.dto.request.LoginRequest;
 import com.example.HealthCare.dto.request.PersonalInfoRequest;
 import com.example.HealthCare.dto.request.ProfessionalInfoRequest;
@@ -161,6 +162,42 @@ public class AuthController {
 		} catch (Exception e) {
 			log.error("Error in forget password endpoint for email {}: {}", email, e.getMessage());
 			throw e;
+		}
+	}
+
+	@PostMapping("/send-verification-email")
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseSuccess sendVerificationEmail(@Valid @RequestBody com.example.HealthCare.dto.request.SendVerificationEmailRequest req) {
+		String email = req.getEmail();
+		try {
+			authService.sendVerificationEmail(email);
+			return new ResponseSuccess(HttpStatus.OK, "Verification email is being sent. Please check your email for the OTP code.");
+		} catch (Exception e) {
+			log.error("Error in send verification email endpoint for email {}: {}", email, e.getMessage());
+			throw e;
+		}
+	}
+
+	@PostMapping("/verify-email-otp")
+	public ResponseEntity<?> verifyEmailOtp(@Valid @RequestBody Map<String, String> body) {
+		String email = body.get("email");
+		String otp = body.get("otp");
+		try {
+			boolean isValid = authService.verifyEmailOtp(email, otp);
+			if (isValid) {
+				return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Email verification successful!"));
+			} else {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+					"error", "invalid_otp",
+					"message", "Invalid or expired OTP code"
+				));
+			}
+		} catch (Exception e) {
+			log.error("Error in verify email OTP endpoint for email {}: {}", email, e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+				"error", "verification_failed",
+				"message", e.getMessage()
+			));
 		}
 	}
 
