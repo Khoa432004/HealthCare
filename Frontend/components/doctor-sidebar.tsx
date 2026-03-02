@@ -8,7 +8,7 @@ import {
   Calendar,
   // Activity,
   // FileText,
-  // MessageSquare,
+  MessageSquare,
   BarChart3,
   HelpCircle,
   ChevronLeft,
@@ -21,7 +21,7 @@ const sidebarItems = [
   { icon: Calendar, label: "Calendar", href: "/calendar" },
   // { icon: Activity, label: "Monitoring", href: "/monitoring" },
   // { icon: FileText, label: "EMR", href: "/emr" },
-  // { icon: MessageSquare, label: "Chats", href: "/chats" },
+  { icon: MessageSquare, label: "Chats", href: "/doctor-chat" },
   { icon: BarChart3, label: "Reports", href: "/reports" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },
 ]

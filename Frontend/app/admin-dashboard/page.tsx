@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
+import { ChatLayout } from "@/components/chat"
 
-type TabType = "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors"
+type TabType = "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors" | "chats"
 
 function AdminDashboardContent() {
   const router = useRouter()
@@ -92,6 +93,12 @@ function AdminDashboardContent() {
         return <DoctorPayrollTable />
       case "doctors":
         return <div className="p-4">Doctors - Coming soon</div>
+      case "chats":
+        return (
+          <div className="h-[calc(100vh-120px)] min-h-[500px]">
+            <ChatLayout role="ADMIN" />
+          </div>
+        )
       default:
         return <AdminOverview />
     }
