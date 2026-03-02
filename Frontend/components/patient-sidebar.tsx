@@ -16,7 +16,7 @@ const sidebarItems = [
   { icon: Calendar, label: "My Calendar", href: "/patient-calendar" },
   { icon: Activity, label: "Health Tracking", href: "/health-tracking" },
   { icon: FileText, label: "Medical Records", href: "/medical-records" },
-  { icon: MessageSquare, label: "Chats", href: "/chats" },
+  { icon: MessageSquare, label: "Chats", href: "/patient-chat" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },
   { icon: FileText, label: "EMR", href: "/patient-emr" },
 ]

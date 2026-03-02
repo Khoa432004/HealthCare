@@ -233,10 +233,12 @@ function PatientDashboardContent() {
                       <span className="text-xs font-medium">Book Appointment</span>
                     </Button>
                   </Link>
-                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <MessageSquare className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
-                    <span className="text-xs font-medium">Chat with Doctor</span>
-                  </Button>
+                  <Link href="/patient-chat">
+                    <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth w-full">
+                      <MessageSquare className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
+                      <span className="text-xs font-medium">Chat with Doctor</span>
+                    </Button>
+                  </Link>
                   <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
                     <FileText className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
                     <span className="text-xs font-medium">View Reports</span>
