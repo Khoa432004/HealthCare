@@ -13,13 +13,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <Head>
         <title>HealthCare - Hệ thống quản lý khám bệnh</title>
         <meta name="description" content="Hệ thống quản lý khám bệnh trực tuyến" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         {children}
         <Toaster />
         <Analytics />
