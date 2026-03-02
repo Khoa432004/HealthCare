@@ -1,7 +1,10 @@
 package com.example.HealthCare.security;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class CustomUserDetailsService implements UserDetailsService {
 
 	private final UserAccountRepository userAccountRepository;
+	private final JwtUtil jwtUtil;
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -46,8 +50,20 @@ public class CustomUserDetailsService implements UserDetailsService {
 			return Collections.emptyList();
 		}
 		
-		// Create role authority from UserRole enum
+		List<GrantedAuthority> authorities = new ArrayList<>();
+		
+		// Role authority (ROLE_DOCTOR, ROLE_PATIENT, etc.)
 		String roleName = "ROLE_" + userAccount.getRole().name();
-		return Collections.singletonList(new SimpleGrantedAuthority(roleName));
+		authorities.add(new SimpleGrantedAuthority(roleName));
+		
+		// Privileges for @PreAuthorize("hasAuthority('VIEW_MEDICAL_EXAMINATION_HISTORY')") etc.
+		List<String> privileges = jwtUtil.getPrivilegesByRolePublic(userAccount.getRole());
+		if (privileges != null) {
+			for (String privilege : privileges) {
+				authorities.add(new SimpleGrantedAuthority(privilege));
+			}
+		}
+		
+		return authorities;
 	}
 }

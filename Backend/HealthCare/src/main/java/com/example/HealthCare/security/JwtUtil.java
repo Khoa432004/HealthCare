@@ -58,6 +58,13 @@ public class JwtUtil {
 	}
 
 	/**
+	 * Map user roles to privileges (public for use in CustomUserDetailsService).
+	 */
+	public List<String> getPrivilegesByRolePublic(com.example.HealthCare.enums.UserRole role) {
+		return getPrivilegesByRole(role);
+	}
+
+	/**
 	 * Map user roles to privileges
 	 */
 	private List<String> getPrivilegesByRole(com.example.HealthCare.enums.UserRole role) {
