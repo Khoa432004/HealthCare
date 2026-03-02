@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Trash2, FileText, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient } from "@/lib/api-client"
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { medicalReportService, type MedicalReport, type VitalSign as VitalSignType, type Medication as MedicationType } from "@/services/medical-report.service"
+import { IcdPickerDialog } from "@/components/icd-picker-dialog"
 
 interface VitalSign {
   id: string
@@ -30,6 +33,31 @@ interface Medication {
 interface MedicalReportTabProps {
   appointmentId?: string
   appointmentStatus?: string
+}
+
+interface IcdDiseaseSearchItem {
+  icdCode: string
+  diseaseName: string
+}
+
+interface IcdMedicationItem {
+  medicationName: string
+  medicationType: string
+  dosage: string
+  medicationGroup: string
+  role: string
+}
+
+// Map CSV medication type (Vietnamese) to form value
+function mapMedicationTypeToForm(type: string | null): string {
+  if (!type || !type.trim()) return "tablet"
+  const t = type.trim().toLowerCase()
+  if (t === "bột") return "powder"
+  if (t === "viên") return "tablet"
+  if (t === "viên nang" || t.includes("capsule")) return "capsule"
+  if (t === "dung dịch" || t === "liquid" || t.includes("dịch")) return "liquid"
+  if (t.includes("tiêm") || t === "injection") return "injection"
+  return "tablet"
 }
 
 // Available vital signs with their units
@@ -78,6 +106,8 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
     note: "",
     followUpDate: "",
   })
+
+  const [icdPickerOpen, setIcdPickerOpen] = useState(false)
 
   // Load existing medical report
   useEffect(() => {
@@ -162,6 +192,36 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
     }
   }
 
+  const handleIcdSelect = useCallback(async (item: IcdDiseaseSearchItem) => {
+    setForm(prev => ({ ...prev, icdCode: item.icdCode, diagnosis: item.diseaseName }))
+    try {
+      const meds = await apiClient.get<IcdMedicationItem[] | null>(API_ENDPOINTS.ICD.MEDICATIONS(item.icdCode))
+      if (Array.isArray(meds) && meds.length > 0) {
+        const newForms = meds.map((m, i) => {
+          const formId = `icd-${item.icdCode}-${i}-${Date.now()}`
+          return {
+            id: formId,
+            medicationName: m.medicationName?.trim() ?? "",
+            medicationDosage: m.dosage?.trim() ?? "",
+            medicationType: m.medicationType?.trim() ? mapMedicationTypeToForm(m.medicationType) : "",
+            medicationMealTiming: "",
+            durationDays: undefined,
+            startDate: "",
+            note: [m.medicationGroup, m.role].filter(Boolean).join(" - ") || "",
+          }
+        })
+        setMedicineForms(prev => [...prev, ...newForms])
+        toast({
+          title: "Đã gợi ý thuốc",
+          description: `Đã thêm ${newForms.length} form thuốc. Chỉ các trường có sẵn đã được điền, bác sĩ vui lòng nhập thêm các trường còn trống rồi bấm thêm vào danh sách.`,
+        })
+      }
+    } catch (e) {
+      console.error("Fetch medications by ICD failed", e)
+      toast({ title: "Lỗi", description: "Không tải được danh sách thuốc gợi ý.", variant: "destructive" })
+    }
+  }, [])
+
   const handleVitalSignToggle = (vitalSignId: string) => {
     if (selectedVitalSigns.includes(vitalSignId)) {
       // Remove from selection
@@ -209,8 +269,8 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
   const addMedicationFromForm = (formId: string) => {
     const form = medicineForms.find(f => f.id === formId)
-    if (!form || !form.medicationName || !form.medicationDosage || !form.medicationType) {
-      return // Basic validation
+    if (!form || !form.medicationName || !form.medicationDosage || !form.medicationType || !form.medicationMealTiming) {
+      return // Basic validation - bác sĩ phải nhập đủ (kể cả thời điểm uống nếu chưa có từ gợi ý)
     }
     
     const newMedication: Medication = {
@@ -259,7 +319,7 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
     // Combine existing medications with those from open forms
     const allMedications: Medication[] = [
       ...medications,
-      ...medicineForms.filter(f => f.medicationName && f.medicationDosage && f.medicationType)
+      ...medicineForms.filter(f => f.medicationName && f.medicationDosage && f.medicationType && f.medicationMealTiming)
     ]
 
     // Convert medications to API format
@@ -659,6 +719,7 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
                                 <SelectItem value="tablet">Tablet</SelectItem>
                                 <SelectItem value="capsule">Capsule</SelectItem>
                                 <SelectItem value="liquid">Liquid</SelectItem>
+                                <SelectItem value="powder">Powder (Bột)</SelectItem>
                                 <SelectItem value="injection">Injection</SelectItem>
                               </SelectContent>
                             </Select>
@@ -795,11 +856,22 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">ICD Code</label>
-                    <Input
-                      placeholder="Enter ICD code"
-                      value={form.icdCode}
-                      onChange={(e) => setForm({ ...form, icdCode: e.target.value })}
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">ICD-10 / Tên bệnh</label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!canEdit}
+                      onClick={() => setIcdPickerOpen(true)}
+                      className="w-full justify-between font-normal h-10 border-gray-300 truncate"
+                    >
+                      {form.icdCode && form.diagnosis
+                        ? `${form.icdCode} - ${form.diagnosis.length > 40 ? form.diagnosis.slice(0, 40) + "…" : form.diagnosis}`
+                        : "Chọn mã ICD (theo chương hoặc tìm kiếm)..."}
+                    </Button>
+                    <IcdPickerDialog
+                      open={icdPickerOpen}
+                      onOpenChange={setIcdPickerOpen}
+                      onSelect={handleIcdSelect}
                       disabled={!canEdit}
                     />
                   </div>
