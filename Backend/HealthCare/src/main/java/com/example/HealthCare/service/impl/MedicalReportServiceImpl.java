@@ -3,6 +3,7 @@ package com.example.HealthCare.service.impl;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -178,7 +179,7 @@ public class MedicalReportServiceImpl implements MedicalReportService {
             boolean isDoctor = userRoleValue != null && "DOCTOR".equalsIgnoreCase(userRoleValue);
             boolean isPatient = userRoleValue != null && "PATIENT".equalsIgnoreCase(userRoleValue);
             
-            // Validate appointment ownership
+            // Validate appointment ownership (null-safe)
             UUID appointmentDoctorId = appointment.getDoctorId();
             UUID appointmentPatientId = appointment.getPatientId();
             
@@ -187,7 +188,7 @@ public class MedicalReportServiceImpl implements MedicalReportService {
                     log.error("Appointment doctor ID is null for appointment ID: {}", appointmentId);
                     throw new BadRequestException("Appointment doctor information is missing.");
                 }
-                if (!appointmentDoctorId.equals(currentUserId)) {
+                if (!Objects.equals(appointmentDoctorId, currentUserId)) {
                     throw new BadRequestException("You are not the assigned doctor for this appointment.");
                 }
             }
@@ -197,7 +198,7 @@ public class MedicalReportServiceImpl implements MedicalReportService {
                     log.error("Appointment patient ID is null for appointment ID: {}", appointmentId);
                     throw new BadRequestException("Appointment patient information is missing.");
                 }
-                if (!appointmentPatientId.equals(currentUserId)) {
+                if (!Objects.equals(appointmentPatientId, currentUserId)) {
                     throw new BadRequestException("You are not the patient for this appointment.");
                 }
             }
@@ -231,6 +232,9 @@ public class MedicalReportServiceImpl implements MedicalReportService {
         } catch (IllegalArgumentException | NotFoundException | BadRequestException e) {
             log.error("Error in getByAppointmentId for appointment ID: " + appointmentId, e);
             throw e;
+        } catch (NullPointerException e) {
+            log.error("NullPointerException in getByAppointmentId for appointment ID: " + appointmentId + ". Check appointment, user, role, or report mapping.", e);
+            throw new RuntimeException("Failed to get medical report due to missing data. Please check appointment and user details.", e);
         } catch (Exception e) {
             log.error("Error getting medical report for appointment ID: " + appointmentId, e);
             throw new RuntimeException("Failed to get medical report: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()), e);
@@ -432,7 +436,8 @@ public class MedicalReportServiceImpl implements MedicalReportService {
             
             // Map vital signs with null checks
             try {
-                builder.vitalSigns(vitalSigns.stream()
+                List<MedicalReportVitalSign> vsList = (vitalSigns != null) ? vitalSigns : new ArrayList<>();
+                builder.vitalSigns(vsList.stream()
                         .filter(vs -> vs != null && vs.getId() != null) // Filter out null vital signs and those without ID
                         .map(vs -> {
                             try {
@@ -440,7 +445,7 @@ public class MedicalReportServiceImpl implements MedicalReportService {
                                         .id(vs.getId())
                                         .signType(vs.getSignType() != null ? vs.getSignType() : "")
                                         .value(vs.getValue() != null ? vs.getValue() : "")
-                                        .unit(vs.getUnit())
+                                        .unit(vs.getUnit() != null ? vs.getUnit() : "")
                                         .build();
                             } catch (Exception e) {
                                 log.warn("Error mapping vital sign: {}", e.getMessage());
@@ -456,7 +461,8 @@ public class MedicalReportServiceImpl implements MedicalReportService {
             
             // Map medications with null checks
             try {
-                builder.medications(medications.stream()
+                List<MedicalReportMedication> medList = (medications != null) ? medications : new ArrayList<>();
+                builder.medications(medList.stream()
                         .filter(med -> med != null && med.getId() != null) // Filter out null medications and those without ID
                         .map(med -> {
                             try {

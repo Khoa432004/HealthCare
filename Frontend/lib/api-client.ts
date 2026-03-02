@@ -73,11 +73,11 @@ class ApiClient {
         try {
           responseText = await response.text()
           
-          // Only log detailed error info for non-400 errors (400 is usually validation/conflict which is expected)
+          // Only log detailed error info for non-400 errors (use console.warn to avoid Next.js unhandled error overlay)
           if (response.status !== 400) {
-            console.error('API Error Response Text:', responseText)
-            console.error('API Error Response Status:', response.status)
-            console.error('API Error Response Headers:', Object.fromEntries(response.headers.entries()))
+            console.warn('API Error Response Text:', responseText)
+            console.warn('API Error Response Status:', response.status)
+            console.warn('API Error Response Headers:', Object.fromEntries(response.headers.entries()))
           }
           
           if (responseText && responseText.trim()) {
@@ -116,7 +116,7 @@ class ApiClient {
           }
         } catch (e) {
           // If reading response fails
-          console.error('Error reading response:', e)
+          console.warn('Error reading response:', e)
           errorData = {
             error: 'read_error',
             message: `Failed to read response: ${e instanceof Error ? e.message : 'Unknown error'}`,
@@ -127,24 +127,30 @@ class ApiClient {
         // If errorData is empty object or doesn't have message, provide default message
         if (Object.keys(errorData).length === 0 || (!errorData.message && !errorData.details && !errorData.error)) {
           // Try to use responseText as message if available
-          if (responseText && responseText.trim()) {
+          if (typeof responseText === 'string' && responseText.trim()) {
             errorData = {
               error: 'parse_error',
               message: responseText,
               rawText: responseText
-            }
+            };
           } else {
             errorData = {
               error: 'unknown_error',
-              message: `HTTP error! status: ${response.status}. Response was empty.`,
+              message: `HTTP error! status: ${response.status}. Response was empty or invalid.`,
               status: response.status
-            }
+            };
           }
         }
         
-        // Only log non-400 errors to avoid console noise
+        // Final safety: ensure we never log or throw with empty error message
+        if (!errorData.message && !errorData.details && !errorData.rawText) {
+          errorData.message = `HTTP error! status: ${response.status}.`;
+          if (!errorData.status) errorData.status = response.status;
+        }
+        
+        // Only log non-400 errors (use console.warn to avoid Next.js unhandled error overlay)
         if (response.status !== 400) {
-          console.error('API Error Response (parsed):', errorData)
+          console.warn('API Error Response (parsed):', errorData);
         }
         
         // Handle validation errors with details
@@ -198,7 +204,7 @@ class ApiClient {
     } catch (error: any) {
       // Don't log conflict errors (they are expected and handled)
       if (!error.isConflict) {
-        console.error('API Request Error:', error)
+        console.warn('API Request Error:', error)
       }
       
       // Handle network errors

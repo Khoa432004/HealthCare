@@ -153,8 +153,8 @@ public class MedicalReportController {
             
             return userId;
         } catch (Exception e) {
-            log.error("Error getting current user ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to get current user ID: " + e.getMessage(), e);
+            log.error("Error getting current user ID: {}", e != null ? e.getMessage() : "null", e);
+            throw new RuntimeException("Failed to get current user ID: " + (e != null && e.getMessage() != null ? e.getMessage() : (e != null ? e.getClass().getSimpleName() : "Unknown")), e);
         }
     }
 }

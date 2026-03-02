@@ -134,17 +134,15 @@ export const medicalReportService = {
       console.warn('Medical report API returned success=false:', response);
       return null;
     } catch (error: any) {
-      console.error('Error fetching medical report for appointment:', appointmentId, error);
-      
-      // If it's a 404 or "not found" error, return null (no report exists)
-      if (error.response?.status === 404 || 
-          error.message?.toLowerCase().includes('not found') ||
-          error.message?.toLowerCase().includes('no medical report')) {
-        return null;
+      // On any API error (404, 500, network, etc.), return null so the UI shows empty form
+      // instead of throwing and triggering unhandled error overlay
+      const status = error?.status ?? error?.response?.status;
+      if (status !== undefined) {
+        console.warn('Medical report fetch failed for appointment', appointmentId, 'status:', status, error?.message);
+      } else {
+        console.warn('Medical report fetch failed for appointment', appointmentId, error?.message);
       }
-      
-      // For other errors, re-throw to let the caller handle it
-      throw error;
+      return null;
     }
   },
 };
