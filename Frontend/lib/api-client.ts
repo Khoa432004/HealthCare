@@ -198,9 +198,18 @@ class ApiClient {
         throw error
       }
 
-      const jsonData = await response.json()
-      console.log('API Response Data:', jsonData)
-      return jsonData
+      const text = await response.text()
+      if (!text || !text.trim()) {
+        return null as T
+      }
+      try {
+        const jsonData = JSON.parse(text) as T
+        console.log('API Response Data:', jsonData)
+        return jsonData
+      } catch (parseError) {
+        console.warn('API Response parse error', parseError)
+        throw new Error('Phản hồi không hợp lệ từ máy chủ.')
+      }
     } catch (error: any) {
       // Don't log conflict errors (they are expected and handled)
       if (!error.isConflict) {

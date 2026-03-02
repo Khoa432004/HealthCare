@@ -61,8 +61,13 @@ export const API_ENDPOINTS = {
   },
   VNPAY: {
     PAYMENT: (orderTotal: number, orderInfo: string)  => `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`,
-  }
-
+  },
+  ICD: {
+    SEARCH: (q: string) => `/api/icd/search?q=${encodeURIComponent(q)}`,
+    MEDICATIONS: (icdCode: string) => `/api/icd/${encodeURIComponent(icdCode)}/medications`,
+    CHAPTERS: '/api/icd/chapters',
+    CODES_BY_RANGE: (from: string, to: string) => `/api/icd/codes?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+  },
 } as const
 
 // Token storage keys

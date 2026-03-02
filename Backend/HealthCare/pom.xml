@@ -150,6 +150,13 @@
 			<artifactId>commons-pool2</artifactId>
 		</dependency>
 
+		<!-- CSV parsing for ICD/drug data import -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>1.11.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
