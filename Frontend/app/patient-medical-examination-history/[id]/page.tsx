@@ -14,6 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { API_ENDPOINTS } from "@/lib/api-config"
+import { authService } from "@/services/auth.service"
+
 interface PrescriptionItem {
   name: string
   dosage: string
@@ -55,8 +57,19 @@ export default function MedicalReportDetail() {
   const [report, setReport] = useState<MedicalReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string>("PATIENT")
 
   const appointmentId = params.id as string
+
+  // Back link theo role: bác sĩ quay về chi tiết lịch hẹn, bệnh nhân quay về danh sách lịch sử khám
+  const backHref = userRole?.toUpperCase() === "DOCTOR"
+    ? `/calendar/appointment/${appointmentId}`
+    : "/patient-medical-examination-history"
+
+  useEffect(() => {
+    const user = authService.getUserInfo()
+    if (user?.role) setUserRole(user.role)
+  }, [])
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -97,7 +110,7 @@ export default function MedicalReportDetail() {
       <div className="max-w-5xl mx-auto">
         {/* Back Button */}
           <Link
-              href={`/patient-medical-examination-history`}            
+              href={backHref}
               className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
