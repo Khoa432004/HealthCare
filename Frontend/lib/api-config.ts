@@ -1,10 +1,23 @@
 /**
  * API Configuration
  * Centralized configuration for API endpoints
+ *
+ * Ưu tiên chọn URL theo thứ tự:
+ *  1. NEXT_PUBLIC_API_BASE_URL (nếu được set thủ công trong .env)
+ *  2. URL Northflank (khi NODE_ENV === 'production')
+ *  3. localhost:8080 (khi chạy local dev)
  */
+const HOSTED_API_URL = 'https://p01--be-healthcare--pycvnbgpdxqq.code.run'
+const LOCAL_API_URL = 'http://localhost:8080'
 
-// Get base URL from environment variable or use default
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === 'production' ? HOSTED_API_URL : LOCAL_API_URL)
+
+// Log để dễ debug (chỉ hiện trên browser console)
+if (typeof window !== 'undefined') {
+  console.info(`[API] Mode: ${process.env.NODE_ENV} → ${API_BASE_URL}`)
+}
 
 // API Endpoints
 export const API_ENDPOINTS = {
