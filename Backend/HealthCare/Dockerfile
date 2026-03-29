@@ -38,7 +38,7 @@ EXPOSE 8080
 # Health check: gọi /actuator/health mỗi 30s
 # - start-period=60s: cho app thời gian khởi động trước khi kiểm tra
 # - retries=3: thử lại 3 lần trước khi báo unhealthy
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # Tối ưu JVM cho môi trường container:
