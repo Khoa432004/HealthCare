@@ -3,6 +3,7 @@ package com.example.HealthCare.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -69,10 +70,12 @@ public class IcdService {
 
     private final IcdDiseaseMedicationRepository repository;
 
+    @Cacheable("icdChapters")
     public List<IcdChapterDto> getChapters() {
         return CHAPTERS;
     }
 
+    @Cacheable(value = "icdCodes", key = "#codeFrom + ':' + #codeTo")
     public List<IcdDiseaseSearchItemDto> getCodesByRange(String codeFrom, String codeTo) {
         if (codeFrom == null || codeTo == null || codeFrom.isBlank() || codeTo.isBlank()) {
             return List.of();
@@ -87,6 +90,7 @@ public class IcdService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "icdSearch", key = "#q")
     public List<IcdDiseaseSearchItemDto> search(String q) {
         if (q == null || q.isBlank()) {
             return List.of();
@@ -102,6 +106,7 @@ public class IcdService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "icdMedications", key = "#icdCode")
     public List<IcdMedicationItemDto> getMedicationsByIcdCode(String icdCode) {
         if (icdCode == null || icdCode.isBlank()) {
             return List.of();

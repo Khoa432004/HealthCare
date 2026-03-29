@@ -13,6 +13,9 @@ import com.example.HealthCare.repository.DoctorScheduleRuleRepository;
 import com.example.HealthCare.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,6 +107,7 @@ public class DoctorServiceImpl implements DoctorService {
         }
 
         @Override
+        @Cacheable(value = "doctorDetails", key = "#doctorId")
         public DoctorDetailDto getDoctorDetail(UUID doctorId) {
         return doctorProfileRepository.findByUserId(doctorId)
                 .map(doc -> {
@@ -187,6 +191,7 @@ public class DoctorServiceImpl implements DoctorService {
         }
 
         @Override
+        @Cacheable(value = "doctorProfessionalInfo", key = "#doctorId")
         public ProfessionalInfoResponse getProfessionalInfo(UUID doctorId) {
             DoctorProfile profile = doctorProfileRepository.findByUserId(doctorId)
                     .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
@@ -315,6 +320,10 @@ public class DoctorServiceImpl implements DoctorService {
 
         @Override
         @Transactional
+        @Caching(evict = {
+            @CacheEvict(value = "doctorDetails", key = "#doctorId"),
+            @CacheEvict(value = "doctorProfessionalInfo", key = "#doctorId")
+        })
         public ProfessionalInfoResponse updateProfessionalInfo(UUID doctorId, UpdateProfessionalInfoRequest request) {
             // Find existing profile
             DoctorProfile profile = doctorProfileRepository.findByUserId(doctorId)

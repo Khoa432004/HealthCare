@@ -82,8 +82,32 @@ public class RedisConfig {
             defaultCacheConfiguration.entryTtl(Duration.ofHours(24)));
         
         // Cache cho doctors pending - TTL 10 phút
-        cacheConfigurations.put("pendingDoctors", 
+        cacheConfigurations.put("pendingDoctors",
             defaultCacheConfiguration.entryTtl(Duration.ofMinutes(10)));
+
+        // Cache cho doctor detail - TTL 30 phút
+        cacheConfigurations.put("doctorDetails",
+            defaultCacheConfiguration.entryTtl(Duration.ofMinutes(30)));
+
+        // Cache cho doctor professional info - TTL 30 phút
+        cacheConfigurations.put("doctorProfessionalInfo",
+            defaultCacheConfiguration.entryTtl(Duration.ofMinutes(30)));
+
+        // Cache cho ICD chapters (dữ liệu tĩnh) - TTL 24 giờ
+        cacheConfigurations.put("icdChapters",
+            defaultCacheConfiguration.entryTtl(Duration.ofHours(24)));
+
+        // Cache cho ICD search - TTL 6 giờ
+        cacheConfigurations.put("icdSearch",
+            defaultCacheConfiguration.entryTtl(Duration.ofHours(6)));
+
+        // Cache cho ICD codes by range - TTL 24 giờ
+        cacheConfigurations.put("icdCodes",
+            defaultCacheConfiguration.entryTtl(Duration.ofHours(24)));
+
+        // Cache cho ICD medications - TTL 24 giờ
+        cacheConfigurations.put("icdMedications",
+            defaultCacheConfiguration.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfiguration)

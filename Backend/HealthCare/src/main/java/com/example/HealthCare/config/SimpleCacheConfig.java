@@ -23,7 +23,13 @@ public class SimpleCacheConfig {
             "roles",
             "privileges",
             "jwtBlacklist",
-            "pendingDoctors"
+            "pendingDoctors",
+            "doctorDetails",
+            "doctorProfessionalInfo",
+            "icdChapters",
+            "icdSearch",
+            "icdCodes",
+            "icdMedications"
         ));
         return cacheManager;
     }
