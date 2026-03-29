@@ -1,7 +1,21 @@
 version: '3.8'
 
+# ============================================================
+# Stack đầy đủ cho production:
+#   - app: Spring Boot (cổng 8080)
+#   - db:  PostgreSQL 15 (cổng 5432)
+#   - redis: Redis 7 (cổng 6379)
+#
+# Cách chạy:
+#   1. Sao chép .env.example thành .env rồi điền giá trị thật
+#   2. docker compose -f docker-compose.prod.yml up --build -d
+# ============================================================
+
 services:
+
+  # ----------------------------------------------------------
   # Spring Boot Application
+  # ----------------------------------------------------------
   app:
     build:
       context: .
@@ -9,70 +23,75 @@ services:
     container_name: healthcare-app
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      # Database Configuration
+      # Database
       - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://db:5432/healthcare_db}
       - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME:-postgres}
       - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD:-postgres}
-      
-      # JPA Configuration
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      # JPA
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       - SPRING_JPA_SHOW_SQL=false
-      
-      # Redis Configuration
+      # Redis
       - SPRING_DATA_REDIS_HOST=${REDIS_HOST:-redis}
       - SPRING_DATA_REDIS_PORT=${REDIS_PORT:-6379}
-      
-      # JWT Configuration
-      - SECURITY_JWT_SECRET=${JWT_SECRET:-ZmFrZV9iYXNlNjRfc2VjcmV0X2NoYW5nZV9tZV9sYXRlcg==}
+      - SPRING_CACHE_TYPE=${SPRING_CACHE_TYPE:-redis}
+      # JWT
+      - SECURITY_JWT_SECRET=${JWT_SECRET}
       - SECURITY_JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS:-86400000}
       - SECURITY_JWT_REFRESH_EXPIRATION_MS=${JWT_REFRESH_EXPIRATION_MS:-604800000}
-      
-      # Email Configuration
+      # Email (Gmail SMTP)
       - SPRING_MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
       - SPRING_MAIL_PORT=${MAIL_PORT:-587}
       - SPRING_MAIL_USERNAME=${MAIL_USERNAME}
       - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
-      
-      # Server Configuration
+      # Server / Profile
       - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
-    
+      - SPRING_PROFILES_ACTIVE=prod
     depends_on:
-      - db
-      - redis
-    
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
-    
     networks:
       - healthcare-network
-    
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 90s
 
+  # ----------------------------------------------------------
   # PostgreSQL Database
+  # ----------------------------------------------------------
   db:
     image: postgres:15-alpine
     container_name: healthcare-db
     environment:
-      - POSTGRES_DB=healthcare_db
+      - POSTGRES_DB=${POSTGRES_DB:-healthcare_db}
       - POSTGRES_USER=${DATABASE_USERNAME:-postgres}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Uncomment to initialize with SQL dump
-      # - ./ehealthcare_db_1-0.sql:/docker-entrypoint-initdb.d/init.sql
+      # Bỏ comment dòng dưới nếu muốn khởi tạo DB từ file SQL dump
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     networks:
       - healthcare-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${POSTGRES_DB:-healthcare_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ----------------------------------------------------------
   # Redis Cache
+  # ----------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: healthcare-redis
@@ -84,6 +103,11 @@ services:
     restart: unless-stopped
     networks:
       - healthcare-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
@@ -94,4 +118,3 @@ volumes:
 networks:
   healthcare-network:
     driver: bridge
-

@@ -157,6 +157,12 @@
 			<version>1.11.0</version>
 		</dependency>
 
+		<!-- Actuator for health checks (used by Docker/cloud health endpoints) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

@@ -41,6 +41,12 @@ README.md
 Dockerfile
 .dockerignore
 docker-compose.yml
+docker-compose.prod.yml
+
+# Environment files (không copy secret vào image)
+.env
+.env.*
+!.env.example
 
 # Monitoring data
 monitoring/
