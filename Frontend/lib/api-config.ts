@@ -1,12 +1,3 @@
-/**
- * API Configuration
- * Centralized configuration for API endpoints
- *
- * Ưu tiên chọn URL theo thứ tự:
- *  1. NEXT_PUBLIC_API_BASE_URL (nếu được set thủ công trong .env)
- *  2. URL Northflank (khi NODE_ENV === 'production')
- *  3. localhost:8080 (khi chạy local dev)
- */
 const HOSTED_API_URL = 'https://p01--be-healthcare--pycvnbgpdxqq.code.run'
 const LOCAL_API_URL = 'http://localhost:8080'
 
