@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit, CheckCircle } from "lucide-react"
+import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Edit, CheckCircle, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -139,6 +139,14 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   const isPatient = currentUser?.role?.toUpperCase() === 'PATIENT' || currentUser?.role === 'patient'
   const canEdit = isDoctor && appointment?.status === 'SCHEDULED'
   
+  const canJoinVideoCall = (): boolean => {
+    if (!appointment || !currentUser) return false
+    const status = appointment.status?.toUpperCase()
+    if (status !== "IN_PROCESS") return false
+    if (!isDoctor) return false
+    return String(currentUser.id).trim() === String(appointment.doctorId).trim()
+  }
+
   // Check if confirmation button should be shown
   // Button is shown when: status = SCHEDULED, user is doctor, and user is assigned doctor
   // Time validation is handled by backend when confirming
@@ -297,6 +305,18 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                     <CheckCircle className="w-4 h-4 mr-2" />
                     {isConfirming ? "Đang xác nhận..." : "Xác nhận khám"}
                   </Button>
+                )}
+                {canJoinVideoCall() && (
+                  <Link href={`/video-call/${appointment.id}`}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="ml-2 bg-[#16a1bd] text-white hover:bg-[#0d6171]"
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      Video call
+                    </Button>
+                  </Link>
                 )}
                 {/* Edit Button (only for doctor) */}
                 {canEdit && (

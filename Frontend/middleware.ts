@@ -19,21 +19,23 @@ const publicRoutes = [
 const roleBasedRoutes = {
   ADMIN: ['/admin-dashboard', '/settings'],
   CLINIC_ADMIN: ['/admin-dashboard', '/settings'],
-  DOCTOR: [
-    '/doctor-dashboard',
-    '/doctor-chat',
-    '/calendar',
-    '/my-profile',
-    '/settings',
-    '/patient-medical-examination-history',
-    '/patient-medical-examination-history/[id]',
-    '/prescription'
-  ],
-  PATIENT: [
-    '/patient-dashboard',
-    '/patient-chat',
-    '/patient-calendar',
-    '/patient-profile',
+    DOCTOR: [
+      '/doctor-dashboard',
+      '/doctor-chat',
+      '/calendar',
+      '/video-call',
+      '/my-profile',
+      '/settings',
+      '/patient-medical-examination-history',
+      '/patient-medical-examination-history/[id]',
+      '/prescription'
+    ],
+    PATIENT: [
+      '/patient-dashboard',
+      '/patient-chat',
+      '/patient-calendar',
+      '/video-call',
+      '/patient-profile',
     '/my-profile',
     '/settings',
     '/patient-emr',

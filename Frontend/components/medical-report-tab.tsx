@@ -33,6 +33,10 @@ interface Medication {
 interface MedicalReportTabProps {
   appointmentId?: string
   appointmentStatus?: string
+  /** Gọn trong sidebar phòng video — ẩn tiêu đề trùng lặp, giảm padding */
+  embedded?: boolean
+  /** Sau khi hoàn thành báo cáo (thay cho reload trang, ví dụ thoát phòng video) */
+  onReportCompleted?: () => void
 }
 
 interface IcdDiseaseSearchItem {
@@ -72,7 +76,12 @@ const AVAILABLE_VITAL_SIGNS = [
   { id: 'weight', name: 'Weight', unit: 'kg' },
 ]
 
-export default function MedicalReportTab({ appointmentId, appointmentStatus }: MedicalReportTabProps) {
+export default function MedicalReportTab({
+  appointmentId,
+  appointmentStatus,
+  embedded = false,
+  onReportCompleted,
+}: MedicalReportTabProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -435,9 +444,10 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
       
       // Reload report to show completed state
       await loadMedicalReport()
-      
-      // Reload appointment to get updated status
-      if (window.location.pathname.includes('/appointment/')) {
+
+      if (onReportCompleted) {
+        setTimeout(() => onReportCompleted(), 800)
+      } else if (window.location.pathname.includes('/appointment/')) {
         setTimeout(() => {
           window.location.reload()
         }, 1000)
@@ -463,23 +473,24 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className={`flex items-center justify-center ${embedded ? 'py-8' : 'py-16'}`}>
         <p className="text-gray-500">Đang tải...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Medical Report</h3>
-        {reportCompleted && (
-          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-            Completed
-          </span>
-        )}
-      </div>
+    <div className={embedded ? 'flex min-h-0 flex-col' : 'space-y-6'}>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Medical Report</h3>
+          {reportCompleted && (
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              Completed
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Empty State for SCHEDULED status */}
       {isScheduled && !existingReport && (
@@ -496,19 +507,26 @@ export default function MedicalReportTab({ appointmentId, appointmentStatus }: M
 
       {/* Form displayed directly in tab for IN_PROCESS status or when report exists */}
       {(isInProcess || existingReport) && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-          {/* Form Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Báo cáo y tế</h2>
-            {reportCompleted && (
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                Đã hoàn thành
-              </span>
-            )}
-          </div>
+        <div
+          className={
+            embedded
+              ? 'flex min-h-0 flex-col border-0 bg-transparent shadow-none'
+              : 'rounded-2xl border border-gray-200 bg-white shadow-sm'
+          }
+        >
+          {!embedded && (
+            <div className="flex items-center justify-between border-b border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900">Báo cáo y tế</h2>
+              {reportCompleted && (
+                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                  Đã hoàn thành
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Form Content */}
-          <div className="p-6 space-y-6">
+          <div className={`space-y-6 ${embedded ? 'p-4' : 'p-6'}`}>
               {/* Vital Signs Section */}
               <div>
                 <div className="flex items-center justify-between mb-4">

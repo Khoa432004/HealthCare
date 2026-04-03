@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Clock, X } from "lucide-react"
+import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Clock, X, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -124,6 +124,16 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
     }
     return name.substring(0, 2).toUpperCase()
+  }
+
+  const canJoinVideoCall = (): boolean => {
+    if (!appointment || !currentUser) return false
+    const status = appointment.status?.toUpperCase()
+    if (status !== "IN_PROCESS") return false
+    const role = currentUser.role?.toUpperCase()
+    const isPatientRole = role === "PATIENT" || currentUser.role === "patient"
+    if (!isPatientRole) return false
+    return String(currentUser.id).trim() === String(appointment.patientId).trim()
   }
 
   // Check if reschedule button should be shown
@@ -258,6 +268,18 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                 <Badge className={`${statusBadge.className} rounded-full px-4 py-1.5 text-sm font-medium`}>
                   {statusBadge.label}
                 </Badge>
+                {canJoinVideoCall() && (
+                  <Link href={`/video-call/${appointment.id}`}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="ml-2 bg-[#16a1bd] text-white hover:bg-[#0d6171]"
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      Video call
+                    </Button>
+                  </Link>
+                )}
                 {/* Reschedule Button (only for patient, when conditions are met) */}
                 {canReschedule() && (
                   <Button 
