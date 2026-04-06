@@ -82,6 +82,7 @@ public class SecurityConfig {
 								"/v3/api-docs/**",
 								"/actuator/**",
 								"/api/auth/test",
+								"/api/chat",
 								"/ws/**",
 								"/app/**",
 								"/topic/**"

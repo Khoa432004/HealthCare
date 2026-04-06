@@ -6,6 +6,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toaster'
 import Head from 'next/head'
 import './globals.css'
+import ChatWidget from '@/components/chat-widget'
 
 export default function RootLayout({
   children,
@@ -23,6 +24,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Analytics />
+        <ChatWidget />
       </body>
     </html>
   )
