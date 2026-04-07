@@ -2,7 +2,17 @@
 
 import { TrendingUp, TrendingDown } from "lucide-react"
 
-const metrics = [
+interface MetricItem {
+  title: string
+  value: string
+  unit: string
+  change: string
+  changeText: string
+  trend: "up" | "down"
+  chartData: number[]
+}
+
+const defaultMetrics: MetricItem[] = [
   {
     title: "Total Appointments",
     value: "65",
@@ -41,9 +51,22 @@ const metrics = [
   },
 ]
 
-export default function DoctorMetricsCards() {
+interface DoctorMetricsCardsProps {
+  metrics?: MetricItem[]
+}
+
+export default function DoctorMetricsCards({ metrics = defaultMetrics }: DoctorMetricsCardsProps) {
+  const gridColsClass =
+    metrics.length >= 4
+      ? "lg:grid-cols-4"
+      : metrics.length === 3
+        ? "lg:grid-cols-3"
+        : metrics.length === 2
+          ? "lg:grid-cols-2"
+          : "lg:grid-cols-1"
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <div className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-4 mb-4`}>
       {metrics.map((metric, index) => (
         <div key={index} className="glass rounded-2xl shadow-soft-md border-white/50 p-4 hover-lift">
           <h3 className="text-xs font-semibold text-gray-600 mb-2">{metric.title}</h3>

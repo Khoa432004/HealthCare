@@ -9,7 +9,6 @@ import {
   // Activity,
   // FileText,
   MessageSquare,
-  BarChart3,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
@@ -22,7 +21,6 @@ const sidebarItems = [
   // { icon: Activity, label: "Monitoring", href: "/monitoring" },
   // { icon: FileText, label: "EMR", href: "/emr" },
   { icon: MessageSquare, label: "Chats", href: "/doctor-chat" },
-  { icon: BarChart3, label: "Reports", href: "/reports" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },
 ]
 
