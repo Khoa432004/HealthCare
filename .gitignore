@@ -93,3 +93,4 @@ Backend/HealthCare/monitoring/prometheus/data/
 Backend/HealthCare/src/main/resources/application.properties
 **/application.properties
 
+.vs/
