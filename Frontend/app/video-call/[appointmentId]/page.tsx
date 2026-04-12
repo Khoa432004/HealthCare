@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { authService } from "@/services/auth.service"
 import { videoCallService } from "@/services/video-call.service"
 import type { VideoCallJoinData } from "@/types/video-call"
+import { SuppressAiFloatingChat } from "@/components/ai-floating-chat-context"
 
 export default function VideoCallPage({
   params,
@@ -57,25 +58,36 @@ export default function VideoCallPage({
 
   if (loading) {
     return (
-      <div className="flex h-svh items-center justify-center bg-slate-950 text-white">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-sm text-white/70">Đang chuẩn bị phòng video…</p>
+      <>
+        <SuppressAiFloatingChat />
+        <div className="flex h-svh items-center justify-center bg-slate-950 text-white">
+          <div className="flex flex-col items-center gap-4">
+            <LoadingSpinner size="lg" />
+            <p className="text-sm text-white/70">Đang chuẩn bị phòng video…</p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="flex h-svh flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center text-white">
-        <p className="max-w-md text-red-200">{error || "Không thể vào phòng"}</p>
-        <Button variant="secondary" onClick={() => router.back()}>
-          Quay lại
-        </Button>
-      </div>
+      <>
+        <SuppressAiFloatingChat />
+        <div className="flex h-svh flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center text-white">
+          <p className="max-w-md text-red-200">{error || "Không thể vào phòng"}</p>
+          <Button variant="secondary" onClick={() => router.back()}>
+            Quay lại
+          </Button>
+        </div>
+      </>
     )
   }
 
-  return <VideoCallRoom callData={data} isDoctor={isDoctor} onLeave={handleLeave} />
+  return (
+    <>
+      <SuppressAiFloatingChat />
+      <VideoCallRoom callData={data} isDoctor={isDoctor} onLeave={handleLeave} />
+    </>
+  )
 }

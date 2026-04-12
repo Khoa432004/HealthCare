@@ -136,6 +136,8 @@
   --color-error-400: #f97066;
   --color-warning-500: #f79009;
   --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
+    0px 8px 8px -4px rgba(16, 24, 40, 0.03);
 }
 
 @layer base {

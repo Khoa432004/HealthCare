@@ -10,9 +10,16 @@ interface YsalusChatInputProps {
   onSend: (content: string) => void
   /** Ví dụ khi AI đang trả lời */
   disabled?: boolean
+  placeholder?: string
 }
 
-export function YsalusChatInput({ isMultiple = true, className, onSend, disabled = false }: YsalusChatInputProps) {
+export function YsalusChatInput({
+  isMultiple = true,
+  className,
+  onSend,
+  disabled = false,
+  placeholder = "Message...",
+}: YsalusChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -63,6 +70,14 @@ export function YsalusChatInput({ isMultiple = true, className, onSend, disabled
 
   const handleFileDelete = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const submitText = () => {
+    if (disabled) return
+    const t = content.trim()
+    if (!t) return
+    onSend(t)
+    setContent("")
   }
 
   return (
@@ -118,7 +133,7 @@ export function YsalusChatInput({ isMultiple = true, className, onSend, disabled
         <input
           type="text"
           value={content}
-          placeholder="Message..."
+          placeholder={placeholder}
           disabled={disabled}
           className="flex-1 placeholder:text-gray-400 focus:outline-none py-2 px-4 text-sm disabled:cursor-not-allowed"
           onChange={(e) => setContent(e.target.value)}
@@ -126,8 +141,7 @@ export function YsalusChatInput({ isMultiple = true, className, onSend, disabled
             if (disabled) return
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
-              onSend(content)
-              setContent("")
+              submitText()
             }
           }}
         />
@@ -135,9 +149,7 @@ export function YsalusChatInput({ isMultiple = true, className, onSend, disabled
           endIcon={<Send className="size-3 text-white" />}
           disabled={disabled}
           onClick={() => {
-            if (disabled) return
-            onSend(content)
-            setContent("")
+            submitText()
           }}
         >
           Send

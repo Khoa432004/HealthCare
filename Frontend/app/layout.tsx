@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster'
 import Head from 'next/head'
 import './globals.css'
 import ChatWidget from '@/components/chat-widget'
+import { AiFloatingChatProvider } from '@/components/ai-floating-chat-context'
 
 export default function RootLayout({
   children,
@@ -21,10 +22,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
-        {children}
-        <Toaster />
-        <Analytics />
-        <ChatWidget />
+        <AiFloatingChatProvider>
+          {children}
+          <Toaster />
+          <Analytics />
+          <ChatWidget />
+        </AiFloatingChatProvider>
       </body>
     </html>
   )

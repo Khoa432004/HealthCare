@@ -18,6 +18,7 @@ import DoctorSidebar from "@/components/doctor-sidebar"
 import { ChatLayout } from "@/components/chat"
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
+import { SuppressAiFloatingChat } from "@/components/ai-floating-chat-context"
 import type { InboxFilter } from "@/types/chat"
 
 function DoctorChatContent() {
@@ -58,6 +59,7 @@ function DoctorChatContent() {
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#e5f5f8" }}>
+      <SuppressAiFloatingChat />
       <DoctorSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden" style={{ paddingTop: "12px" }}>
