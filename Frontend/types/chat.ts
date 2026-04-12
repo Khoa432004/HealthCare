@@ -1,4 +1,4 @@
-export type ChatRole = "ADMIN" | "DOCTOR" | "PATIENT"
+export type ChatRole = "ADMIN" | "DOCTOR" | "PATIENT" | "NURSE" | "RECEPTIONIST"
 
 export type ConversationParticipantType = "patient" | "doctor" | "nurse" | "receptionist" | "admin" | "ysalus"
 

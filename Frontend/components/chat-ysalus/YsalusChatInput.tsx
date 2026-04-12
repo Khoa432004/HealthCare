@@ -8,9 +8,11 @@ interface YsalusChatInputProps {
   isMultiple?: boolean
   className?: string
   onSend: (content: string) => void
+  /** Ví dụ khi AI đang trả lời */
+  disabled?: boolean
 }
 
-export function YsalusChatInput({ isMultiple = true, className, onSend }: YsalusChatInputProps) {
+export function YsalusChatInput({ isMultiple = true, className, onSend, disabled = false }: YsalusChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -65,10 +67,10 @@ export function YsalusChatInput({ isMultiple = true, className, onSend }: Ysalus
 
   return (
     <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      className={`w-full min-h-min relative flex flex-col p-4 overflow-hidden transition ${className ?? ""}`}
+      onDrop={disabled ? undefined : handleDrop}
+      onDragOver={disabled ? undefined : handleDragOver}
+      onDragLeave={disabled ? undefined : handleDragLeave}
+      className={`w-full min-h-min relative flex flex-col p-4 overflow-hidden transition ${disabled ? "opacity-70 pointer-events-none" : ""} ${className ?? ""}`}
     >
       <div
         className={`pointer-events-none absolute flex items-center inset-0 w-[99%] h-[90%] m-auto border-2 border-dashed border-brand-4 bg-gray-100 z-10 rounded-xl transition-opacity duration-200 z-10 ${
@@ -102,7 +104,10 @@ export function YsalusChatInput({ isMultiple = true, className, onSend }: Ysalus
       </div>
 
       <div className="flex items-center gap-4">
-        <CirclePlus className="size-8 text-gray-500 cursor-pointer" onClick={handleFileClick} />
+        <CirclePlus
+          className={`size-8 text-gray-500 ${disabled ? "" : "cursor-pointer"}`}
+          onClick={disabled ? undefined : handleFileClick}
+        />
         <input
           type="file"
           multiple
@@ -114,9 +119,11 @@ export function YsalusChatInput({ isMultiple = true, className, onSend }: Ysalus
           type="text"
           value={content}
           placeholder="Message..."
-          className="flex-1 placeholder:text-gray-400 focus:outline-none py-2 px-4 text-sm"
+          disabled={disabled}
+          className="flex-1 placeholder:text-gray-400 focus:outline-none py-2 px-4 text-sm disabled:cursor-not-allowed"
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={(e) => {
+            if (disabled) return
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
               onSend(content)
@@ -126,7 +133,9 @@ export function YsalusChatInput({ isMultiple = true, className, onSend }: Ysalus
         />
         <YsalusChatButton
           endIcon={<Send className="size-3 text-white" />}
+          disabled={disabled}
           onClick={() => {
+            if (disabled) return
             onSend(content)
             setContent("")
           }}

@@ -7,6 +7,8 @@ export interface ChatPeerDto {
   gender: string
   age: number | null
   avatarUrl: string | null
+  /** ADMIN | DOCTOR | … từ backend — dùng để highlight inbox. */
+  role?: string
 }
 
 export interface ChatMessageCreatorDto {

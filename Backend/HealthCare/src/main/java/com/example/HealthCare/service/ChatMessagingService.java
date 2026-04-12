@@ -140,7 +140,25 @@ public class ChatMessagingService {
 		if (role == UserRole.DOCTOR) {
 			return peersForDoctor(currentUserId);
 		}
+		if (role == UserRole.PATIENT) {
+			return peersForPatient();
+		}
 		return peersDoctorsForPatientOrAdmin();
+	}
+
+	/** Bệnh nhân: admin (hỗ trợ) trước, sau đó danh sách bác sĩ. */
+	private List<ChatPeerDto> peersForPatient() {
+		List<ChatPeerDto> admins = userAccountRepository.findAllByRoleAndStatusAndIsDeletedFalse(UserRole.ADMIN, AccountStatus.ACTIVE)
+				.stream()
+				.map(this::toPeerDto)
+				.filter(Objects::nonNull)
+				.sorted(Comparator.comparing(ChatPeerDto::getFullName, String.CASE_INSENSITIVE_ORDER))
+				.toList();
+		List<ChatPeerDto> doctors = peersDoctorsForPatientOrAdmin();
+		List<ChatPeerDto> out = new ArrayList<>(admins.size() + doctors.size());
+		out.addAll(admins);
+		out.addAll(doctors);
+		return out;
 	}
 
 	private List<ChatPeerDto> peersDoctorsForPatientOrAdmin() {
@@ -190,6 +208,7 @@ public class ChatMessagingService {
 				.gender(u.getGender() != null ? u.getGender().getValue() : "")
 				.age(u.getDateOfBirth() != null ? Period.between(u.getDateOfBirth(), LocalDate.now()).getYears() : null)
 				.avatarUrl(null)
+				.role(u.getRole() != null ? u.getRole().name() : null)
 				.build();
 	}
 }

@@ -17,4 +17,6 @@ public class ChatPeerDto {
 	private String gender;
 	private Integer age;
 	private String avatarUrl;
+	/** Ví dụ ADMIN, DOCTOR — để client highlight (vd chat bệnh nhân ↔ admin). */
+	private String role;
 }

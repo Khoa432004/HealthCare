@@ -71,6 +71,9 @@ export const API_ENDPOINTS = {
     MESSAGES: '/api/chat/messages',
     MESSAGES_GROUP_BY_DATE: '/api/chat/messages-group-by-date',
   },
+  AI: {
+    CHAT: '/api/ai/chat',
+  },
   ICD: {
     SEARCH: (q: string) => `/api/icd/search?q=${encodeURIComponent(q)}`,
     MEDICATIONS: (icdCode: string) => `/api/icd/${encodeURIComponent(icdCode)}/medications`,
