@@ -24,11 +24,13 @@ import {
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
 import { ChatLayout } from "@/components/chat"
+import { useAiFloatingChatContext } from "@/components/ai-floating-chat-context"
 
 type TabType = "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors" | "chats"
 
 function AdminDashboardContent() {
   const router = useRouter()
+  const { setSuppressed } = useAiFloatingChatContext()
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
 
@@ -41,6 +43,11 @@ function AdminDashboardContent() {
       })
     }
   }, [])
+
+  useEffect(() => {
+    setSuppressed(activeTab === "chats")
+    return () => setSuppressed(false)
+  }, [activeTab, setSuppressed])
 
   // Helper function to get initials from fullName
   const getInitials = (name: string): string => {
