@@ -26,7 +26,7 @@ export default function ChatWidget() {
     setInput('')
     setLoading(true)
 
-    const url = apiBase.replace(/\/$/, '') + '/api/chat'
+    const url = apiBase.replace(/\/$/, '') + '/api/ai/chat'
 
     fetch(url, {
       method: 'POST',

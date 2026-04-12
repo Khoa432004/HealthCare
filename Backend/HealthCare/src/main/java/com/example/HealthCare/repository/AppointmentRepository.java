@@ -211,5 +211,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         @Param("endDate") OffsetDateTime endDate
     );
 
+    @Query("SELECT DISTINCT a.patientId FROM Appointment a WHERE a.doctorId = :doctorId AND a.patientId IS NOT NULL")
+    List<UUID> findDistinctPatientIdsByDoctorId(@Param("doctorId") UUID doctorId);
+
 }
 

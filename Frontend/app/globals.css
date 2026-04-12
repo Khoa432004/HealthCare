@@ -111,6 +111,31 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Ysalus chat UI palette (matches ysalus-web/src/index.css) */
+  --color-brand-05: #e5f5f8;
+  --color-brand-1: #b7e2eb;
+  --color-brand-4: #44b4ca;
+  --color-brand-6: #128197;
+  --color-brand-7: #0d6171;
+  --color-dark-main: #0b0c0c;
+  --color-dark-secondary: #404647;
+  --color-indicator: #e4e7ec;
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f2f4f7;
+  --color-gray-200: #e4e7ec;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-800: #1d2939;
+  --color-gray-900: #101828;
+  --color-success-500: #12b76a;
+  --color-error-400: #f97066;
+  --color-warning-500: #f79009;
+  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
 }
 
 @layer base {
@@ -244,5 +269,18 @@
   @keyframes pulse-soft {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.8; }
+  }
+
+  /* Ysalus chat list scrollbars (narrow thumb like ysalus custom-scrollbar) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-200);
+    border-radius: 9999px;
   }
 }

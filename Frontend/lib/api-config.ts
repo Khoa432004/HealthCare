@@ -66,6 +66,11 @@ export const API_ENDPOINTS = {
   VNPAY: {
     PAYMENT: (orderTotal: number, orderInfo: string)  => `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`,
   },
+  CHAT: {
+    PEERS: '/api/chat/peers',
+    MESSAGES: '/api/chat/messages',
+    MESSAGES_GROUP_BY_DATE: '/api/chat/messages-group-by-date',
+  },
   ICD: {
     SEARCH: (q: string) => `/api/icd/search?q=${encodeURIComponent(q)}`,
     MEDICATIONS: (icdCode: string) => `/api/icd/${encodeURIComponent(icdCode)}/medications`,
