@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Bot, ChevronLeft, MoreVertical, Shield, Sparkles } from "lucide-react"
 import { formatDateWithSuffix } from "./dateTime.util"
+import { NewMessagesDivider } from "./NewMessagesDivider"
 import { YsalusAvatar } from "./YsalusAvatar"
 import {
   AI_ASSISTANT_RECEIVER_ID,
@@ -23,6 +24,19 @@ import {
 import { sendAiChatMessage } from "@/services/ai-chat.service"
 import { webSocketService } from "@/services/websocket.service"
 import { YsalusLoading } from "./YsalusLoading"
+import {
+  ensureReadTailInitialized,
+  flattenChatAscending,
+  getFirstUnreadOtherMessageId,
+  getLastReadTailId,
+  peerThreadKey,
+  setLastReadTailId,
+} from "@/lib/chat-read-state"
+import {
+  clearChatPendingForPeer,
+  setOpenPeerThreadForInbox,
+  touchPeerConversationOrder,
+} from "@/lib/chat-inbox-pending"
 
 interface YsalusChatContentProps {
   selectedChat: SelectedChatType
@@ -89,13 +103,55 @@ function MessageThreadView({
   chatMessagesGroupByDateData,
   bottomRef,
   scrollRef,
+  readThreadKey,
 }: {
   selectedChat: SelectedChatType
   currentUserId: string
   chatMessagesGroupByDateData: ChatMessagesGroupByDate[]
   bottomRef: React.RefObject<HTMLDivElement | null>
   scrollRef: React.RefObject<HTMLUListElement | null>
+  readThreadKey: string
 }) {
+  const [readEpoch, setReadEpoch] = useState(0)
+  const flat = useMemo(() => flattenChatAscending(chatMessagesGroupByDateData), [chatMessagesGroupByDateData])
+
+  useEffect(() => {
+    if (flat.length === 0) return
+    ensureReadTailInitialized(currentUserId, readThreadKey, flat)
+    setReadEpoch((e) => e + 1)
+  }, [flat, currentUserId, readThreadKey])
+
+  const firstUnreadOtherId = useMemo(() => {
+    const tail = getLastReadTailId(currentUserId, readThreadKey)
+    return getFirstUnreadOtherMessageId(flat, currentUserId, tail)
+  }, [flat, currentUserId, readThreadKey, readEpoch])
+
+  const markTailIfNearBottom = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || flat.length === 0) return
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+      const latestId = flat[flat.length - 1]!.id
+      if (getLastReadTailId(currentUserId, readThreadKey) !== latestId) {
+        setLastReadTailId(currentUserId, readThreadKey, latestId)
+        setReadEpoch((e) => e + 1)
+      }
+    }
+  }, [flat, currentUserId, readThreadKey, scrollRef])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener("scroll", markTailIfNearBottom, { passive: true })
+    return () => el.removeEventListener("scroll", markTailIfNearBottom)
+  }, [markTailIfNearBottom, scrollRef])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const id = requestAnimationFrame(() => markTailIfNearBottom())
+    return () => cancelAnimationFrame(id)
+  }, [chatMessagesGroupByDateData, markTailIfNearBottom, scrollRef])
+
   return (
     <ul
       ref={scrollRef}
@@ -105,8 +161,8 @@ function MessageThreadView({
         <li className="mt-6 text-center text-xs text-gray-400 px-2">Chưa có tin nhắn. Hãy gửi tin bên dưới.</li>
       )}
       {chatMessagesGroupByDateData.map((item) => (
-        <li key={item.date} className="w-full flex flex-col gap-4 mt-4">
-          <span className="text-gray-400 text-xs text-center">
+        <li key={item.date} className="mt-4 flex w-full flex-col gap-4">
+          <span className="text-center text-xs text-gray-400">
             {formatDateWithSuffix(new Date(item.date + "T12:00:00"))}
           </span>
           {(() => {
@@ -141,9 +197,9 @@ function MessageThreadView({
                       status={selectedChat.isReceiverOnline ? "online" : "none"}
                     />
                   )}
-                  <div className="flex flex-col items-start gap-1 max-w-[70%]">
+                  <div className="flex max-w-[70%] flex-col items-start gap-1">
                     {!isMe && (
-                      <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-xs font-medium text-gray-500">
                         {isAiAssistantChat(selectedChat) ? (
                           <>
                             <Bot className="size-3 shrink-0" />
@@ -156,15 +212,17 @@ function MessageThreadView({
                     )}
 
                     {group.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`p-3 rounded-xl text-gray-900 text-sm font-medium whitespace-pre-wrap break-words ${
-                          isMe
-                            ? "bg-brand-1 rounded-br-none self-end"
-                            : "bg-gray-100 rounded-bl-none"
-                        }`}
-                      >
-                        {msg.content}
+                      <div key={msg.id} className="flex w-full flex-col gap-1">
+                        {msg.id === firstUnreadOtherId ? <NewMessagesDivider /> : null}
+                        <div
+                          className={`whitespace-pre-wrap break-words rounded-xl p-3 text-sm font-medium text-gray-900 ${
+                            isMe
+                              ? "self-end rounded-br-none bg-brand-1"
+                              : "rounded-bl-none bg-gray-100"
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -268,6 +326,7 @@ function YsalusAiChatRoom({
         chatMessagesGroupByDateData={chatMessagesGroupByDateData}
         bottomRef={bottomRef}
         scrollRef={scrollRef}
+        readThreadKey="ai:main"
       />
       <YsalusChatInput className="border-t shrink-0" onSend={handleSendMessage} disabled={sending} />
     </div>
@@ -283,6 +342,16 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
   const [loadError, setLoadError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLUListElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setOpenPeerThreadForInbox(selectedChat.receiverId)
+    return () => setOpenPeerThreadForInbox(null)
+  }, [selectedChat.receiverId])
+
+  useEffect(() => {
+    if (chatMessagesGroupByDateData === null) return
+    clearChatPendingForPeer(selectedChat.receiverId)
+  }, [selectedChat.receiverId, chatMessagesGroupByDateData])
 
   useEffect(() => {
     let cancelled = false
@@ -343,6 +412,7 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
           if (base.length === 0) return [{ date: dayKeyFromCreatedAt(msg.createdAt as number), messages: [msg] }]
           return appendMessage(base, msg)
         })
+        touchPeerConversationOrder(selectedChat.receiverId)
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : "Send failed")
       }
@@ -412,6 +482,7 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
           chatMessagesGroupByDateData={chatMessagesGroupByDateData}
           bottomRef={bottomRef}
           scrollRef={scrollRef}
+          readThreadKey={peerThreadKey(selectedChat.receiverId)}
         />
       )}
       <YsalusChatInput className="border-t" onSend={handleSendMessage} />

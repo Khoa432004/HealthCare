@@ -1,6 +1,14 @@
 "use client"
 
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { ChevronLeft, Phone, Search, Sparkles, Video, X } from "lucide-react"
 import { sendAiChatMessage } from "@/services/ai-chat.service"
 import {
@@ -16,8 +24,36 @@ import { authService } from "@/services/auth.service"
 import { formatDateWithSuffix } from "@/components/chat-ysalus/dateTime.util"
 import { YsalusAvatar } from "@/components/chat-ysalus/YsalusAvatar"
 import { YsalusChatInput } from "@/components/chat-ysalus/YsalusChatInput"
+import { NewMessagesDivider } from "@/components/chat-ysalus/NewMessagesDivider"
+import { AI_ASSISTANT_RECEIVER_ID } from "@/components/chat-ysalus/types"
 import { useAiFloatingChatContext } from "@/components/ai-floating-chat-context"
+import {
+  clearChatPendingForPeer,
+  getChatPendingVersion,
+  getPeerConversationActivityTs,
+  getPendingCountForPeer,
+  setOpenPeerThreadForInbox,
+  subscribeChatPending,
+  touchPeerConversationOrder,
+  totalChatPendingCount,
+} from "@/lib/chat-inbox-pending"
+import {
+  ensureReadTailInitialized,
+  getFirstUnreadOtherMessageId,
+  getLastReadTailId,
+  peerThreadKey,
+  setLastReadTailId,
+} from "@/lib/chat-read-state"
 import { cn } from "@/lib/utils"
+
+function newBubbleMsgId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID()
+  }
+  return `m-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+const AI_BUBBLE_THREAD_KEY = "ai:bubble"
 
 /** Icon bubble giống ysalus-web `ChatBubble` (SVG gốc). */
 function YsalusBubbleChatIcon({ className }: { className?: string }) {
@@ -47,7 +83,7 @@ function YsalusBubbleChatIcon({ className }: { className?: string }) {
 
 type BubbleView = "inbox" | "ai" | "peer"
 
-type AiMsg = { from: "me" | "bot"; text: string }
+type AiMsg = { id: string; from: "me" | "bot"; text: string; at: number }
 
 type PeerLine = { id: string; content: string; creatorId: string; createdAt: string }
 
@@ -136,6 +172,10 @@ export default function ChatWidget() {
 
   const [aiMessages, setAiMessages] = useState<AiMsg[]>([])
   const [aiLoading, setAiLoading] = useState(false)
+  const [peerReadEpoch, setPeerReadEpoch] = useState(0)
+  const [aiReadEpoch, setAiReadEpoch] = useState(0)
+  const [aiBubbleUnread, setAiBubbleUnread] = useState(0)
+  const lastBubbleBotIdRef = useRef<string | null>(null)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -143,6 +183,10 @@ export default function ChatWidget() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const userId = authService.getUserInfo()?.id ?? null
+
+  const pendingVersion = useSyncExternalStore(subscribeChatPending, getChatPendingVersion, () => 0)
+  void pendingVersion
+  const wsPendingTotal = totalChatPendingCount()
 
   const selectedPeerRef = useRef<ChatPeerDto | null>(null)
   selectedPeerRef.current = selectedPeer
@@ -160,6 +204,31 @@ export default function ChatWidget() {
       setSearchQuery("")
     }
   }, [open])
+
+  useEffect(() => {
+    if (open && view === "peer" && selectedPeer) {
+      setOpenPeerThreadForInbox(selectedPeer.id)
+      clearChatPendingForPeer(selectedPeer.id)
+    } else {
+      setOpenPeerThreadForInbox(null)
+    }
+  }, [open, view, selectedPeer?.id])
+
+  useEffect(() => {
+    if (open && view === "ai") setAiBubbleUnread(0)
+  }, [open, view])
+
+  useEffect(() => {
+    const last = aiMessages[aiMessages.length - 1]
+    if (!last || last.from !== "bot") return
+    if (last.id === lastBubbleBotIdRef.current) return
+    if (open && view === "ai") {
+      lastBubbleBotIdRef.current = last.id
+      return
+    }
+    lastBubbleBotIdRef.current = last.id
+    setAiBubbleUnread((n) => n + 1)
+  }, [aiMessages, open, view])
 
   useEffect(() => {
     if (!open || !userId) {
@@ -248,10 +317,16 @@ export default function ChatWidget() {
   }, [open])
 
   const filteredPeers = useMemo(() => {
+    void pendingVersion
     const q = searchQuery.trim().toLowerCase()
-    if (!q) return peers
-    return peers.filter((p) => p.fullName.toLowerCase().includes(q))
-  }, [peers, searchQuery])
+    const base = !q ? peers : peers.filter((p) => p.fullName.toLowerCase().includes(q))
+    return [...base].sort((a, b) => {
+      const ta = getPeerConversationActivityTs(a.id)
+      const tb = getPeerConversationActivityTs(b.id)
+      if (tb !== ta) return tb - ta
+      return a.fullName.localeCompare(b.fullName, undefined, { sensitivity: "base" })
+    })
+  }, [peers, searchQuery, pendingVersion])
 
   const showAiInList = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -261,17 +336,118 @@ export default function ChatWidget() {
 
   const peerDayBlocks = useMemo(() => groupPeerLinesByDay(peerLines), [peerLines])
 
+  const peerFlatRead = useMemo(() => {
+    return [...peerLines]
+      .map((m) => ({
+        id: m.id,
+        creatorId: m.creatorId,
+        createdAt: new Date(m.createdAt).getTime(),
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id))
+  }, [peerLines])
+
+  useEffect(() => {
+    if (!userId || !selectedPeer || view !== "peer") return
+    if (peerFlatRead.length === 0) return
+    const key = peerThreadKey(selectedPeer.id)
+    ensureReadTailInitialized(userId, key, peerFlatRead)
+    setPeerReadEpoch((e) => e + 1)
+  }, [userId, selectedPeer?.id, view, peerFlatRead])
+
+  const firstPeerUnreadId = useMemo(() => {
+    if (!userId || !selectedPeer) return null
+    const tail = getLastReadTailId(userId, peerThreadKey(selectedPeer.id))
+    return getFirstUnreadOtherMessageId(peerFlatRead, userId, tail)
+  }, [userId, selectedPeer, peerFlatRead, peerReadEpoch])
+
+  const peerMarkTailIfNearBottom = useCallback(() => {
+    if (!userId || !selectedPeer || !scrollRef.current || peerFlatRead.length === 0) return
+    const el = scrollRef.current
+    const key = peerThreadKey(selectedPeer.id)
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+      const latestId = peerFlatRead[peerFlatRead.length - 1]!.id
+      if (getLastReadTailId(userId, key) !== latestId) {
+        setLastReadTailId(userId, key, latestId)
+        setPeerReadEpoch((e) => e + 1)
+      }
+    }
+  }, [userId, selectedPeer, peerFlatRead])
+
+  useEffect(() => {
+    if (view !== "peer") return
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener("scroll", peerMarkTailIfNearBottom, { passive: true })
+    const id = requestAnimationFrame(() => peerMarkTailIfNearBottom())
+    return () => {
+      cancelAnimationFrame(id)
+      el.removeEventListener("scroll", peerMarkTailIfNearBottom)
+    }
+  }, [view, peerMarkTailIfNearBottom, peerLines.length])
+
+  const aiFlatRead = useMemo(() => {
+    if (!userId) return [] as { id: string; creatorId: string; createdAt: number }[]
+    return [...aiMessages]
+      .map((m) => ({
+        id: m.id,
+        creatorId: m.from === "me" ? userId : AI_ASSISTANT_RECEIVER_ID,
+        createdAt: m.at,
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id))
+  }, [aiMessages, userId])
+
+  useEffect(() => {
+    if (!userId || view !== "ai") return
+    if (aiFlatRead.length === 0) return
+    ensureReadTailInitialized(userId, AI_BUBBLE_THREAD_KEY, aiFlatRead)
+    setAiReadEpoch((e) => e + 1)
+  }, [userId, view, aiFlatRead])
+
+  const firstAiUnreadId = useMemo(() => {
+    if (!userId) return null
+    const tail = getLastReadTailId(userId, AI_BUBBLE_THREAD_KEY)
+    return getFirstUnreadOtherMessageId(aiFlatRead, userId, tail)
+  }, [userId, aiFlatRead, aiReadEpoch])
+
+  const aiMarkTailIfNearBottom = useCallback(() => {
+    if (!userId || !scrollRef.current || aiFlatRead.length === 0) return
+    const el = scrollRef.current
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+      const latestId = aiFlatRead[aiFlatRead.length - 1]!.id
+      if (getLastReadTailId(userId, AI_BUBBLE_THREAD_KEY) !== latestId) {
+        setLastReadTailId(userId, AI_BUBBLE_THREAD_KEY, latestId)
+        setAiReadEpoch((e) => e + 1)
+      }
+    }
+  }, [userId, aiFlatRead])
+
+  useEffect(() => {
+    if (view !== "ai") return
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener("scroll", aiMarkTailIfNearBottom, { passive: true })
+    const id = requestAnimationFrame(() => aiMarkTailIfNearBottom())
+    return () => {
+      cancelAnimationFrame(id)
+      el.removeEventListener("scroll", aiMarkTailIfNearBottom)
+    }
+  }, [view, aiMarkTailIfNearBottom, aiMessages.length])
+
   const sendAi = useCallback(async (raw: string) => {
     const text = raw.trim()
     if (!text || aiLoading) return
-    setAiMessages((prev) => [...prev, { from: "me", text }])
+    const userMsg: AiMsg = { id: newBubbleMsgId(), from: "me", text, at: Date.now() }
+    setAiMessages((prev) => [...prev, userMsg])
     setAiLoading(true)
     try {
       const reply = await sendAiChatMessage(text)
-      setAiMessages((prev) => [...prev, { from: "bot", text: reply }])
+      setAiMessages((prev) => [
+        ...prev,
+        { id: newBubbleMsgId(), from: "bot", text: reply, at: Date.now() },
+      ])
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gửi tin thất bại"
-      setAiMessages((prev) => [...prev, { from: "bot", text: msg }])
+      setAiMessages((prev) => [...prev, { id: newBubbleMsgId(), from: "bot", text: msg, at: Date.now() }])
     } finally {
       setAiLoading(false)
     }
@@ -296,6 +472,7 @@ export default function ChatWidget() {
             },
           ]
         })
+        touchPeerConversationOrder(selectedPeer.id)
       } catch (e) {
         setPeerLoadError(e instanceof Error ? e.message : "Gửi thất bại")
       } finally {
@@ -414,19 +591,29 @@ export default function ChatWidget() {
                   )}
                   {userId &&
                     !peersLoading &&
-                    filteredPeers.map((p, index) => (
+                    filteredPeers.map((p, index) => {
+                      const rowPending = getPendingCountForPeer(p.id)
+                      return (
                       <li key={p.id} className="flex flex-col">
                         <button
                           type="button"
                           className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-3 text-sm hover:bg-gray-100"
                           onClick={() => {
+                            clearChatPendingForPeer(p.id)
                             setSelectedPeer(p)
                             setView("peer")
                           }}
                         >
                           <YsalusAvatar src={p.avatarUrl ?? ""} alt={p.fullName} size="medium" status="none" />
                           <div className="min-w-0 flex-1 overflow-hidden text-left">
-                            <p className="mb-1 block font-semibold text-gray-800">{p.fullName}</p>
+                            <div className="mb-1 flex items-center gap-2">
+                              <p className="block min-w-0 flex-1 truncate font-semibold text-gray-800">{p.fullName}</p>
+                              {rowPending > 0 ? (
+                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-error-400 px-1.5 text-[10px] font-bold text-white">
+                                  {rowPending > 9 ? "9+" : rowPending}
+                                </span>
+                              ) : null}
+                            </div>
                             <div className="flex items-center justify-between gap-2">
                               <p className="flex-1 truncate text-sm text-gray-500">{peerRoleLabel(p.role)}</p>
                             </div>
@@ -434,7 +621,8 @@ export default function ChatWidget() {
                         </button>
                         {index < filteredPeers.length - 1 ? <hr className="border-indicator" /> : null}
                       </li>
-                    ))}
+                      )
+                    })}
                   {userId &&
                     !peersLoading &&
                     filteredPeers.length === 0 &&
@@ -475,24 +663,26 @@ export default function ChatWidget() {
                       {grp[0]?.from === "bot" ? (
                         <p className="text-xs font-medium text-gray-500">Trợ lý AI</p>
                       ) : null}
-                      {grp.map((m, mi) => (
-                        <div
-                          key={`ai-g-${gi}-m-${mi}`}
-                          className={cn(
-                            "flex w-full",
-                            m.from === "me" ? "justify-end" : "justify-start"
-                          )}
-                        >
+                      {grp.map((m) => (
+                        <div key={m.id} className="flex w-full flex-col gap-1">
+                          {m.id === firstAiUnreadId ? <NewMessagesDivider /> : null}
                           <div
                             className={cn(
-                              "max-w-[80%] whitespace-pre-wrap break-words p-2 text-sm font-medium text-gray-900",
-                              "rounded-xl",
-                              m.from === "me"
-                                ? "rounded-br-none bg-brand-1"
-                                : "rounded-bl-none bg-gray-100"
+                              "flex w-full",
+                              m.from === "me" ? "justify-end" : "justify-start"
                             )}
                           >
-                            {m.text}
+                            <div
+                              className={cn(
+                                "max-w-[80%] whitespace-pre-wrap break-words p-2 text-sm font-medium text-gray-900",
+                                "rounded-xl",
+                                m.from === "me"
+                                  ? "rounded-br-none bg-brand-1"
+                                  : "rounded-bl-none bg-gray-100"
+                              )}
+                            >
+                              {m.text}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -551,6 +741,7 @@ export default function ChatWidget() {
                               {showPeerName ? (
                                 <p className="text-xs font-medium text-gray-500">{selectedPeer.fullName}</p>
                               ) : null}
+                              {m.id === firstPeerUnreadId ? <NewMessagesDivider /> : null}
                               <div className={cn("flex w-full", isMe ? "justify-end" : "justify-start")}>
                                 <div
                                   className={cn(
@@ -588,6 +779,11 @@ export default function ChatWidget() {
           onClick={toggle}
           className="relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-7 text-white shadow-md transition hover:bg-brand-6 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-6 focus-visible:ring-offset-2"
         >
+          {(wsPendingTotal > 0 || aiBubbleUnread > 0) && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-error-400 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+              {wsPendingTotal + aiBubbleUnread > 9 ? "9+" : wsPendingTotal + aiBubbleUnread}
+            </span>
+          )}
           <YsalusBubbleChatIcon />
         </button>
       </div>

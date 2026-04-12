@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useEffect, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { MessageCircle, Shield, Stethoscope, Users } from "lucide-react"
 import { YsalusAvatar } from "./YsalusAvatar"
 import { YsalusLabel } from "./YsalusLabel"
@@ -14,6 +14,13 @@ import {
 import type { ChatRole, InboxFilter } from "@/types/chat"
 import { fetchChatPeers, type ChatPeerDto } from "@/services/chat-messaging.service"
 import { ChatAiHighlightBanner } from "./ChatAiHighlightBanner"
+import {
+  clearChatPendingForPeer,
+  getChatPendingVersion,
+  getPeerConversationActivityTs,
+  getPendingCountForPeer,
+  subscribeChatPending,
+} from "@/lib/chat-inbox-pending"
 
 /** Không có nurse/receptionist — không dùng trong inbox Ysalus. */
 const INBOX_CATEGORY_DEFS: { icon: ReactNode; filter: InboxFilter }[] = [
@@ -36,6 +43,7 @@ function genderLabel(g?: string) {
 }
 
 function peerToSelected(peer: ChatPeerDto, senderId: string): SelectedChatType {
+  const activityTs = getPeerConversationActivityTs(peer.id)
   return {
     senderId,
     receiverId: peer.id,
@@ -46,7 +54,7 @@ function peerToSelected(peer: ChatPeerDto, senderId: string): SelectedChatType {
     receiverRole: peer.role,
     isReceiverOnline: false,
     lastMessage: " ",
-    lastDate: new Date(),
+    lastDate: activityTs > 0 ? new Date(activityTs) : new Date(),
   }
 }
 
@@ -88,6 +96,9 @@ export function YsalusChatList({
   const [peers, setPeers] = useState<ChatPeerDto[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
 
+  const pendingVersion = useSyncExternalStore(subscribeChatPending, getChatPendingVersion, () => 0)
+  void pendingVersion
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -103,9 +114,19 @@ export function YsalusChatList({
     }
   }, [])
 
+  const sortedPeers = useMemo(() => {
+    void pendingVersion
+    return [...peers].sort((a, b) => {
+      const ta = getPeerConversationActivityTs(a.id)
+      const tb = getPeerConversationActivityTs(b.id)
+      if (tb !== ta) return tb - ta
+      return a.fullName.localeCompare(b.fullName, undefined, { sensitivity: "base" })
+    })
+  }, [peers, pendingVersion])
+
   const formatChats = useMemo(
-    () => peers.map((p) => peerToSelected(p, currentUserId)),
-    [peers, currentUserId]
+    () => sortedPeers.map((p) => peerToSelected(p, currentUserId)),
+    [sortedPeers, currentUserId, pendingVersion]
   )
 
   const renderCategory = (icon: ReactNode, filter: InboxFilter) => {
@@ -144,11 +165,13 @@ export function YsalusChatList({
         {formatChats.map((item, index) => {
           const adminRow = isAdminReceiver(item)
           const rowSelected = selectedReceiverId === item.receiverId
+          const peerPending = getPendingCountForPeer(item.receiverId)
           return (
           <li
             key={item.receiverId}
             className="flex flex-col"
             onClick={() => {
+              clearChatPendingForPeer(item.receiverId)
               setSelectedChat(item)
             }}
           >
@@ -180,6 +203,11 @@ export function YsalusChatList({
                       <span className={`font-semibold truncate ${adminRow ? "text-amber-950" : "text-gray-800"}`}>
                         {item.receiverName}
                       </span>
+                      {peerPending > 0 && (
+                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-error-400 px-1.5 text-[10px] font-bold text-white">
+                          {peerPending > 9 ? "9+" : peerPending}
+                        </span>
+                      )}
                       {adminRow && (
                         <span className="shrink-0 rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                           Admin

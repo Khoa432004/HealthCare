@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster'
 import Head from 'next/head'
 import './globals.css'
 import ChatWidget from '@/components/chat-widget'
+import { ChatInboundSubscriber } from '@/components/chat-inbound-subscriber'
 import { AiFloatingChatProvider } from '@/components/ai-floating-chat-context'
 
 export default function RootLayout({
@@ -23,6 +24,7 @@ export default function RootLayout({
       </Head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
         <AiFloatingChatProvider>
+          <ChatInboundSubscriber />
           {children}
           <Toaster />
           <Analytics />
