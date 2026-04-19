@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
 import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
+import com.example.HealthCare.dto.response.VitalMetricPointResponse;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
 
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,19 @@ public class MedicalExaminationHistoryController {
         List<MedicalExaminationHistoryDetailDto> detailHistory = historyService.getDetailHistoryByAppointmentId(appointmentId);
         return ResponseEntity.ok(detailHistory);
     }
-    
+
+    /**
+     * Combined vital-metrics feed for the patient's "Metrics" tab chart.
+     * Returns a flat list of measurement points sourced from both the legacy
+     * medical_report_vital_sign table and the new patient_vital_measurement
+     * table, sorted by takenAt ascending.
+     */
+    @GetMapping("/{patientId}/vital-metrics")
+    @PreAuthorize("hasAuthority('VIEW_MEDICAL_EXAMINATION_HISTORY')")
+    public ResponseEntity<List<VitalMetricPointResponse>> getVitalMetrics(
+            @PathVariable UUID patientId) {
+        List<VitalMetricPointResponse> points = historyService.getVitalMetricPoints(patientId);
+        return ResponseEntity.ok(points);
+    }
+
 }

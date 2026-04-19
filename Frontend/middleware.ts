@@ -41,6 +41,7 @@ const roleBasedRoutes = {
     '/patient-emr',
     '/patient-medical-examination-history',
     '/patient-medical-examination-history/[id]',
+    '/health-tracking',
     '/prescription',
     '/submitOrder',
     '/patient-payment-history'

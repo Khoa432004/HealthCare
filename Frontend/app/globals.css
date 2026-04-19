@@ -113,11 +113,17 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Ysalus chat UI palette (matches ysalus-web/src/index.css) */
+  --color-brand-0: #fcfeff;
+  --color-brand-025: #f7fefe;
   --color-brand-05: #e5f5f8;
   --color-brand-1: #b7e2eb;
   --color-brand-4: #44b4ca;
+  --color-brand-5: #16a1bd;
   --color-brand-6: #128197;
   --color-brand-7: #0d6171;
+  --color-brand-8: #09404c;
+  --color-brand-9: #073039;
+  --color-brand-11: #ceebf2;
   --color-dark-main: #0b0c0c;
   --color-dark-secondary: #404647;
   --color-indicator: #e4e7ec;
@@ -134,8 +140,11 @@
   --color-gray-900: #101828;
   --color-success-500: #12b76a;
   --color-error-400: #f97066;
+  --color-error-500: #f04438;
   --color-warning-500: #f79009;
   --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
+    0px 4px 6px -2px rgba(16, 24, 40, 0.03);
   --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
     0px 8px 8px -4px rgba(16, 24, 40, 0.03);
 }
@@ -284,5 +293,19 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: var(--color-gray-200);
     border-radius: 9999px;
+  }
+
+  /* Hide scrollbar (matches ysalus-web .no-scrollbar) */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Ysalus-compatible z-9 utility */
+  .z-9 {
+    z-index: 9;
   }
 }
