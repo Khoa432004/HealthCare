@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
-import PatientMetricsCards from "@/components/patient-metrics-cards"
 import { HealthMetricsChart } from "@/components/health-metrics-chart"
 import { LatestMeasurements } from "@/components/latest-measurements"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
@@ -162,8 +161,6 @@ function PatientDashboardContent() {
         <div className="flex-1 flex">
           {/* Main Dashboard Area */}
           <div className="flex-1 px-4 pb-4">
-            <PatientMetricsCards />
-
             {/* Charts and Updates Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
               <div className="lg:col-span-1">

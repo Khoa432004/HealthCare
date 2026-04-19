@@ -66,6 +66,10 @@ export type MetricDetail = {
   registeredDeviceId?: string | null
   serialNumber?: string | null
   averageMode?: boolean | null
+  /** Classification badge computed by the backend (LOW / NORMAL / HIGH). */
+  badge?: "LOW" | "NORMAL" | "HIGH" | null
+  /** Human-readable reference range label (e.g. "90 - 140 mg/dL"). */
+  rangeLabel?: string | null
 }
 
 export type MetricData = {

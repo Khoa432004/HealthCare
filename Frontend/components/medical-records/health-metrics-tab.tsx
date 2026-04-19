@@ -13,21 +13,22 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { format, isToday } from "date-fns"
+import { format, isToday, startOfDay } from "date-fns"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   FilterIcon,
 } from "./ysalus-metrics/icons"
 
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   patientVitalMetricsService,
   type MedicalVitalMetricPoint,
 } from "@/services/patient-vital-metrics.service"
+import { patientVitalMeasurementService } from "@/services/patient-vital-measurement.service"
 
 import { AddMeasurementPopup } from "./add-measurement-popup/AddMeasurementPopup"
+import { mapFormValuesToCreateRequest } from "./add-measurement-popup/mapToBackendPayload"
 import { HealthMetricsChartContainer } from "./ysalus-metrics/HealthMetricsChartContainer"
 import { MeasurementDateItem } from "./ysalus-metrics/MeasurementDateItem"
 import { MetricsFilterMenu } from "./ysalus-metrics/MetricsFilterMenu"
@@ -38,18 +39,16 @@ import {
   isClientMetricFilterKey,
 } from "./ysalus-metrics/healthMetricsFilter.constants"
 import {
-  buildHealthMetricChartData,
   buildHealthMetricOptions,
   getHealthMetricTimelineDate,
   getHealthMetricColor,
-  getHealthMetricLabel,
   mergeHealthMetricData,
   resolveHealthMetricChartKeys,
   type HealthMetricChartKey,
   type HealthMetricDateRange,
   type HealthMetricOptionKey,
 } from "./ysalus-metrics/healthMetricsChart.utils"
-import type { SelectOption } from "./ysalus-metrics/types"
+import { MetricType, type MetricDetail, type SelectOption } from "./ysalus-metrics/types"
 
 const dateRangeOptions: SelectOption[] = [
   { value: "week", label: "Tuần" },
@@ -176,15 +175,55 @@ export function HealthMetricsTab({
     [selectedMetricOptionKey]
   )
 
-  const visibleMetricKeys = useMemo(
-    () =>
-      buildHealthMetricChartData(
-        metrics,
-        selectedMetricKeys,
-        selectedDateRange
-      ).series.map((series) => series.name as HealthMetricChartKey),
-    [metrics, selectedDateRange, selectedMetricKeys]
-  )
+  /**
+   * Group every MetricData bucket by CALENDAR DAY so all measurements taken
+   * on the same day render under a single date label ("Hôm nay" / "16 thg 4")
+   * — matching the ysalus-source "Latest measurements" layout.
+   */
+  const measurementsByDay = useMemo(() => {
+    const METRIC_ORDER: Record<MetricType, number> = {
+      [MetricType.BloodPressure]: 0,
+      [MetricType.HeartRate]: 1,
+      [MetricType.BloodSugar]: 2,
+      [MetricType.Cholesterol]: 3,
+      [MetricType.UricAcid]: 4,
+      [MetricType.Hemoglobin]: 5,
+      [MetricType.Hematocrit]: 6,
+      [MetricType.Ketone]: 7,
+      [MetricType.Ecg]: 8,
+      [MetricType.Measurement]: 9,
+    }
+
+    const detailTime = (detail: MetricDetail): number => {
+      const ref = detail.takenAt ?? detail.updatedAt ?? detail.createdAt
+      return ref ? new Date(ref).getTime() : 0
+    }
+
+    const byDay = new Map<
+      string,
+      { dayStart: Date; details: MetricDetail[] }
+    >()
+
+    for (const metricData of metrics) {
+      const dayStart = startOfDay(getHealthMetricTimelineDate(metricData))
+      const dayKey = dayStart.toISOString()
+      const bucket =
+        byDay.get(dayKey) ?? { dayStart, details: [] as MetricDetail[] }
+      bucket.details.push(...metricData.metricDetails)
+      byDay.set(dayKey, bucket)
+    }
+
+    return Array.from(byDay.values())
+      .map(({ dayStart, details }) => ({
+        dayStart,
+        details: details.sort((a, b) => {
+          const timeDiff = detailTime(b) - detailTime(a)
+          if (timeDiff !== 0) return timeDiff
+          return (METRIC_ORDER[a.type] ?? 99) - (METRIC_ORDER[b.type] ?? 99)
+        }),
+      }))
+      .sort((left, right) => right.dayStart.getTime() - left.dayStart.getTime())
+  }, [metrics])
 
   const renderMetricOptionChip = (option: SelectOption) => {
     if (!option.value) return null
@@ -284,21 +323,6 @@ export function HealthMetricsTab({
               dateRange={selectedDateRange}
             />
           )}
-
-          <div className="flex flex-wrap items-center gap-3">
-            {visibleMetricKeys.map((metricKey) => (
-              <div
-                key={metricKey}
-                className="flex items-center gap-2 text-xs font-medium"
-              >
-                <div
-                  className="rounded-full h-3 w-3"
-                  style={{ background: getHealthMetricColor(metricKey) }}
-                />
-                <span>{getHealthMetricLabel(metricKey)}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -310,40 +334,37 @@ export function HealthMetricsTab({
               Chỉ số gần nhất
             </span>
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 max-w-10 text-xs rounded-full bg-brand-05 border border-brand-7 flex items-center justify-center cursor-pointer">
-                <FilterIcon className="size-4 text-brand-7" />
-              </div>
-              <Button
-                variant="outline"
+              <button
+                type="button"
+                className="h-10 w-10 rounded-full bg-white border border-brand-5 text-brand-5 flex items-center justify-center hover:bg-brand-05 transition-colors"
+                aria-label="Lọc chỉ số"
+              >
+                <FilterIcon className="size-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsAddMeasurementOpen(true)}
+                className="h-10 px-6 rounded-full bg-white border border-brand-5 text-brand-5 text-sm font-medium hover:bg-brand-05 transition-colors"
               >
                 Thêm chỉ số
-              </Button>
+              </button>
             </div>
           </div>
 
           <div className="flex flex-col gap-6">
-            {metrics.length === 0 && !loading ? (
+            {measurementsByDay.length === 0 && !loading ? (
               <p className="text-sm text-gray-500 py-6 text-center">
                 Chưa có bản ghi chỉ số nào từ các lần khám đã hoàn thành.
               </p>
             ) : (
-              metrics.map((metricData) => (
+              measurementsByDay.map(({ dayStart, details }) => (
                 <MeasurementDateItem
-                  key={
-                    metricData.id +
-                    metricData.metricDetails
-                      .map((detail) => String(detail.updatedAt))
-                      .join()
-                  }
-                  metricDetails={metricData.metricDetails}
+                  key={dayStart.toISOString()}
+                  metricDetails={details}
                   date={
-                    isToday(getHealthMetricTimelineDate(metricData))
+                    isToday(dayStart)
                       ? "Hôm nay"
-                      : format(
-                          getHealthMetricTimelineDate(metricData),
-                          "dd MMM"
-                        )
+                      : format(dayStart, "dd MMM")
                   }
                 />
               ))
@@ -358,7 +379,12 @@ export function HealthMetricsTab({
         patientId={patientId}
         patientName={patientName}
         readableId={patientReadableId}
-        onSave={async () => {
+        onSave={async ({ result, formValues }) => {
+          const payload = mapFormValuesToCreateRequest(formValues, result)
+          if (!payload) {
+            throw new Error("Loại chỉ số chưa được hỗ trợ.")
+          }
+          await patientVitalMeasurementService.create(payload)
           await fetchData()
         }}
       />

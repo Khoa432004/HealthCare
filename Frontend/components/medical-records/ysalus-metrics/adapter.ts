@@ -10,6 +10,8 @@
 import type { MedicalVitalMetricPoint } from "@/services/patient-vital-metrics.service"
 
 import {
+  MetricBloodSugarMeasurement,
+  MetricTimeOfDay,
   MetricType,
   type MetricData,
   type MetricDetail,
@@ -50,6 +52,22 @@ function parseBloodPressure(
   return { systolic: sys, diastolic: dia }
 }
 
+function resolveSource(
+  point: MedicalVitalMetricPoint
+): "manual" | "device" {
+  if (point.source === "MANUAL") return "manual"
+  if (point.source === "DEVICE") return "device"
+  return "device"
+}
+
+function resolveTimeOfDay(
+  meal: MedicalVitalMetricPoint["meal"]
+): MetricTimeOfDay | undefined {
+  if (meal === "BEFORE_MEAL") return MetricTimeOfDay.BeforeMeal
+  if (meal === "AFTER_MEAL") return MetricTimeOfDay.AfterMeal
+  return undefined
+}
+
 function buildMetricDetail(
   point: MedicalVitalMetricPoint,
   patientId: string,
@@ -60,6 +78,11 @@ function buildMetricDetail(
 
   const takenAt = new Date(point.measuredAt)
   const baseId = `${point.appointmentId}-${point.signType}-${index}`
+  const source = resolveSource(point)
+
+  const badge = point.badge ?? null
+  const rangeLabel = point.rangeLabel ?? null
+  const timeOfDay = resolveTimeOfDay(point.meal)
 
   if (metricType === MetricType.BloodPressure) {
     const parsed = parseBloodPressure(point.value)
@@ -71,11 +94,13 @@ function buildMetricDetail(
       updatedAt: takenAt,
       takenAt,
       type: MetricType.BloodPressure,
-      source: "device",
+      source,
       unit: point.unit,
       systolicValue: parsed.systolic,
       diastolicValue: parsed.diastolic,
       value: parsed.systolic,
+      badge,
+      rangeLabel,
     }
   }
 
@@ -94,9 +119,17 @@ function buildMetricDetail(
     updatedAt: takenAt,
     takenAt,
     type: metricType,
-    source: "device",
+    source,
     unit: point.unit,
     value: numeric,
+    badge,
+    rangeLabel,
+    ...(metricType === MetricType.BloodSugar
+      ? {
+          timeOfDay,
+          measurement: MetricBloodSugarMeasurement.BloodGlucose,
+        }
+      : {}),
     ...(point.signType === "Weight" ? { weight: numeric } : {}),
   }
 }
@@ -105,6 +138,12 @@ function buildMetricDetail(
  * Group points by visit (appointmentId). Within each visit all details share
  * the same measuredAt so they appear as one row in ysalus "Latest
  * measurements" list.
+ *
+ * Additionally, when a BP and a HR detail co-exist in the same bucket (the
+ * backend expands a BP+pulse self-measurement into two points with the same
+ * grouping id), we fold the HR into the BP detail's `pulseValue` so the
+ * MeasurementItem renders them in a single card (BP on the left, HR on the
+ * right as secondary) — matching the ysalus-source UX.
  */
 export function adaptVitalMetricsToMetricData(
   points: MedicalVitalMetricPoint[],
@@ -134,7 +173,7 @@ export function adaptVitalMetricsToMetricData(
     patientId,
     createdAt: bucket.takenAt,
     updatedAt: bucket.takenAt,
-    metricDetails: bucket.details.sort((a, b) => {
+    metricDetails: mergeBpAndHrDetails(bucket.details).sort((a, b) => {
       const order: Record<MetricType, number> = {
         [MetricType.BloodPressure]: 0,
         [MetricType.HeartRate]: 1,
@@ -150,4 +189,36 @@ export function adaptVitalMetricsToMetricData(
       return (order[a.type] ?? 99) - (order[b.type] ?? 99)
     }),
   }))
+}
+
+/**
+ * If a BP detail and a HR detail co-exist within the same bucket, inline the
+ * HR value as `pulseValue` on the BP detail and drop the standalone HR entry.
+ * This mirrors ysalus-source where a single measurement session with both
+ * systolic/diastolic + pulse is rendered as one combined card.
+ */
+function mergeBpAndHrDetails(details: MetricDetail[]): MetricDetail[] {
+  const bpIndex = details.findIndex(
+    (d) => d.type === MetricType.BloodPressure
+  )
+  if (bpIndex < 0) return details
+
+  const hrIndex = details.findIndex(
+    (d) => d.type === MetricType.HeartRate
+  )
+  if (hrIndex < 0) return details
+
+  const bp = details[bpIndex]
+  const hr = details[hrIndex]
+
+  if (bp.pulseValue !== undefined && bp.pulseValue !== null) return details
+
+  const pulseValue =
+    typeof hr.value === "number" && !Number.isNaN(hr.value) ? hr.value : null
+  if (pulseValue === null) return details
+
+  const merged: MetricDetail = { ...bp, pulseValue }
+  return details
+    .map((d, index) => (index === bpIndex ? merged : d))
+    .filter((_, index) => index !== hrIndex)
 }

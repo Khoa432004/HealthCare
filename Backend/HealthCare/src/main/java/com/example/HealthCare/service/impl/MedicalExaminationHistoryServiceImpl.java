@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.example.HealthCare.dto.MedicalExaminationHistoryDetailDto;
 import com.example.HealthCare.dto.MedicalExaminationHistorySummaryDto;
 import com.example.HealthCare.dto.MedicalReportVitalSignDto;
+import com.example.HealthCare.dto.response.VitalMetricPointResponse;
 import com.example.HealthCare.enums.AppointmentStatus;
 import com.example.HealthCare.enums.ReportStatus;
 import com.example.HealthCare.model.Appointment;
@@ -14,6 +15,7 @@ import com.example.HealthCare.model.UserAccount;
 import com.example.HealthCare.repository.AppointmentRepository;
 import com.example.HealthCare.repository.MedicalReportVitalSignRepository;
 import com.example.HealthCare.service.MedicalExaminationHistoryService;
+import com.example.HealthCare.service.PatientVitalMeasurementService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,6 +24,7 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
     
     private final AppointmentRepository appointmentRepository;
     private final MedicalReportVitalSignRepository medicalReportVitalSignRepository;
+    private final PatientVitalMeasurementService patientVitalMeasurementService;
 
 
 
@@ -118,5 +121,13 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
                 .build()
             )
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<VitalMetricPointResponse> getVitalMetricPoints(UUID patientId) {
+        // Delegates to the measurement service which already merges legacy
+        // medical-report-sourced signs with self-reported measurements and
+        // sorts them by takenAt asc.
+        return patientVitalMeasurementService.listVitalMetricPoints(patientId);
     }
 }

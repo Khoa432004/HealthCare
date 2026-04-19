@@ -45,12 +45,25 @@ export const HealthMetricsChartContainer = ({
     )
   }, [dateRange, metricsData, resolvedMetricKeys])
 
+  /**
+   * Keep the raw internal metric key as `series.name` so downstream matching
+   * against `scatterSeries.parentKey` (which also uses the internal key) works.
+   * The human-readable legend text is carried separately via `legendLabels`.
+   */
   const chartSeries = useMemo(
     () =>
       chartData.series.map((series) => ({
-        ...series,
-        name: getHealthMetricLabel(series.name as HealthMetricChartKey),
+        name: series.name,
+        data: series.data,
       })),
+    [chartData.series]
+  )
+
+  const legendLabels = useMemo(
+    () =>
+      chartData.series.map((series) =>
+        getHealthMetricLabel(series.name as HealthMetricChartKey)
+      ),
     [chartData.series]
   )
 
@@ -62,12 +75,20 @@ export const HealthMetricsChartContainer = ({
     [chartData.series]
   )
 
+  const badgesPerSeries = useMemo(
+    () => chartData.series.map((series) => series.badges ?? []),
+    [chartData.series]
+  )
+
   return (
     <HealthMetricsChart
       className={className}
       series={chartSeries}
       categories={chartData.categories}
       colors={chartColors}
+      legendLabels={legendLabels}
+      badgesPerSeries={badgesPerSeries}
+      scatterSeries={chartData.scatterSeries}
       yaxis={chartData.yAxis}
       height={height}
     />

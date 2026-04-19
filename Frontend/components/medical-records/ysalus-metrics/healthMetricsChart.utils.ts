@@ -2,6 +2,7 @@ import { startOfDay, subDays, format } from "date-fns"
 
 import {
   MetricType,
+  MetricTimeOfDay,
   type MetricData,
   type MetricDetail,
   type MetricRealtimePayload,
@@ -26,9 +27,77 @@ export type HealthMetricChartKey =
 
 export type HealthMetricDateRange = "week" | "month" | "year"
 
+/**
+ * Badge classification roll-up for a single chart data point.
+ * - "BAD" if ANY contributing measurement in the bucket is LOW or HIGH.
+ * - "NORMAL" if at least one contributing measurement is NORMAL and none are LOW/HIGH.
+ * - null if no contributing measurement carries a backend classification.
+ */
+export type HealthMetricPointBadge = "BAD" | "NORMAL" | null
+
 export type HealthMetricsChartSeries = {
   name: string
   data: Array<number | null>
+  badges?: Array<HealthMetricPointBadge>
+}
+
+/**
+ * Scatter overlay used for blood pressure: keeps the aggregated daily-average
+ * line untouched while exposing every individual measurement as its own dot.
+ *
+ * `xCategory` must match one of the chart x-axis labels so ApexCharts plots
+ * the dot on the correct day; multiple points with the same `xCategory` are
+ * allowed (and expected — that's the whole point of the overlay).
+ */
+export type HealthMetricScatterMarker = "filled" | "hollow"
+
+/**
+ * Shapes supported for per-point scatter overlays:
+ *  - "filled": solid circle (badge color fill, white stroke)
+ *  - "hollow": ring (white fill, badge color stroke) — fasting
+ *  - "half":   half-filled circle (left half badge color, right half white,
+ *             with a badge color border) — before-meal BG. Rendered via an
+ *             SVG image annotation since ApexCharts markers can't do "half".
+ */
+export type HealthMetricPointShape = "filled" | "hollow" | "half"
+
+/**
+ * Fully-resolved per-point visual style. Emitted for metrics like blood
+ * glucose where each measurement has its own color (badge palette) and shape
+ * (meal context), so the chart layer doesn't need metric-specific knowledge.
+ *
+ * `color` is the single accent color (the badge color); how it's applied
+ * depends on `shape` — the chart layer handles the mapping.
+ */
+export type HealthMetricPointStyle = {
+  shape: HealthMetricPointShape
+  color: string
+}
+
+export type HealthMetricScatterPoint = {
+  /**
+   * Numeric index into the chart's `categories` array — ApexCharts mixes
+   * line (number[] aligned to categories) and scatter ({x,y} pairs) most
+   * reliably when scatter x values are the integer position on the category
+   * axis, not the category label itself.
+   */
+  x: number
+  y: number
+  badge: "LOW" | "NORMAL" | "HIGH" | null
+  /** Optional per-point style — overrides series defaults. Used by BG. */
+  style?: HealthMetricPointStyle
+}
+
+export type HealthMetricScatterSeries = {
+  /** Stable id used by the chart layer to differentiate from main lines. */
+  name: string
+  /** The aggregated line series this scatter sits on top of. */
+  parentKey: HealthMetricChartKey
+  /** Default visual style when a point doesn't provide its own `style`. */
+  marker: HealthMetricScatterMarker
+  /** Default color reused from the parent metric (e.g. systolic red). */
+  color: string
+  data: HealthMetricScatterPoint[]
 }
 
 export type HealthMetricsChartYAxis = {
@@ -41,7 +110,39 @@ export type HealthMetricsChartData = {
   series: HealthMetricsChartSeries[]
   categories: string[]
   yAxis?: HealthMetricsChartYAxis
+  /**
+   * Optional per-measurement scatter overlays. Currently emitted only for the
+   * BP `systolicValue`/`diastolicValue` keys.
+   */
+  scatterSeries?: HealthMetricScatterSeries[]
 }
+
+/**
+ * Which chart keys get a per-measurement scatter overlay. Each entry also
+ * declares the default marker — BG uses per-point style (derived from meal
+ * context) so its default is mostly irrelevant, but we still set "filled".
+ */
+const SCATTER_OVERLAY_CONFIG: Partial<
+  Record<HealthMetricChartKey, HealthMetricScatterMarker>
+> = {
+  systolicValue: "filled",
+  diastolicValue: "hollow",
+  bg: "filled",
+}
+
+/**
+ * Metric-specific badge color palettes. Blood glucose uses a 3-color palette
+ * (yellow/green/red) matching the reference design; everything else uses the
+ * binary BAD/NORMAL mapping via HEALTH_METRIC_BADGE_COLOR at the chart layer.
+ */
+const BG_BADGE_FILL_COLOR = {
+  LOW: "#F59E0B", // amber-500
+  NORMAL: "#10B981", // emerald-500
+  HIGH: "#EF4444", // rose-500
+} as const
+
+/** Fallback fill when a BG measurement has no backend classification. */
+const BG_UNCLASSIFIED_FILL_COLOR = "#9CA3AF" // gray-400
 
 export type LatestBloodPressureMeasurement = {
   map: number
@@ -126,6 +227,46 @@ const defaultYAxis: HealthMetricsChartYAxis = {
   min: 0,
   max: 160,
   tickAmount: 8,
+}
+
+/** Marker colors used when a chart data point carries a backend classification. */
+export const HEALTH_METRIC_BADGE_COLOR = {
+  BAD: "#ef4444", // rose-500 — any LOW/HIGH bucket
+  NORMAL: "#10b981", // emerald-500 — all NORMAL bucket
+} as const
+
+function mergeBadge(
+  current: HealthMetricPointBadge,
+  incoming: "LOW" | "NORMAL" | "HIGH" | null | undefined
+): HealthMetricPointBadge {
+  if (current === "BAD") return "BAD"
+  if (incoming === "LOW" || incoming === "HIGH") return "BAD"
+  if (incoming === "NORMAL") return current === null ? "NORMAL" : current
+  return current
+}
+
+/**
+ * Resolve the per-point visual style for a blood glucose measurement.
+ * Color is driven by the backend badge (LOW/NORMAL/HIGH); shape encodes
+ * the meal context:
+ *  - Fasting     -> hollow ring
+ *  - Before meal -> half-filled circle
+ *  - After meal  -> solid filled circle
+ *  - Unspecified -> solid filled circle (treated as "any/general")
+ */
+function resolveBloodGlucosePointStyle(
+  badge: "LOW" | "NORMAL" | "HIGH" | null,
+  timeOfDay: MetricTimeOfDay | string | null | undefined
+): HealthMetricPointStyle {
+  const color = badge ? BG_BADGE_FILL_COLOR[badge] : BG_UNCLASSIFIED_FILL_COLOR
+
+  if (timeOfDay === MetricTimeOfDay.Fasting) {
+    return { shape: "hollow", color }
+  }
+  if (timeOfDay === MetricTimeOfDay.BeforeMeal) {
+    return { shape: "half", color }
+  }
+  return { shape: "filled", color }
 }
 
 function toDate(value: Date | string | number | null | undefined): Date {
@@ -428,7 +569,31 @@ export function buildHealthMetricChartData(
   const { from, to, groupBy } = resolveDateRangeWindow(dateRange)
   const groupedPointsByMetric = new Map<
     HealthMetricChartKey,
-    Map<string, { total: number; count: number; timestamp: Date }>
+    Map<
+      string,
+      {
+        total: number
+        count: number
+        timestamp: Date
+        badge: HealthMetricPointBadge
+      }
+    >
+  >()
+  /**
+   * Raw individual measurements per metric, used to build per-measurement
+   * scatter overlays. Indexed first by metric key, then a flat list of
+   * { groupKey, value, badge, timeOfDay } entries — one per detail.
+   * `timeOfDay` is only meaningful for metrics that care about meal context
+   * (BG today) but we carry it uniformly to keep the structure simple.
+   */
+  const rawPointsByMetric = new Map<
+    HealthMetricChartKey,
+    Array<{
+      groupKey: string
+      value: number
+      badge: "LOW" | "NORMAL" | "HIGH" | null
+      timeOfDay: MetricTimeOfDay | string | null | undefined
+    }>
   >()
   const groupedTimeline = new Map<string, Date>()
 
@@ -455,18 +620,42 @@ export function buildHealthMetricChartData(
 
         const metricGroupedPoints =
           groupedPointsByMetric.get(metricKey) ??
-          new Map<string, { total: number; count: number; timestamp: Date }>()
+          new Map<
+            string,
+            {
+              total: number
+              count: number
+              timestamp: Date
+              badge: HealthMetricPointBadge
+            }
+          >()
         const current = metricGroupedPoints.get(groupKey) ?? {
           total: 0,
           count: 0,
           timestamp: groupTimestamp,
+          badge: null as HealthMetricPointBadge,
         }
 
         current.total += value
         current.count += 1
         current.timestamp = groupTimestamp
+        current.badge = mergeBadge(current.badge, detail.badge ?? null)
         metricGroupedPoints.set(groupKey, current)
         groupedPointsByMetric.set(metricKey, metricGroupedPoints)
+
+        // Track raw measurement for scatter overlay (filtered by
+        // SCATTER_OVERLAY_CONFIG so we don't waste memory on metrics that
+        // don't render individual-measurement dots).
+        if (SCATTER_OVERLAY_CONFIG[metricKey]) {
+          const rawList = rawPointsByMetric.get(metricKey) ?? []
+          rawList.push({
+            groupKey,
+            value,
+            badge: detail.badge ?? null,
+            timeOfDay: detail.timeOfDay ?? null,
+          })
+          rawPointsByMetric.set(metricKey, rawList)
+        }
       }
     }
   }
@@ -491,6 +680,10 @@ export function buildHealthMetricChartData(
           if (!point) return null
           return Number((point.total / point.count).toFixed(2))
         }),
+        badges: sortedTimeline.map(({ groupKey }) => {
+          const point = metricGroupedPoints?.get(groupKey)
+          return point ? point.badge : null
+        }),
       }
     })
     .filter((seriesItem) => seriesItem.data.some((point) => point !== null))
@@ -503,11 +696,57 @@ export function buildHealthMetricChartData(
     return { series: [], categories: [] }
   }
 
+  const categories = sortedTimeline.map((point) =>
+    formatChartCategory(point.timestamp, dateRange)
+  )
+  const groupKeyToIndex = new Map(
+    sortedTimeline.map((point, index) => [point.groupKey, index])
+  )
+
+  // Per-measurement scatter overlay. One series per metricKey declared in
+  // SCATTER_OVERLAY_CONFIG, ONLY when that metricKey is part of the active
+  // filter — otherwise the overlay would never render.
+  const scatterSeries: HealthMetricScatterSeries[] = []
+  for (const metricKey of resolvedMetricKeys) {
+    const marker = SCATTER_OVERLAY_CONFIG[metricKey]
+    if (!marker) continue
+    const rawList = rawPointsByMetric.get(metricKey)
+    if (!rawList?.length) continue
+
+    const points: HealthMetricScatterPoint[] = rawList.flatMap((raw) => {
+      const xIndex = groupKeyToIndex.get(raw.groupKey)
+      if (xIndex === undefined) return []
+
+      // Blood glucose uses per-point styling (color by badge, shape by meal
+      // context) so each measurement can visually encode both dimensions.
+      // Other metrics fall back to the series-level marker + color and let
+      // the chart layer handle badge coloring.
+      const style =
+        metricKey === "bg"
+          ? resolveBloodGlucosePointStyle(raw.badge, raw.timeOfDay)
+          : undefined
+
+      return [{ x: xIndex, y: raw.value, badge: raw.badge, style }]
+    })
+    if (!points.length) continue
+
+    scatterSeries.push({
+      name: `${metricKey}-points`,
+      parentKey: metricKey,
+      marker,
+      color: getHealthMetricColor(metricKey),
+      data: points,
+    })
+  }
+
+  // Include scatter Y values when sizing the Y axis so individual highs/lows
+  // aren't clipped (the average alone may understate the spread).
+  const scatterValues = scatterSeries.flatMap((s) => s.data.map((p) => p.y))
+
   return {
     series,
-    categories: sortedTimeline.map((point) =>
-      formatChartCategory(point.timestamp, dateRange)
-    ),
-    yAxis: buildYAxis(values),
+    categories,
+    yAxis: buildYAxis([...values, ...scatterValues]),
+    scatterSeries: scatterSeries.length ? scatterSeries : undefined,
   }
 }

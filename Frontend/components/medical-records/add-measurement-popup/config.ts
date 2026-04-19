@@ -301,12 +301,9 @@ const buildResultMeta = (
   "actions" | "recommendation" | "severity" | "statusLabel" | "tone"
 > => {
   const isAbnormal = severity !== "lv2"
-  const tone: NormalizedMeasurement["tone"] =
-    severity === "lv2"
-      ? "success"
-      : severity === "lv3" || severity === "lv4"
-        ? "info"
-        : "danger"
+  // Any non-normal classification (LOW or any HIGH tier) is rendered as
+  // "danger" (red) so the popup background and badges match the chart/cards.
+  const tone: NormalizedMeasurement["tone"] = isAbnormal ? "danger" : "success"
 
   if (deviceId === "6connect") {
     return {
@@ -386,14 +383,15 @@ export const buildMeasurementResultFromManual = (
     const severity = resolveP80Severity(record)
     const meta = buildResultMeta("p80", severity)
 
-    const pulseBadgeLabel =
+    const pulseBadgeKey: MetricBadge | undefined =
       pulse === undefined
         ? undefined
         : pulse < HEART_RATE_RANGE.min
-          ? BADGE_LABEL.low
+          ? "low"
           : pulse > HEART_RATE_RANGE.max
-            ? BADGE_LABEL.high
-            : BADGE_LABEL.normal
+            ? "high"
+            : "normal"
+    const pulseBadgeLabel = pulseBadgeKey ? BADGE_LABEL[pulseBadgeKey] : undefined
 
     return {
       ...meta,
@@ -407,6 +405,7 @@ export const buildMeasurementResultFromManual = (
           type: MetricType.BloodPressure,
           value: `${record.systolic}/${record.diastolic} ${record.unit}`,
           badgeLabel: badgeLabelFromSeverity(severity),
+          badgeKey: badgeFromSeverity(severity),
           rangeLabel: resolveBloodPressureRangeLabel(),
         },
         ...(pulse
@@ -417,6 +416,7 @@ export const buildMeasurementResultFromManual = (
                 type: MetricType.HeartRate,
                 value: `${pulse} bpm`,
                 badgeLabel: pulseBadgeLabel,
+                badgeKey: pulseBadgeKey,
                 rangeLabel: "60-100 bpm",
               } satisfies MetricResult,
             ]
@@ -445,6 +445,7 @@ export const buildMeasurementResultFromManual = (
           measurementSubType: MetricBloodSugarMeasurement.BloodGlucose,
           value: formatMetricValue(value, unit),
           badgeLabel: badgeLabelFromSeverity(severity),
+          badgeKey: badgeFromSeverity(severity),
           rangeLabel: resolveBloodGlucoseRangeLabel(unit),
         },
       ],
@@ -476,6 +477,7 @@ export const buildMeasurementResultFromManual = (
           measurementSubType,
           value: formatMetricValue(value, "mg/dL"),
           badgeLabel: badgeLabelFromSeverity(severity),
+          badgeKey: badgeFromSeverity(severity),
         },
       ],
     }
@@ -499,6 +501,7 @@ export const buildMeasurementResultFromManual = (
           type: MetricType.UricAcid,
           value: formatMetricValue(value, "mg/dL"),
           badgeLabel: badgeLabelFromSeverity(severity),
+          badgeKey: badgeFromSeverity(severity),
           rangeLabel: "3.5-7.2 mg/dL",
         },
       ],
@@ -522,6 +525,7 @@ export const buildMeasurementResultFromManual = (
           type: MetricType.HeartRate,
           value: `${heartRate} bpm`,
           badgeLabel: badgeLabelFromSeverity(severity),
+          badgeKey: badgeFromSeverity(severity),
           rangeLabel: "60-100 bpm",
         },
       ],

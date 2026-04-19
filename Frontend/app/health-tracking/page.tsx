@@ -2,17 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  Activity,
-  FileText,
-  LogOut,
-  Search,
-  User,
-} from "lucide-react"
+import { Activity, LogOut, Search, User } from "lucide-react"
 
 import { AuthGuard } from "@/components/auth-guard"
 import { HealthMetricsTab } from "@/components/medical-records/health-metrics-tab"
-import { MedicalHistoryTab } from "@/components/medical-records/medical-history-tab"
 import { NotificationBell } from "@/components/notification-bell"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { authService } from "@/services/auth.service"
 
 function getInitials(name?: string) {
@@ -157,37 +149,14 @@ function MetricsContent() {
             </div>
           </div>
 
-          <Tabs defaultValue="metrics" className="w-full">
-            <TabsList className="bg-white/80 backdrop-blur border border-white/60 shadow-soft h-11">
-              <TabsTrigger value="metrics" className="gap-2">
-                <Activity className="w-4 h-4" />
-                Chỉ số sức khỏe
-              </TabsTrigger>
-              <TabsTrigger value="history" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Lịch sử khám
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="metrics" className="mt-4">
-              {userInfo?.id ? (
-                <HealthMetricsTab
-                  patientId={userInfo.id}
-                  patientName={userInfo.fullName}
-                />
-              ) : (
-                <PlaceholderMessage text="Đang lấy thông tin người dùng..." />
-              )}
-            </TabsContent>
-
-            <TabsContent value="history" className="mt-4">
-              {userInfo?.id ? (
-                <MedicalHistoryTab patientId={userInfo.id} />
-              ) : (
-                <PlaceholderMessage text="Đang lấy thông tin người dùng..." />
-              )}
-            </TabsContent>
-          </Tabs>
+          {userInfo?.id ? (
+            <HealthMetricsTab
+              patientId={userInfo.id}
+              patientName={userInfo.fullName}
+            />
+          ) : (
+            <PlaceholderMessage text="Đang lấy thông tin người dùng..." />
+          )}
         </div>
       </div>
     </div>

@@ -45,6 +45,16 @@ const metricIconMap = {
   default: ChartMetricIcon,
 } as const
 
+/**
+ * Pill style for result badges. Mirrors the chart/card colours so a single
+ * mental model holds across the feature: NORMAL = green, LOW/HIGH = red.
+ */
+const RESULT_BADGE_STYLE: Record<"low" | "normal" | "high", string> = {
+  low: "bg-rose-500 text-white",
+  normal: "bg-emerald-500 text-white",
+  high: "bg-rose-500 text-white",
+}
+
 export const ResultStage = ({
   activeTab,
   isReminderPending,
@@ -156,7 +166,13 @@ export const ResultStage = ({
                           {metric.label}
                         </p>
                         {metric.badgeLabel ? (
-                          <span className="rounded-full bg-[#FFF0C7] px-2 py-0.5 text-[10px] font-semibold uppercase text-[#C78A11]">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                              metric.badgeKey
+                                ? RESULT_BADGE_STYLE[metric.badgeKey]
+                                : "bg-[#FFF0C7] text-[#C78A11]"
+                            }`}
+                          >
                             {metric.badgeLabel}
                           </span>
                         ) : null}

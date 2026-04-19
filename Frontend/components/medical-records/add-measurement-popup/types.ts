@@ -81,6 +81,8 @@ export interface DeviceDefinition {
   setupInstructions: string[]
 }
 
+export type MetricResultBadge = "low" | "normal" | "high"
+
 export interface MetricResult {
   id: string
   label: string
@@ -88,6 +90,8 @@ export interface MetricResult {
   measurementSubType?: MetricBloodSugarMeasurement | MetricCholesterolMeasurement
   value: string
   badgeLabel?: string
+  /** Classification key used to tint the badge pill (low/normal/high). */
+  badgeKey?: MetricResultBadge
   rangeLabel?: string
 }
 
