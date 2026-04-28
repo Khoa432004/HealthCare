@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Calendar,
-  // Activity,
+  Activity,
   // FileText,
   MessageSquare,
   HelpCircle,
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/doctor-dashboard" },
   { icon: Calendar, label: "Calendar", href: "/calendar" },
-  // { icon: Activity, label: "Monitoring", href: "/monitoring" },
+  { icon: Activity, label: "Monitoring", href: "/monitoring" },
   // { icon: FileText, label: "EMR", href: "/emr" },
   { icon: MessageSquare, label: "Chats", href: "/doctor-chat" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },

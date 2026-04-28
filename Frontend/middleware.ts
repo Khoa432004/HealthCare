@@ -21,6 +21,8 @@ const roleBasedRoutes = {
   CLINIC_ADMIN: ['/admin-dashboard', '/settings'],
     DOCTOR: [
       '/doctor-dashboard',
+      '/monitoring',
+      '/health-tracking',
       '/doctor-chat',
       '/calendar',
       '/video-call',

@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   },
   DASHBOARD: {
     GET_STATS: '/api/v1/dashboard/stats',
+    GET_PATIENT_OVERVIEW: '/api/v1/dashboard/patient-overview',
   },
   ADMIN: {
     APPROVE_DOCTOR: (userId: string) => `/api/auth/admin/approve-doctor/${userId}`,

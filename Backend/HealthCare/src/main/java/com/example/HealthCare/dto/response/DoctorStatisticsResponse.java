@@ -21,5 +21,8 @@ public class DoctorStatisticsResponse {
     
     // Pending Reports Table
     private List<PendingReportAppointmentResponse> pendingReports;
+
+    // Top Critical Cases (5 newest abnormal patients)
+    private List<CriticalCaseResponse> criticalCases;
 }
 

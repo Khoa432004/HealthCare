@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Activity, LogOut, Search, User } from "lucide-react"
 
 import { AuthGuard } from "@/components/auth-guard"
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
+import DoctorSidebar from "@/components/doctor-sidebar"
 
 function getInitials(name?: string) {
   if (!name) return "PT"
@@ -31,10 +32,15 @@ function getInitials(name?: string) {
 
 function MetricsContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{
     id: string
     fullName: string
     role: string
+  } | null>(null)
+  const [trackingTarget, setTrackingTarget] = useState<{
+    patientId: string
+    patientName: string
   } | null>(null)
 
   useEffect(() => {
@@ -48,6 +54,19 @@ function MetricsContent() {
     }
   }, [])
 
+  useEffect(() => {
+    const fromQueryId = (searchParams.get("patientId") || "").trim()
+    const fromQueryName = (searchParams.get("patientName") || "").trim()
+    if (fromQueryId) {
+      setTrackingTarget({
+        patientId: fromQueryId,
+        patientName: fromQueryName || "Patient",
+      })
+    } else {
+      setTrackingTarget(null)
+    }
+  }, [searchParams])
+
   const handleLogout = async () => {
     try {
       await authService.logout()
@@ -59,9 +78,17 @@ function MetricsContent() {
     }
   }
 
+  const isDoctor = String(userInfo?.role || "").toUpperCase() === "DOCTOR"
+  const displayedPatientId = isDoctor
+    ? trackingTarget?.patientId || ""
+    : userInfo?.id || ""
+  const displayedPatientName = isDoctor
+    ? trackingTarget?.patientName || "Patient"
+    : userInfo?.fullName || "Patient"
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#e5f5f8" }}>
-      <PatientSidebar />
+      {isDoctor ? <DoctorSidebar /> : <PatientSidebar />}
 
       <div
         className="flex-1 flex flex-col overflow-y-auto"
@@ -149,13 +176,19 @@ function MetricsContent() {
             </div>
           </div>
 
-          {userInfo?.id ? (
+          {displayedPatientId ? (
             <HealthMetricsTab
-              patientId={userInfo.id}
-              patientName={userInfo.fullName}
+              patientId={displayedPatientId}
+              patientName={displayedPatientName}
             />
           ) : (
-            <PlaceholderMessage text="Đang lấy thông tin người dùng..." />
+            <PlaceholderMessage
+              text={
+                isDoctor
+                  ? "Vui lòng chọn bệnh nhân từ Monitoring để theo dõi."
+                  : "Đang lấy thông tin người dùng..."
+              }
+            />
           )}
         </div>
       </div>
@@ -173,7 +206,7 @@ function PlaceholderMessage({ text }: { text: string }) {
 
 export default function HealthTrackingPage() {
   return (
-    <AuthGuard allowedRoles={["PATIENT"]}>
+    <AuthGuard allowedRoles={["PATIENT", "DOCTOR"]}>
       <MetricsContent />
     </AuthGuard>
   )
