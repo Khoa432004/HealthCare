@@ -369,7 +369,10 @@ function DoctorDashboardContent() {
                 </div>
 
                 <div id="top-critical-cases">
-                  <CriticalCasesTable inProcessAppointments={inProcessAppointments} />
+                  <CriticalCasesTable
+                    inProcessAppointments={inProcessAppointments}
+                    criticalCases={statistics?.criticalCases ?? []}
+                  />
                 </div>
               </div>
             </div>

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings } from "lucide-react"
+import { Search, LayoutDashboard, Calendar, User, LogOut, Plus, ClipboardList, LineChart, FlaskConical, Pill, Clock, Droplets, HeartPulse, Activity, TestTube2, ChevronRight } from "lucide-react"
+import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip } from "recharts"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
@@ -17,11 +18,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
-import { HealthMetricsChart } from "@/components/health-metrics-chart"
-import { LatestMeasurements } from "@/components/latest-measurements"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
-import MedicalHistoryTable from "@/components/medical-history-table"
 import { authService } from "@/services/auth.service"
+import { dashboardService, type PatientDashboardOverview } from "@/services/dashboard.service"
 import { AuthGuard } from "@/components/auth-guard"
 
 function PatientDashboardContent() {
@@ -29,6 +28,7 @@ function PatientDashboardContent() {
   const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null)
+  const [overview, setOverview] = useState<PatientDashboardOverview | null>(null)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -61,6 +61,18 @@ function PatientDashboardContent() {
     }
   }, [searchParams, router])
 
+  useEffect(() => {
+    const fetchOverview = async () => {
+      try {
+        const data = await dashboardService.getPatientOverview()
+        setOverview(data)
+      } catch (error) {
+        console.error("Failed to fetch patient dashboard overview:", error)
+      }
+    }
+    fetchOverview()
+  }, [])
+
   // Helper function to get initials from fullName
   const getInitials = (name: string): string => {
     if (!name) return 'PT'
@@ -82,6 +94,35 @@ function PatientDashboardContent() {
       router.push('/login')
     }
   }
+
+  const quickActions = [
+    { title: "Book Appointment", icon: Calendar, href: "/patient-calendar/booking" },
+    { title: "Add Measurement", icon: Plus, href: "/patient-medical-records" },
+    { title: "View Metrics Log", icon: LineChart, href: "/patient-medical-records" },
+    { title: "Health Test", icon: FlaskConical, href: "/patient-medical-records" },
+  ]
+
+  const metricIconMap: Record<string, any> = {
+    "Blood Glucose": Droplets,
+    "Hematocrit": Activity,
+    "Ketone": TestTube2,
+    "Heart Rate": HeartPulse,
+  }
+
+  const metricToneMap: Record<string, string> = {
+    High: "text-red-600 bg-red-50 border-red-100",
+    Low: "text-amber-600 bg-amber-50 border-amber-100",
+    Upper: "text-orange-600 bg-orange-50 border-orange-100",
+    Normal: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    "N/A": "text-slate-600 bg-slate-50 border-slate-100",
+  }
+
+  const latestMeasurements = overview?.metricCards ?? []
+  const metricsTrendData = overview?.glucoseTrend ?? []
+  const medicinePlans = overview?.todayMedicines ?? []
+  const currentPlan = overview?.currentPlan
+  const hasCurrentPlan = Boolean(currentPlan?.title)
+
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
@@ -161,95 +202,200 @@ function PatientDashboardContent() {
         <div className="flex-1 flex">
           {/* Main Dashboard Area */}
           <div className="flex-1 px-4 pb-4">
-            {/* Charts and Updates Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-              <div className="lg:col-span-1">
-                <HealthMetricsChart />
-              </div>
-
-              <div className="lg:col-span-2">
-                <div className="glass rounded-2xl shadow-soft-lg border-white/50 p-4 h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Health Updates</h3>
-                </div>
-
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">New Lab Results</span>
-                        <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          3
-                          </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                          </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Upcoming Appointments</span>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          2
-                        </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 mb-4">
+              {quickActions.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.title} href={item.href}>
+                    <div className="h-[38px] bg-gradient-to-b from-[#2aa8c6] to-[#0d8fae] rounded-lg px-4 flex items-center justify-between hover:opacity-95 transition-smooth">
+                      <span className="text-[12px] font-medium text-white">{item.title}</span>
+                      <Icon className="w-3.5 h-3.5 text-white/90" />
                     </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Medication Reminders</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 glass rounded-xl hover:bg-white transition-smooth cursor-pointer hover-lift shadow-soft">
-                      <span className="text-gray-700 font-medium text-sm">Health Tips</span>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="destructive" className="gradient-primary border-0 shadow-soft text-xs h-5">
-                          5
-                        </Badge>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  </Link>
+                )
+              })}
             </div>
 
-            <MedicalHistoryTable />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                  <LatestMeasurements />
-
-              <div className="glass rounded-2xl shadow-soft-lg border-white/50 p-4">
+            <div className="space-y-4">
+              <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">Quick Actions</h3>
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Latest Measurements</h3>
+                  <button className="text-[11px] text-[#0f172a] inline-flex items-center gap-1">
+                    See Details <ChevronRight className="w-3 h-3" />
+                  </button>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href="/patient-calendar/booking">
-                    <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth w-full">
-                      <Calendar className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
-                      <span className="text-xs font-medium">Book Appointment</span>
-                    </Button>
-                  </Link>
-                  <Link href="/patient-chat">
-                    <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth w-full">
-                      <MessageSquare className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
-                      <span className="text-xs font-medium">Chat with Doctor</span>
-                    </Button>
-                  </Link>
-                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <FileText className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
-                    <span className="text-xs font-medium">View Reports</span>
-                  </Button>
-                  <Button className="h-16 flex flex-col items-center justify-center glass hover:bg-white transition-smooth">
-                    <Activity className="w-5 h-5 mb-1.5 text-[#16a1bd]" />
-                    <span className="text-xs font-medium">Health Tracking</span>
-                  </Button>
+                <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
+                  {latestMeasurements.length > 0 ? (
+                    latestMeasurements.map((item) => {
+                      const Icon = metricIconMap[item.name] ?? Activity
+                      const tone = metricToneMap[item.status] ?? metricToneMap.Normal
+                      return (
+                        <div key={item.name} className={`rounded-xl border p-2.5 bg-white ${tone}`}>
+                          <div className="flex items-start justify-between">
+                            <Icon className="w-3.5 h-3.5" />
+                            <Badge className="bg-white/90 text-[9px] text-gray-700 border-0 h-4">{item.status}</Badge>
+                          </div>
+                          <p className="mt-1.5 text-[10px] font-medium opacity-90">{item.name}</p>
+                          <div className="mt-1 flex items-end gap-1">
+                            <span className="text-[18px] font-semibold leading-none">{item.value}</span>
+                            <span className="text-[10px] opacity-80">{item.unit}</span>
+                          </div>
+                          <p className="mt-1 text-[9px] opacity-80">{item.deltaText}</p>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="col-span-full rounded-xl border border-dashed border-[#b6ccd4] bg-white p-4 text-center text-xs text-gray-500">
+                      No data available
+                    </div>
+                  )}
                 </div>
-              </div>
+                <div className="mt-3 rounded-xl border border-[#cfe0e7] bg-[#f2f8fa] p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-[11px] font-semibold text-[#0f172a]">Blood Glucose</p>
+                      <p className="text-[10px] text-gray-500">Last 30 days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-semibold text-[#0f172a] leading-none">
+                        {latestMeasurements.find((m) => m.name === "Blood Glucose")?.value ?? 0}
+                        <span className="text-xs font-medium text-gray-500"> mg/dL</span>
+                      </p>
+                      <p className="text-[10px] text-gray-500">Average</p>
+                    </div>
+                  </div>
+                  {metricsTrendData.length > 0 ? (
+                    <div className="h-24 rounded-lg bg-white border border-[#e8f1f4] px-2 py-1.5">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsLineChart data={metricsTrendData} margin={{ top: 6, right: 6, left: -26, bottom: 0 }}>
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 9, fill: "#6b7280" }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis hide domain={["dataMin - 12", "dataMax + 12"]} />
+                          <Tooltip
+                            cursor={{ stroke: "#d5e5eb", strokeWidth: 1 }}
+                            contentStyle={{ borderRadius: 8, borderColor: "#d6edf2", fontSize: 11 }}
+                            formatter={(value: number) => [`${value} mg/dL`, "Blood Glucose"]}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#0d8fae"
+                            strokeWidth={2}
+                            dot={{ r: 2.8, strokeWidth: 1.5, fill: "#0d8fae", stroke: "#ffffff" }}
+                            activeDot={{ r: 4 }}
+                          />
+                        </RechartsLineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="h-24 rounded-lg bg-white border border-dashed border-[#b6ccd4] flex items-center justify-center text-xs text-gray-500">
+                      No data available
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Current Plan</h3>
+                  <button className="text-[11px] text-[#0f172a] inline-flex items-center gap-1">
+                    See Details <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="bg-white rounded-xl border border-[#d6edf2] p-3">
+                  {hasCurrentPlan ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-lg bg-[#e9f7fb] flex items-center justify-center">
+                          <ClipboardList className="w-5 h-5 text-[#16a1bd]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-[#0f172a]">{currentPlan?.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {currentPlan?.status ?? "Unknown"}{currentPlan?.daysLeft ? ` - ${currentPlan.daysLeft} days left` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1.5">
+                          <span>Completed</span>
+                          <span>{currentPlan?.progressPercent ?? 0}%</span>
+                        </div>
+                        <div className="w-full h-2.5 rounded-full bg-[#dff2f7]">
+                          <div className="h-full rounded-full bg-[#16a1bd]" style={{ width: `${currentPlan?.progressPercent ?? 0}%` }} />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-5 text-center text-xs text-gray-500">No data available</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Today&apos;s Medicines</h3>
+                  <button className="text-[11px] text-[#0f172a] inline-flex items-center gap-1">
+                    See Details <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto bg-white rounded-xl border border-[#d6edf2]">
+                  <table className="w-full min-w-[740px]">
+                    <thead className="border-b border-[#e5eff3]">
+                      <tr className="text-center text-[10px] text-gray-500">
+                        <th className="px-4 py-3 font-medium">Time</th>
+                        <th className="px-4 py-3 font-medium">Drug Name</th>
+                        <th className="px-4 py-3 font-medium">Dosage</th>
+                        <th className="px-4 py-3 font-medium">Instructions</th>
+                        <th className="px-4 py-3 font-medium text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {medicinePlans.length > 0 ? (
+                        medicinePlans.map((plan, idx) => (
+                          <tr key={`${plan.drugName}-${idx}`} className="border-b border-[#eff5f7] last:border-b-0">
+                            <td className="px-4 py-3 text-[11px] text-gray-700 text-center">
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-[#16a1bd]" />
+                                {plan.time}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[11px] font-medium text-[#0f172a]">{plan.drugName}</td>
+                            <td className="px-4 py-3 text-[11px] text-gray-700 text-center">{plan.dosage}</td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge className="bg-[#dff5fa] text-[#0e8cac] border-0 text-[9px] h-5">{plan.instruction.toUpperCase()}</Badge>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Button className={`h-7 px-4 text-[10px] rounded-full ${plan.status === "Taking" || plan.status === "Take" ? "bg-[#0d8fae] hover:bg-[#0c83a0] text-white" : "bg-white border border-[#0d8fae] hover:bg-[#ecf7fa] text-[#0d8fae]"}`}>
+                                <Pill className="w-3.5 h-3.5 mr-1.5" />
+                                {plan.status}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-500">
+                            No data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
             </div>
           </div>
 
-          <PatientAppointmentsSidebar />
+          <PatientAppointmentsSidebar
+            pendingAppointment={overview?.pendingAppointment ?? null}
+            weeklyAppointments={overview?.weeklyAppointments ?? []}
+          />
         </div>
       </div>
     </div>

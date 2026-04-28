@@ -5,66 +5,31 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, ChevronRight, FileText } from "lucide-react"
 import type { Appointment } from "@/services/appointment.service"
+import type { CriticalCase } from "@/services/doctor-statistics.service"
 import Link from "next/link"
-
-const criticalCases = [
-  {
-    id: "PA0011",
-    name: "Test patient 2",
-    initials: "TE",
-    condition: "Hypertension, Arthritis",
-    result: "-- mg/dL",
-    status: "Low",
-    statusColor: "orange",
-    mealTime: "Before meal",
-  },
-  {
-    id: "PA0010",
-    name: "Test stag patient",
-    initials: "TE",
-    condition: "Hypertension",
-    result: "-- mg/dL",
-    status: "High",
-    statusColor: "orange",
-    mealTime: "After meal",
-  },
-  {
-    id: "PA0008",
-    name: "HIHI",
-    initials: "HI",
-    condition: "Diabetes, Asthma, Hypertensi...",
-    result: "-- mg/dL",
-    status: "Low",
-    statusColor: "orange",
-    mealTime: "Before meal",
-  },
-  {
-    id: "PA0007",
-    name: "Nguyễn Văn Nam",
-    initials: "NG",
-    condition: "Hypertension, Arthritis, Asthm...",
-    result: "-- mg/dL",
-    status: "High",
-    statusColor: "orange",
-    mealTime: "After meal",
-  },
-  {
-    id: "PA0006",
-    name: "Nguyễn Thị Minh Châu",
-    initials: "NG",
-    condition: "Hypertension, Arthritis, Stoma...",
-    result: "-- mg/dL",
-    status: "Low",
-    statusColor: "orange",
-    mealTime: "Before meal",
-  },
-]
 
 interface CriticalCasesTableProps {
   inProcessAppointments?: Appointment[]
+  criticalCases?: CriticalCase[]
 }
 
-export default function CriticalCasesTable({ inProcessAppointments = [] }: CriticalCasesTableProps) {
+export default function CriticalCasesTable({ inProcessAppointments = [], criticalCases = [] }: CriticalCasesTableProps) {
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((part) => part[0] || "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+
+  const formatMetricType = (metric: string) =>
+    metric
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+
+  const formatStatus = (status: string) => status.toLowerCase() === "high" ? "High" : "Low"
+
   return (
     <div className="space-y-6">
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
@@ -103,28 +68,28 @@ export default function CriticalCasesTable({ inProcessAppointments = [] }: Criti
               </tr>
             </thead>
             <tbody>
-              {criticalCases.map((case_, index) => (
-                <tr key={index} className="border-b border-white/30 hover:bg-white/50 transition-smooth">
-                  <td className="py-4 px-4 text-sm text-gray-700 font-medium">{case_.id}</td>
+              {criticalCases.map((case_) => (
+                <tr key={case_.patientId} className="border-b border-white/30 hover:bg-white/50 transition-smooth">
+                  <td className="py-4 px-4 text-sm text-gray-700 font-medium">{case_.patientId.slice(0, 8)}</td>
                   <td className="py-4 px-4">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-9 h-9 gradient-primary ring-2 ring-white shadow-soft">
-                        <AvatarFallback className="text-xs font-semibold text-white gradient-primary">{case_.initials}</AvatarFallback>
+                        <AvatarFallback className="text-xs font-semibold text-white gradient-primary">{getInitials(case_.patientName)}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-semibold text-gray-900">{case_.name}</span>
+                      <span className="text-sm font-semibold text-gray-900">{case_.patientName}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{case_.condition}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600">{formatMetricType(case_.metricType)}</td>
                   <td className="py-4 px-4 text-sm text-gray-900 font-medium">{case_.result}</td>
                   <td className="py-4 px-4">
                     <div className="flex flex-col space-y-1.5">
                       <Badge
-                        className={`${case_.status === "Low" ? "bg-orange-100 text-orange-700 border-orange-200" : "bg-orange-100 text-orange-700 border-orange-200"} w-fit shadow-soft`}
+                        className={`${case_.status.toLowerCase() === "high" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200"} w-fit shadow-soft`}
                       >
-                        {case_.status}
+                        {formatStatus(case_.status)}
                       </Badge>
                       <Badge className="gradient-primary text-white w-fit text-xs border-0 shadow-soft">
-                        🍽️ {case_.mealTime}
+                        🍽️ {case_.mealTime || "N/A"}
                       </Badge>
                     </div>
                   </td>
@@ -135,6 +100,13 @@ export default function CriticalCasesTable({ inProcessAppointments = [] }: Criti
                   </td>
                 </tr>
               ))}
+              {criticalCases.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm text-gray-500">
+                    No abnormal vital measurements found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

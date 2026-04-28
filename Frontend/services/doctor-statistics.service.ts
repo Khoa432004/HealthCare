@@ -16,12 +16,23 @@ export interface PendingReportAppointment {
   medicalReportId: string | null
 }
 
+export interface CriticalCase {
+  patientId: string
+  patientName: string
+  metricType: string
+  result: string
+  status: string
+  mealTime: string
+  takenAt: string
+}
+
 export interface DoctorStatistics {
   totalPatientsToday: number
   completedAppointments: number
   pendingReportAppointments: number
   dailyRevenue: number
   pendingReports: PendingReportAppointment[]
+  criticalCases?: CriticalCase[]
 }
 
 interface ApiResponse<T> {

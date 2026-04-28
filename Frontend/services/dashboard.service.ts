@@ -18,6 +18,54 @@ export interface DashboardStats {
   scheduledAppointments: number
 }
 
+export interface PatientDashboardMetricCard {
+  name: string
+  value: number
+  unit: string
+  status: string
+  deltaText: string
+}
+
+export interface PatientDashboardTrendPoint {
+  day: string
+  value: number
+}
+
+export interface PatientDashboardCurrentPlan {
+  title: string
+  status: string
+  progressPercent: number
+  daysLeft: number
+  appointmentSummary: string
+  startDate: string
+  endDate: string
+}
+
+export interface PatientDashboardMedicineItem {
+  time: string
+  drugName: string
+  dosage: string
+  instruction: string
+  status: string
+}
+
+export interface PatientDashboardAppointmentItem {
+  id: string
+  day: string
+  date: string
+  doctor: string
+  time: string
+}
+
+export interface PatientDashboardOverview {
+  metricCards: PatientDashboardMetricCard[]
+  glucoseTrend: PatientDashboardTrendPoint[]
+  currentPlan: PatientDashboardCurrentPlan
+  todayMedicines: PatientDashboardMedicineItem[]
+  pendingAppointment: PatientDashboardAppointmentItem | null
+  weeklyAppointments: PatientDashboardAppointmentItem[]
+}
+
 interface ApiResponse<T> {
   statusCode: number
   message: string
@@ -37,6 +85,18 @@ class DashboardService {
 
     if (response.error) {
       throw new Error(response.error.message || 'Failed to fetch dashboard stats')
+    }
+
+    return response.data
+  }
+
+  async getPatientOverview(): Promise<PatientDashboardOverview> {
+    const response = await apiClient.get<ApiResponse<PatientDashboardOverview>>(
+      API_ENDPOINTS.DASHBOARD.GET_PATIENT_OVERVIEW
+    )
+
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to fetch patient dashboard overview')
     }
 
     return response.data
