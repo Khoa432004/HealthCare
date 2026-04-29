@@ -9,12 +9,17 @@ interface ChatLayoutProps {
   showNeedHelpBanner?: boolean
   /** Inbox pills: chỉ hiển thị các filter này (ví dụ patient: all+doctor). Không truyền = all + patient + doctor (không có nurse/receptionist). */
   allowedFilters?: InboxFilter[]
+  initialReceiverId?: string | null
 }
 
-export function ChatLayout({ role, allowedFilters }: ChatLayoutProps) {
+export function ChatLayout({ role, allowedFilters, initialReceiverId }: ChatLayoutProps) {
   return (
     <div className="flex flex-1 min-h-0 h-full w-full">
-      <YsalusChatPage role={role} inboxAllowedFilters={allowedFilters} />
+      <YsalusChatPage
+        role={role}
+        inboxAllowedFilters={allowedFilters}
+        initialReceiverId={initialReceiverId}
+      />
     </div>
   )
 }

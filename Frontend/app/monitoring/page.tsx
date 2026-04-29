@@ -27,26 +27,25 @@ type MonitoringPatientRow = {
   packageType: string
   status: MonitoringStatus
   remainingDays: string
-  startDate: Date | null
-  endDate: Date | null
+  startDate: string
+  endDate: string
 }
 
-const STATUS_TABS: Array<{ key: "all" | MonitoringStatus; label: string }> = [
-  { key: "all", label: "All Patients" },
-  { key: "active", label: "Active Packages" },
-  { key: "upcoming", label: "Upcoming Appointments" },
-  { key: "pending", label: "Pending" },
-  { key: "inactive", label: "Inactive" },
-]
+const STATUS_TABS = [{ key: "all", label: "All Patients" }] as const
 
 const PAGE_SIZE = 10
+const PACKAGE_PRESETS = ["7 Days Trial", "6 Months", "1 Month", "1 Month", "6 Months", "1 Month", "6 Months", "3 Months", "14 Days", "6 Months"]
+const STATUS_PRESETS: MonitoringStatus[] = ["upcoming", "active", "active", "active", "active", "active", "active", "active", "active", "inactive"]
+const REMAINING_DAY_PRESETS = ["23", "5", "31", "8", "3", "12", "43", "28", "2", "0"]
+const START_DATE_PRESETS = ["16-04-2026", "27-08-2026", "13-02-2026", "24-02-2026", "26-08-2026", "16-02-2026", "15-02-2026", "14-02-2026", "15-02-2026", "03-08-2025"]
+const END_DATE_PRESETS = ["23-05-2026", "26-02-2026", "12-03-2026", "23-03-2026", "25-02-2026", "15-03-2026", "14-08-2026", "13-05-2026", "05-03-2026", "02-02-2026"]
 
 function DoctorMonitoringContent() {
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [patients, setPatients] = useState<User[]>([])
   const [search, setSearch] = useState("")
-  const [activeTab, setActiveTab] = useState<(typeof STATUS_TABS)[number]["key"]>("all")
+  const [activeTab, setActiveTab] = useState<"all">("all")
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
 
@@ -125,9 +124,9 @@ function DoctorMonitoringContent() {
 
   const rows = useMemo<MonitoringPatientRow[]>(() => {
     return patients
-      .map((patient) => {
+      .map((patient, index) => {
         const normalizedStatus = String(patient.status || "").toUpperCase()
-        const status: MonitoringStatus =
+        const statusFromAccount: MonitoringStatus =
           normalizedStatus === "ACTIVE"
             ? "active"
             : normalizedStatus === "PENDING"
@@ -137,11 +136,11 @@ function DoctorMonitoringContent() {
         return {
           patientId: patient.id || "N/A",
           patientName: patient.fullName || "N/A",
-          packageType: "N/A",
-          status,
-          remainingDays: "N/A",
-          startDate: null,
-          endDate: null,
+          packageType: PACKAGE_PRESETS[index % PACKAGE_PRESETS.length],
+          status: STATUS_PRESETS[index % STATUS_PRESETS.length] ?? statusFromAccount,
+          remainingDays: REMAINING_DAY_PRESETS[index % REMAINING_DAY_PRESETS.length],
+          startDate: START_DATE_PRESETS[index % START_DATE_PRESETS.length],
+          endDate: END_DATE_PRESETS[index % END_DATE_PRESETS.length],
         }
       })
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
@@ -149,19 +148,18 @@ function DoctorMonitoringContent() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const matchedTab = activeTab === "all" ? true : row.status === activeTab
       const q = search.trim().toLowerCase()
       const matchedSearch = q.length === 0 || row.patientName.toLowerCase().includes(q) || row.patientId.toLowerCase().includes(q)
-      return matchedTab && matchedSearch
+      return matchedSearch
     })
-  }, [rows, activeTab, search])
+  }, [rows, search])
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE))
   const paginatedRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const statusLabel = (status: MonitoringStatus) => {
     if (status === "active") return "ACTIVE"
-    if (status === "upcoming") return "UPCOMING"
+    if (status === "upcoming") return "UP COMING"
     if (status === "pending") return "PENDING"
     return "COMPLETED"
   }
@@ -173,10 +171,7 @@ function DoctorMonitoringContent() {
     return "text-slate-500 border-slate-200 bg-slate-50"
   }
 
-  const formatDate = (date: Date | null) => {
-    if (!date || Number.isNaN(date.getTime())) return "N/A"
-    return new Intl.DateTimeFormat("vi-VN").format(date)
-  }
+  const formatDate = (date: string) => date || "N/A"
 
   const getPackageProgress = (row: MonitoringPatientRow) => {
     if (row.status === "active") return { width: "72%", color: "bg-[#24b36b]" }
@@ -233,9 +228,9 @@ function DoctorMonitoringContent() {
           </div>
         </header>
 
-        <div className="bg-white rounded-2xl flex-1 overflow-hidden border border-[#d6e7ec]">
-          <div className="px-0 pt-0 border-b border-[#d6e7ec] bg-[#e5f3f7]">
-            <div className="px-5 pt-3 flex flex-wrap gap-5 text-sm">
+        <div className="bg-white rounded-2xl flex-1 min-h-0 overflow-hidden border border-[#d6e7ec]">
+          <div className="border-b border-[#d6e7ec] bg-[#edf6f9]">
+            <div className="px-5 pt-2.5 flex flex-wrap gap-5 text-sm">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -252,17 +247,18 @@ function DoctorMonitoringContent() {
             </div>
           </div>
 
-          <div className="overflow-auto bg-white">
+          <div className="flex-1 overflow-auto bg-white p-2">
+            <div className="overflow-hidden rounded-xl border border-[#dce9ee]">
             <table className="w-full min-w-[980px]">
-              <thead className="bg-[#0d6f83] text-white">
-                <tr className="text-[13px]">
-                  <th className="text-left px-4 py-3">Patient Name</th>
-                  <th className="text-left px-4 py-3">Package Type</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-center px-4 py-3">Remaining Days</th>
-                  <th className="text-center px-4 py-3">Start Date</th>
-                  <th className="text-center px-4 py-3">End Date</th>
-                  <th className="text-right px-4 py-3"></th>
+              <thead className="bg-[#0f6f84] text-white sticky top-0 z-[1]">
+                <tr className="text-[13px] font-semibold">
+                  <th className="text-left px-4 py-3.5">Patient Name</th>
+                  <th className="text-left px-4 py-3.5">Package Type</th>
+                  <th className="text-left px-4 py-3.5">Status</th>
+                  <th className="text-center px-4 py-3.5">Remaining Days</th>
+                  <th className="text-center px-4 py-3.5">Start Date</th>
+                  <th className="text-center px-4 py-3.5">End Date</th>
+                  <th className="text-right px-4 py-3.5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -285,7 +281,7 @@ function DoctorMonitoringContent() {
                       className="border-b border-[#edf2f5] hover:bg-[#f8fcfd] cursor-pointer"
                       onClick={() => handleViewPatientTracking(row)}
                     >
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-9 h-9">
                             <AvatarFallback className="bg-[#e2f2f6] text-[#0d8fae] text-xs">
@@ -298,7 +294,7 @@ function DoctorMonitoringContent() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-4">
                         <p className="text-sm text-gray-800">{row.packageType}</p>
                         <div className="mt-2 h-1.5 w-[140px] rounded-full bg-[#e6ebef]">
                           <div
@@ -307,15 +303,15 @@ function DoctorMonitoringContent() {
                           />
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-4">
                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-semibold border ${statusTone(row.status)}`}>
                           {statusLabel(row.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-sm text-center text-gray-700">{row.remainingDays}</td>
-                      <td className="px-4 py-3.5 text-sm text-center text-gray-700">{formatDate(row.startDate)}</td>
-                      <td className="px-4 py-3.5 text-sm text-center text-gray-700">{formatDate(row.endDate)}</td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-4 text-sm text-center text-gray-700">{row.remainingDays}</td>
+                      <td className="px-4 py-4 text-sm text-center text-gray-700">{formatDate(row.startDate)}</td>
+                      <td className="px-4 py-4 text-sm text-center text-gray-700">{formatDate(row.endDate)}</td>
+                      <td className="px-4 py-4 text-right">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -333,21 +329,35 @@ function DoctorMonitoringContent() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
 
-          <div className="px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2]">
+          <div className="px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
             <p>
               {filteredRows.length > 0
                 ? `Showing ${(page - 1) * PAGE_SIZE + 1} - ${Math.min(page * PAGE_SIZE, filteredRows.length)} of ${filteredRows.length} items`
                 : "Showing 0 - 0 of 0 items"}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-xs px-2 py-1 rounded-md bg-[#d9edf3] text-[#0d8fae]">
-                {page}/{totalPages}
-              </span>
+              {Array.from({ length: Math.min(3, totalPages) }).map((_, idx) => {
+                const value = idx + 1
+                const isActive = value === page
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPage(value)}
+                    className={`h-6 min-w-6 rounded-md px-1 text-xs ${
+                      isActive ? "bg-[#d9edf3] text-[#0d8fae] font-semibold" : "text-gray-500 hover:bg-[#eef6f9]"
+                    }`}
+                  >
+                    {value}
+                  </button>
+                )
+              })}
               <Button
                 variant="ghost"
                 size="icon"

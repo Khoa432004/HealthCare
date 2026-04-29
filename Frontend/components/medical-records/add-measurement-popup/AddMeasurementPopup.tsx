@@ -62,7 +62,7 @@ export const AddMeasurementPopup = ({
     >
       <DialogContent
         showCloseButton={false}
-        className={`!p-0 !gap-0 !border-0 !bg-white !shadow-xl max-h-[95dvh] overflow-y-auto ${controller.modalClassName}`}
+        className={`!p-0 !gap-0 !border-0 !bg-white !shadow-xl !w-[calc(100vw-16px)] sm:!w-full max-h-[calc(100dvh-16px)] overflow-y-auto ${controller.modalClassName}`}
       >
         <DialogTitle className="sr-only">Thêm số đo</DialogTitle>
         <DialogDescription className="sr-only">

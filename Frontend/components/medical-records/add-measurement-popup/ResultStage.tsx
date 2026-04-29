@@ -86,9 +86,9 @@ export const ResultStage = ({
           card: "border-[#CFEAF2] bg-[#E8F7FC]",
         }
   return (
-    <div className="px-4 pb-4 pt-4 md:px-[44px] md:pb-[44px] md:pt-[32px]">
-      <div className="-mx-4 sticky top-0 z-10 flex items-start justify-between border-b border-[#D8ECF1] bg-white px-4 pb-4 pt-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
-        <h2 className="text-[18px] font-semibold text-[#151A1E] md:text-[22px]">
+    <div className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 md:px-[44px] md:pb-[44px] md:pt-[32px]">
+      <div className="-mx-3 sticky top-0 z-10 flex items-start justify-between border-b border-[#D8ECF1] bg-white px-3 pb-3 pt-3 sm:-mx-4 sm:px-4 sm:pb-4 sm:pt-4 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
+        <h2 className="text-[16px] font-semibold text-[#151A1E] sm:text-[18px] md:text-[22px]">
           Kết quả theo dõi
         </h2>
         <button
@@ -120,7 +120,7 @@ export const ResultStage = ({
       </section>
 
       <section
-        className={`mt-5 rounded-[20px] border px-4 py-4 md:mt-7 md:rounded-[22px] md:px-5 ${themeClasses.card}`}
+        className={`mt-4 rounded-[16px] border px-3 py-3 sm:mt-5 sm:rounded-[20px] sm:px-4 sm:py-4 md:mt-7 md:rounded-[22px] md:px-5 ${themeClasses.card}`}
       >
         <div className="flex items-center gap-3">
           <div
@@ -226,8 +226,8 @@ export const ResultStage = ({
         ) : null}
       </div>
 
-      <div className="mt-7 border-b border-[#D8ECF1] md:mt-8">
-        <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <div className="mt-6 border-b border-[#D8ECF1] md:mt-8">
+        <div className="-mx-3 overflow-x-auto px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0">
           <div className="flex w-max min-w-full items-center gap-5 md:gap-8">
             {(["info", "nutrition"] as const).map((tab) => (
               <button
@@ -266,7 +266,7 @@ export const ResultStage = ({
         ) : null}
       </div>
 
-      <div className="-mx-4 sticky bottom-0 z-10 mt-6 border-t border-[#D8ECF1] bg-white/95 px-4 py-4 backdrop-blur md:static md:mx-0 md:mt-8 md:border-0 md:bg-transparent md:px-0 md:py-0">
+      <div className="-mx-3 sticky bottom-0 z-20 mt-6 border-t border-[#D8ECF1] bg-white/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:px-4 sm:py-4 md:mx-0 md:mt-8 md:px-0 md:py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           {result.actions.canSave ? (
             <PopupButton

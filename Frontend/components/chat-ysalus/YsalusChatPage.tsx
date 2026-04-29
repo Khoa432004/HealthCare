@@ -10,9 +10,14 @@ import { authService } from "@/services/auth.service"
 interface YsalusChatPageProps {
   role: ChatRole
   inboxAllowedFilters?: InboxFilter[]
+  initialReceiverId?: string | null
 }
 
-export function YsalusChatPage({ role, inboxAllowedFilters }: YsalusChatPageProps) {
+export function YsalusChatPage({
+  role,
+  inboxAllowedFilters,
+  initialReceiverId,
+}: YsalusChatPageProps) {
   const [selectedChat, setSelectedChat] = useState<SelectedChatType | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -37,6 +42,7 @@ export function YsalusChatPage({ role, inboxAllowedFilters }: YsalusChatPageProp
           <YsalusChatList
             role={role}
             inboxAllowedFilters={inboxAllowedFilters}
+            initialReceiverId={initialReceiverId}
             currentUserId={currentUserId}
             selectedReceiverId={selectedChat?.receiverId ?? null}
             setSelectedChat={setSelectedChat}
@@ -58,6 +64,7 @@ export function YsalusChatPage({ role, inboxAllowedFilters }: YsalusChatPageProp
             <YsalusChatList
               role={role}
               inboxAllowedFilters={inboxAllowedFilters}
+              initialReceiverId={initialReceiverId}
               currentUserId={currentUserId}
               selectedReceiverId={null}
               setSelectedChat={setSelectedChat}

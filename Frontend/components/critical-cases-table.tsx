@@ -3,9 +3,16 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, ChevronRight, FileText } from "lucide-react"
+import { MoreHorizontal, ChevronRight, FileText, MessageSquare, Activity } from "lucide-react"
 import type { Appointment } from "@/services/appointment.service"
 import type { CriticalCase } from "@/services/doctor-statistics.service"
+import { useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
 interface CriticalCasesTableProps {
@@ -14,6 +21,8 @@ interface CriticalCasesTableProps {
 }
 
 export default function CriticalCasesTable({ inProcessAppointments = [], criticalCases = [] }: CriticalCasesTableProps) {
+  const router = useRouter()
+
   const getInitials = (name: string) =>
     name
       .split(" ")
@@ -30,29 +39,26 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
 
   const formatStatus = (status: string) => status.toLowerCase() === "high" ? "High" : "Low"
 
+  const handleOpenChat = (criticalCase: CriticalCase) => {
+    const params = new URLSearchParams({
+      peerId: criticalCase.patientId,
+    })
+    router.push(`/doctor-chat?${params.toString()}`)
+  }
+
+  const handleOpenMetricsDetails = (criticalCase: CriticalCase) => {
+    const params = new URLSearchParams({
+      patientId: criticalCase.patientId,
+      patientName: criticalCase.patientName,
+    })
+    router.push(`/health-tracking?${params.toString()}`)
+  }
+
   return (
     <div className="space-y-6">
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Top Critical Cases</h3>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="glass border-white/50 hover:bg-white transition-smooth">
-              BP
-            </Badge>
-            <Badge className="gradient-primary border-0 shadow-soft">BG</Badge>
-            <Badge variant="outline" className="glass border-white/50 hover:bg-white transition-smooth">
-              KET
-            </Badge>
-            <Badge variant="outline" className="glass border-white/50 hover:bg-white transition-smooth">
-              Hct
-            </Badge>
-            <Badge variant="outline" className="glass border-white/50 hover:bg-white transition-smooth">
-              UA
-            </Badge>
-          </div>
-          <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50 transition-smooth">
-            See details <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -94,9 +100,23 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white transition-smooth">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white transition-smooth">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenChat(case_)}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Open Chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenMetricsDetails(case_)}>
+                          <Activity className="mr-2 h-4 w-4" />
+                          Metrics Details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}
