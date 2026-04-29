@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, MessageSquare, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
@@ -23,6 +23,7 @@ import type { InboxFilter } from "@/types/chat"
 
 function DoctorChatContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
 
   useEffect(() => {
@@ -56,6 +57,7 @@ function DoctorChatContent() {
   }
 
   const allowedFilters: InboxFilter[] = ["all", "patient"]
+  const initialReceiverId = searchParams.get("peerId")
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#e5f5f8" }}>
@@ -115,7 +117,12 @@ function DoctorChatContent() {
         </header>
 
         <main className="flex-1 flex flex-col min-h-0 px-3 pb-3">
-          <ChatLayout role="DOCTOR" showNeedHelpBanner={false} allowedFilters={allowedFilters} />
+          <ChatLayout
+            role="DOCTOR"
+            showNeedHelpBanner={false}
+            allowedFilters={allowedFilters}
+            initialReceiverId={initialReceiverId}
+          />
         </main>
       </div>
     </div>

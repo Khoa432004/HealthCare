@@ -341,7 +341,7 @@ export const useAddMeasurementPopupController = ({
 
   const modalClassName = useMemo(() => {
     if (state.view === "result_review") {
-      return "!w-full !max-w-[680px] !rounded-[30px] !overflow-hidden"
+      return "!w-full !max-w-[680px] !rounded-[18px] sm:!rounded-[24px] md:!rounded-[30px] !overflow-hidden"
     }
 
     if (
@@ -355,10 +355,10 @@ export const useAddMeasurementPopupController = ({
       state.view === "connect_failed" ||
       state.view === "measurement_failed"
     ) {
-      return "!w-full !max-w-[1120px] !rounded-[30px] !overflow-hidden"
+      return "!w-full !max-w-[1120px] !rounded-[18px] sm:!rounded-[24px] md:!rounded-[30px] !overflow-hidden"
     }
 
-    return "!w-full !max-w-[1024px] !rounded-[30px] !overflow-hidden"
+    return "!w-full !max-w-[1024px] !rounded-[18px] sm:!rounded-[24px] md:!rounded-[30px] !overflow-hidden"
   }, [state.view])
 
   const registeredDevices = useMemo(

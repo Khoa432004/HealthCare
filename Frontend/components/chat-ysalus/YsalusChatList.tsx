@@ -62,6 +62,7 @@ interface YsalusChatListProps {
   role: ChatRole
   /** Giới hạn pill (vd patient: all, doctor). Không truyền = hiện all + patient + doctor. */
   inboxAllowedFilters?: InboxFilter[]
+  initialReceiverId?: string | null
   currentUserId: string
   selectedReceiverId: string | null
   setSelectedChat: (value: SelectedChatType) => void
@@ -72,6 +73,7 @@ const ROLES_WITHOUT_INBOX_FILTERS: ChatRole[] = ["NURSE", "RECEPTIONIST"]
 export function YsalusChatList({
   role,
   inboxAllowedFilters,
+  initialReceiverId,
   currentUserId,
   selectedReceiverId,
   setSelectedChat,
@@ -128,6 +130,15 @@ export function YsalusChatList({
     () => sortedPeers.map((p) => peerToSelected(p, currentUserId)),
     [sortedPeers, currentUserId, pendingVersion]
   )
+
+  useEffect(() => {
+    if (!initialReceiverId || selectedReceiverId) return
+    const target = formatChats.find((chat) => chat.receiverId === initialReceiverId)
+    if (target) {
+      clearChatPendingForPeer(target.receiverId)
+      setSelectedChat(target)
+    }
+  }, [formatChats, initialReceiverId, selectedReceiverId, setSelectedChat])
 
   const renderCategory = (icon: ReactNode, filter: InboxFilter) => {
     return (
