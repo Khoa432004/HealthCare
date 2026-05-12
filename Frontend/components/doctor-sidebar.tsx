@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
+  Package,
   Calendar,
   Activity,
   // FileText,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button"
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/doctor-dashboard" },
+  { icon: Package, label: "Package Program", href: "/doctor-dashboard/package-program" },
   { icon: Calendar, label: "Calendar", href: "/calendar" },
   { icon: Activity, label: "Monitoring", href: "/monitoring" },
   // { icon: FileText, label: "EMR", href: "/emr" },
@@ -99,7 +101,10 @@ export default function DoctorSidebar() {
           const Icon = item.icon
           const isActive =
             pathname === item.href ||
-            (item.href === "/doctor-dashboard" && (pathname === "/my-profile" || pathname === "/settings"))
+            (item.href !== "/doctor-dashboard" &&
+              pathname.startsWith(item.href + "/")) ||
+            (item.href === "/doctor-dashboard" &&
+              (pathname === "/my-profile" || pathname === "/settings"))
 
           return (
             <button

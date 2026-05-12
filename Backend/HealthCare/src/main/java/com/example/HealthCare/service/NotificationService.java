@@ -22,4 +22,9 @@ public interface NotificationService {
     Long getUnreadCount(UUID userId);
     NotificationResponse markAsRead(UUID notificationUserId, UUID userId);
     void markAllAsRead(UUID userId);
+
+    /**
+     * Deliver a notification to exactly one user (in-app + WebSocket), e.g. after an admin-only action.
+     */
+    void notifySingleUser(UUID recipientUserId, String title, String content, String type, UUID createdByAdminId);
 }
