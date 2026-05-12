@@ -37,9 +37,11 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final UserAccountRepository userAccountRepository;
 
-    // ========== USER OPERATIONS (literal paths before /{id} to avoid ambiguous matching) ==========
+    // ========== USER OPERATIONS (literal paths before /{id} to avoid ambiguous
+    // matching) ==========
 
     @GetMapping("/my-notifications")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getMyNotifications() {
         try {
             UUID userId = getCurrentUserId();
@@ -53,6 +55,7 @@ public class NotificationController {
     }
 
     @GetMapping("/my-notifications/unread")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getMyUnreadNotifications() {
         try {
             UUID userId = getCurrentUserId();
@@ -66,6 +69,7 @@ public class NotificationController {
     }
 
     @GetMapping("/my-notifications/unread/count")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getUnreadCount() {
         try {
             UUID userId = getCurrentUserId();
@@ -79,6 +83,7 @@ public class NotificationController {
     }
 
     @PutMapping("/my-notifications/read-all")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> markAllAsRead() {
         try {
             UUID userId = getCurrentUserId();
@@ -92,6 +97,7 @@ public class NotificationController {
     }
 
     @PutMapping("/my-notifications/{notificationUserId}/read")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> markAsRead(@PathVariable UUID notificationUserId) {
         try {
             UUID userId = getCurrentUserId();
@@ -139,10 +145,10 @@ public class NotificationController {
             // Get current admin user by email
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
-            
+
             UserAccount admin = userAccountRepository.findByEmailAndIsDeletedFalse(email)
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
-            
+
             UUID adminId = admin.getId();
             NotificationResponse notification = notificationService.createNotification(request, adminId);
             return ResponseEntity.ok(Map.of("success", true, "data", notification));
@@ -180,14 +186,14 @@ public class NotificationController {
     }
 
     // ========== HELPER METHODS ==========
-    
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        
+
         UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return user.getId();
     }
 }

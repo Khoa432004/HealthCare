@@ -120,16 +120,17 @@ public class UserController {
 	}
 
 	@GetMapping("/pending-doctors")
+	@PreAuthorize("hasAuthority('APPROVE_DOCTOR')")
 	public ResponseEntity<?> getPendingDoctorAccounts() {
 		try {
 			List<UserResponse> pendingDoctors = userService.getPendingDoctorAccounts();
-			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK, "Pending doctor accounts retrieved successfully!", pendingDoctors));
+			return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK,
+					"Pending doctor accounts retrieved successfully!", pendingDoctors));
 		} catch (Exception ex) {
 			log.error("Error getting pending doctors: {}", ex.getMessage(), ex);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-				"error", "failed_to_get_pending_doctors",
-				"message", ex.getMessage()
-			));
+					"error", "failed_to_get_pending_doctors",
+					"message", ex.getMessage()));
 		}
 	}
 
@@ -144,9 +145,8 @@ public class UserController {
 		} catch (Exception ex) {
 			log.error("Error toggling account status for user ID {}: {}", id, ex.getMessage(), ex);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-				"error", "toggle_status_failed",
-				"message", ex.getMessage()
-			));
+					"error", "toggle_status_failed",
+					"message", ex.getMessage()));
 		}
 	}
 }

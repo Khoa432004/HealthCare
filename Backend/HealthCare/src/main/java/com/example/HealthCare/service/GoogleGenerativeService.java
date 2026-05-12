@@ -38,46 +38,47 @@ public class GoogleGenerativeService {
     public String generateText(String userQuery) throws Exception {
         // Lấy danh sách bác sĩ thực tế từ Database
         List<DoctorProfile> doctors = doctorProfileRepository.findAll();
-        
+
         // Xây dựng context thông tin bác sĩ đầy đủ (tên, chuyên khoa, giá, lịch rãnh)
         StringBuilder contextBuilder = new StringBuilder("=== THÔNG TIN BÁC SĨ TẠI PHÒNG KHÁM ===\n\n");
-        
+
         if (!doctors.isEmpty()) {
             for (DoctorProfile doctor : doctors) {
                 // Basic info
                 String doctorName = doctor.getUserAccount() != null ? doctor.getUserAccount().getFullName() : "N/A";
                 String specialty = doctor.getSpecialties() != null ? doctor.getSpecialties() : "N/A";
                 String title = doctor.getTitle() != null ? doctor.getTitle() : "";
-                
+
                 contextBuilder.append(String.format("👨‍⚕️ %s %s\n", title, doctorName));
                 contextBuilder.append(String.format("   Chuyên khoa: %s\n", specialty));
-                
+
                 // Get schedule and price
                 List<DoctorScheduleRule> schedules = doctorScheduleRuleRepository
                         .findByDoctorIdOrderByWeekdayAscStartTimeAsc(doctor.getUserId());
-                
+
                 if (!schedules.isEmpty()) {
                     // Get cost from first schedule
                     String appointmentCost = String.format("%,d đ", schedules.get(0).getAppointmentCost().intValue());
-                    
+
                     contextBuilder.append(String.format("   Giá khám: %s\n", appointmentCost));
-                    
+
                     // Group schedules by weekday for better readability
                     Map<Short, List<DoctorScheduleRule>> schedulesByDay = schedules.stream()
                             .collect(Collectors.groupingBy(DoctorScheduleRule::getWeekday));
-                    
+
                     contextBuilder.append("   Lịch rãnh:\n");
-                    String[] daysOfWeek = {"", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"};
-                    
+                    String[] daysOfWeek = { "", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật" };
+
                     for (int i = 2; i <= 7; i++) { // 2=Monday to 7=Sunday in backend, skip 1=Monday
                         List<DoctorScheduleRule> daySchedules = schedulesByDay.get((short) i);
                         if (daySchedules != null && !daySchedules.isEmpty()) {
                             String dayName = daysOfWeek[i];
                             StringBuilder timeSlots = new StringBuilder();
                             for (DoctorScheduleRule rule : daySchedules) {
-                                if (timeSlots.length() > 0) timeSlots.append(", ");
-                                timeSlots.append(String.format("%s-%s", 
-                                        rule.getStartTime().toString(), 
+                                if (timeSlots.length() > 0)
+                                    timeSlots.append(", ");
+                                timeSlots.append(String.format("%s-%s",
+                                        rule.getStartTime().toString(),
                                         rule.getEndTime().toString()));
                             }
                             contextBuilder.append(String.format("      %s: %s\n", dayName, timeSlots.toString()));
@@ -88,9 +89,10 @@ public class GoogleGenerativeService {
                     if (sundaySchedules != null && !sundaySchedules.isEmpty()) {
                         StringBuilder timeSlots = new StringBuilder();
                         for (DoctorScheduleRule rule : sundaySchedules) {
-                            if (timeSlots.length() > 0) timeSlots.append(", ");
-                            timeSlots.append(String.format("%s-%s", 
-                                    rule.getStartTime().toString(), 
+                            if (timeSlots.length() > 0)
+                                timeSlots.append(", ");
+                            timeSlots.append(String.format("%s-%s",
+                                    rule.getStartTime().toString(),
                                     rule.getEndTime().toString()));
                         }
                         contextBuilder.append(String.format("      Chủ nhật: %s\n", timeSlots.toString()));
@@ -99,19 +101,19 @@ public class GoogleGenerativeService {
                     contextBuilder.append("   Giá khám: 150.000đ (giá mặc định)\n");
                     contextBuilder.append("   Lịch rãnh: Chưa cập nhật\n");
                 }
-                
+
                 contextBuilder.append("\n");
             }
         } else {
             contextBuilder.append("Hiện chưa có thông tin bác sĩ trong hệ thống.\n\n");
         }
-        
+
         // Kết hợp context bác sĩ + câu hỏi của người dùng
         contextBuilder.append("=== CÂU HỎI ===\n");
         contextBuilder.append(userQuery);
-        
+
         String finalPrompt = contextBuilder.toString();
-        
+
         int maxRetries = 2;
         for (int i = 0; i <= maxRetries; i++) {
             try {
