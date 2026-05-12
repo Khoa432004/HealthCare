@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/api-config"
 
-export default function PaymentResultPage() {
+function PaymentResultContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
@@ -162,5 +162,19 @@ export default function PaymentResultPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+        <div className="p-4 rounded-md bg-white shadow-md text-blue-800">
+          Loading payment result...
+        </div>
+      </div>
+    }>
+      <PaymentResultContent />
+    </Suspense>
   )
 }
