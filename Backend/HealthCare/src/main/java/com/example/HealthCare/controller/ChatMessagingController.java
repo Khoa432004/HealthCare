@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,7 @@ public class ChatMessagingController {
 	private final UserAccountRepository userAccountRepository;
 
 	@PostMapping("/messages")
+	@PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
 	public ResponseEntity<?> sendMessage(@Valid @RequestBody SendChatMessageRequest body) {
 		try {
 			UUID senderId = getCurrentUserId();
@@ -59,6 +61,7 @@ public class ChatMessagingController {
 	}
 
 	@PostMapping("/messages-group-by-date")
+	@PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
 	public ResponseEntity<?> getMessagesGroupByDate(@Valid @RequestBody GetChatMessagesRequest body) {
 		try {
 			UUID senderId = getCurrentUserId();
@@ -77,6 +80,7 @@ public class ChatMessagingController {
 	}
 
 	@GetMapping("/peers")
+	@PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
 	public ResponseEntity<?> listPeers() {
 		try {
 			UUID userId = getCurrentUserId();

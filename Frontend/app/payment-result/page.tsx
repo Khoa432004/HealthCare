@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { API_BASE_URL } from "@/lib/api-config"
 
 export default function PaymentResultPage() {
   const searchParams = useSearchParams()
@@ -72,7 +73,7 @@ export default function PaymentResultPage() {
       }
 
       // Call the backend API to create appointment (and optionally persist payment)
-      const response = await fetch("http://localhost:8080/api/v1/appointments/book-from-payment", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/appointments/book-from-payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

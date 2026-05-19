@@ -37,8 +37,81 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final UserAccountRepository userAccountRepository;
 
+    // ========== USER OPERATIONS (literal paths before /{id} to avoid ambiguous
+    // matching) ==========
+
+    @GetMapping("/my-notifications")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyNotifications() {
+        try {
+            UUID userId = getCurrentUserId();
+            List<NotificationResponse> notifications = notificationService.getUserNotifications(userId);
+            return ResponseEntity.ok(Map.of("success", true, "data", notifications));
+        } catch (Exception e) {
+            log.error("Error getting user notifications", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/my-notifications/unread")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyUnreadNotifications() {
+        try {
+            UUID userId = getCurrentUserId();
+            List<NotificationResponse> notifications = notificationService.getUnreadNotifications(userId);
+            return ResponseEntity.ok(Map.of("success", true, "data", notifications));
+        } catch (Exception e) {
+            log.error("Error getting unread notifications", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/my-notifications/unread/count")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getUnreadCount() {
+        try {
+            UUID userId = getCurrentUserId();
+            Long count = notificationService.getUnreadCount(userId);
+            return ResponseEntity.ok(Map.of("success", true, "count", count));
+        } catch (Exception e) {
+            log.error("Error getting unread count", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/my-notifications/read-all")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> markAllAsRead() {
+        try {
+            UUID userId = getCurrentUserId();
+            notificationService.markAllAsRead(userId);
+            return ResponseEntity.ok(Map.of("success", true, "message", "All notifications marked as read"));
+        } catch (Exception e) {
+            log.error("Error marking all notifications as read", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/my-notifications/{notificationUserId}/read")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> markAsRead(@PathVariable UUID notificationUserId) {
+        try {
+            UUID userId = getCurrentUserId();
+            NotificationResponse notification = notificationService.markAsRead(notificationUserId, userId);
+            return ResponseEntity.ok(Map.of("success", true, "data", notification));
+        } catch (Exception e) {
+            log.error("Error marking notification as read", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     // ========== ADMIN OPERATIONS ==========
-    
+
     @GetMapping
     @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
     public ResponseEntity<?> getAllNotifications() {
@@ -72,10 +145,10 @@ public class NotificationController {
             // Get current admin user by email
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
-            
+
             UserAccount admin = userAccountRepository.findByEmailAndIsDeletedFalse(email)
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
-            
+
             UUID adminId = admin.getId();
             NotificationResponse notification = notificationService.createNotification(request, adminId);
             return ResponseEntity.ok(Map.of("success", true, "data", notification));
@@ -112,82 +185,15 @@ public class NotificationController {
         }
     }
 
-    // ========== USER OPERATIONS ==========
-    
-    @GetMapping("/my-notifications")
-    public ResponseEntity<?> getMyNotifications() {
-        try {
-            UUID userId = getCurrentUserId();
-            List<NotificationResponse> notifications = notificationService.getUserNotifications(userId);
-            return ResponseEntity.ok(Map.of("success", true, "data", notifications));
-        } catch (Exception e) {
-            log.error("Error getting user notifications", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/my-notifications/unread")
-    public ResponseEntity<?> getMyUnreadNotifications() {
-        try {
-            UUID userId = getCurrentUserId();
-            List<NotificationResponse> notifications = notificationService.getUnreadNotifications(userId);
-            return ResponseEntity.ok(Map.of("success", true, "data", notifications));
-        } catch (Exception e) {
-            log.error("Error getting unread notifications", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/my-notifications/unread/count")
-    public ResponseEntity<?> getUnreadCount() {
-        try {
-            UUID userId = getCurrentUserId();
-            Long count = notificationService.getUnreadCount(userId);
-            return ResponseEntity.ok(Map.of("success", true, "count", count));
-        } catch (Exception e) {
-            log.error("Error getting unread count", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @PutMapping("/my-notifications/{notificationUserId}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable UUID notificationUserId) {
-        try {
-            UUID userId = getCurrentUserId();
-            NotificationResponse notification = notificationService.markAsRead(notificationUserId, userId);
-            return ResponseEntity.ok(Map.of("success", true, "data", notification));
-        } catch (Exception e) {
-            log.error("Error marking notification as read", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @PutMapping("/my-notifications/read-all")
-    public ResponseEntity<?> markAllAsRead() {
-        try {
-            UUID userId = getCurrentUserId();
-            notificationService.markAllAsRead(userId);
-            return ResponseEntity.ok(Map.of("success", true, "message", "All notifications marked as read"));
-        } catch (Exception e) {
-            log.error("Error marking all notifications as read", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
     // ========== HELPER METHODS ==========
-    
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        
+
         UserAccount user = userAccountRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return user.getId();
     }
 }

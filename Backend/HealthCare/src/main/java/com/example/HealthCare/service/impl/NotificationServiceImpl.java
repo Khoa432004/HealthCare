@@ -2,6 +2,7 @@ package com.example.HealthCare.service.impl;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,7 @@ import com.example.HealthCare.dto.request.CreateNotificationRequest;
 import com.example.HealthCare.dto.request.UpdateNotificationRequest;
 import com.example.HealthCare.dto.response.NotificationResponse;
 import com.example.HealthCare.enums.UserRole;
+import com.example.HealthCare.exception.NotFoundException;
 import com.example.HealthCare.model.Notification;
 import com.example.HealthCare.model.NotificationUser;
 import com.example.HealthCare.model.UserAccount;
@@ -75,6 +77,36 @@ public class NotificationServiceImpl implements NotificationService {
         }
         
         return mapToResponse(notification);
+    }
+
+    @Override
+    @Transactional
+    public void notifySingleUser(UUID recipientUserId, String title, String content, String type, UUID createdByAdminId) {
+        UserAccount recipient = userAccountRepository.findByIdAndIsDeletedFalse(recipientUserId)
+                .orElseThrow(() -> new NotFoundException("Recipient user not found."));
+        String notifType = type != null && !type.isBlank() ? type : "ADMIN";
+        Notification notification = Notification.builder()
+                .title(title)
+                .content(content)
+                .type(notifType)
+                .targetRoles(Collections.singletonList(recipient.getRole().name()))
+                .createdBy(createdByAdminId)
+                .build();
+        notification = notificationRepository.save(notification);
+        NotificationUser notificationUser = NotificationUser.builder()
+                .notification(notification)
+                .user(recipient)
+                .isRead(false)
+                .build();
+        notificationUser = notificationUserRepository.save(notificationUser);
+        try {
+            NotificationResponse userResponse = mapToResponseWithUserData(notificationUser);
+            webSocketService.sendNotificationToUser(recipientUserId, userResponse);
+            Long unreadCount = notificationUserRepository.countUnreadByUserId(recipientUserId);
+            webSocketService.sendUnreadCountToUser(recipientUserId, unreadCount);
+        } catch (Exception e) {
+            log.error("Error broadcasting single-user notification to {}: {}", recipientUserId, e.getMessage());
+        }
     }
 
     @Override

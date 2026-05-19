@@ -1,17 +1,40 @@
 "use client"
 
-import { LayoutDashboard, Users, Bell, BarChart3, FileText, Settings, LogOut, RefreshCw, XCircle, DollarSign, Stethoscope, MessageSquare } from "lucide-react"
+import { LayoutDashboard, Users, Bell, BarChart3, FileText, Settings, LogOut, RefreshCw, XCircle, DollarSign, Stethoscope, MessageSquare, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AdminSidebarProps {
-  activeTab: "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors" | "chats"
-  setActiveTab: (tab: "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors" | "chats") => void
+  activeTab:
+    | "overview"
+    | "users"
+    | "statistics"
+    | "notifications"
+    | "refunds"
+    | "cancellations"
+    | "revenue"
+    | "doctors"
+    | "chats"
+    | "exam-packages"
+  setActiveTab: (
+    tab:
+      | "overview"
+      | "users"
+      | "statistics"
+      | "notifications"
+      | "refunds"
+      | "cancellations"
+      | "revenue"
+      | "doctors"
+      | "chats"
+      | "exam-packages",
+  ) => void
 }
 
 export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
   const menuItems = [
     { id: "overview" as const, icon: LayoutDashboard, label: "Overview" },
     { id: "users" as const, icon: Users, label: "User Management" },
+    { id: "exam-packages" as const, icon: Package, label: "Exam packages" },
     { id: "chats" as const, icon: MessageSquare, label: "Chats" },
     { id: "statistics" as const, icon: BarChart3, label: "Statistics" },
     { id: "notifications" as const, icon: Bell, label: "Notifications" },

@@ -19,7 +19,9 @@ public enum Privilege {
 	VIEW_PAYROLL("View payroll Have right to view doctor payroll information."),
 	SETTLE_PAYROLL("Settle payroll Have right to settle doctor payrolls."),
 	VIEW_DOCTORS("View doctors Have right to view doctor profiles and information."),
-	VIEW_MEDICAL_EXAMINATION_HISTORY("View medical examination history Have right to view medical examination history.");
+	VIEW_MEDICAL_EXAMINATION_HISTORY("View medical examination history Have right to view medical examination history."),
+	CONFIGURE_EXAM_PACKAGE("Configure exam package Have right to configure standard exam packages for managed patients."),
+	APPROVE_EXAM_PACKAGE_CONFIG("Approve exam package config Have right to approve doctor exam package configurations.");
 
 	private final String description;
 

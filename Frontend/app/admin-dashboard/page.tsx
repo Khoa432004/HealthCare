@@ -8,6 +8,7 @@ import { UserManagementTable } from "@/components/user-management-table"
 import { CanceledAppointmentsTable } from "@/components/canceled-appointments-table"
 import { DoctorPayrollTable } from "@/components/doctor-payroll-table"
 import { NotificationManagement } from "@/components/notification-management"
+import { ExamPackageRequestsTable } from "@/components/exam-package-requests-table"
 import { Input } from "@/components/ui/input"
 import { Search, Bell, User, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -26,7 +27,17 @@ import { AuthGuard } from "@/components/auth-guard"
 import { ChatLayout } from "@/components/chat"
 import { useAiFloatingChatContext } from "@/components/ai-floating-chat-context"
 
-type TabType = "overview" | "users" | "statistics" | "notifications" | "refunds" | "cancellations" | "revenue" | "doctors" | "chats"
+type TabType =
+  | "overview"
+  | "users"
+  | "statistics"
+  | "notifications"
+  | "refunds"
+  | "cancellations"
+  | "revenue"
+  | "doctors"
+  | "chats"
+  | "exam-packages"
 
 function AdminDashboardContent() {
   const router = useRouter()
@@ -88,6 +99,8 @@ function AdminDashboardContent() {
         return <AdminOverview />
       case "users":
         return <UserManagementTable />
+      case "exam-packages":
+        return <ExamPackageRequestsTable />
       case "statistics":
         return <div className="p-4">Statistics - Coming soon</div>
       case "notifications":

@@ -100,6 +100,7 @@ public class RoleController {
 	}
 
 	@GetMapping("/privileges")
+	@PreAuthorize("hasAuthority('VIEW_ROLE')")
 	public ResponseSuccess getPrivilegesByRole(@RequestParam String role) {
 		List<String> privileges = roleService.getPrivilegesByRole(role);
 		return new ResponseSuccess(HttpStatus.OK, "Get privileges successfully", privileges);
