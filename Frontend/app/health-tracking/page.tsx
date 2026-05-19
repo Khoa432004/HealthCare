@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Activity, LogOut, Search, User } from "lucide-react"
 
 import { AuthGuard } from "@/components/auth-guard"
-import { HealthMetricsTab } from "@/components/medical-records/health-metrics-tab"
+import { PatientMetricsSection } from "@/components/medical-records/patient-metrics/PatientMetricsSection"
 import { NotificationBell } from "@/components/notification-bell"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -163,21 +163,8 @@ function MetricsContent() {
 
         {/* Body */}
         <div className="flex-1 px-4 pb-6">
-          <div className="glass rounded-2xl shadow-soft-md border-white/50 p-4 mb-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <h2 className="text-base font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">
-                  Metrics
-                </h2>
-                <p className="text-xs text-gray-500 mt-1">
-                  Theo dõi chỉ số sức khỏe và tiền sử khám bệnh đã ghi nhận.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {displayedPatientId ? (
-            <HealthMetricsTab
+            <PatientMetricsSection
               patientId={displayedPatientId}
               patientName={displayedPatientName}
             />
