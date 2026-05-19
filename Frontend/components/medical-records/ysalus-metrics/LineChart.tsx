@@ -45,6 +45,14 @@ interface Props {
   showGrid?: boolean
 }
 
+const DEFAULT_ANNOTATIONS: ApexAnnotations = {
+  points: [],
+  xaxis: [],
+  yaxis: [],
+  texts: [],
+  images: [],
+}
+
 export const LineChart = ({
   series,
   colors,
@@ -63,6 +71,19 @@ export const LineChart = ({
   width,
   showGrid = true,
 }: Props) => {
+  const categories = xaxis?.categories ?? []
+
+  // ApexCharts crashes during path animation when series or categories are
+  // empty (`seriesData.series[maxValsInArrayIndex]` is undefined).
+  if (!series?.length || !categories.length) {
+    return null
+  }
+
+  const mergedAnnotations: ApexAnnotations = {
+    ...DEFAULT_ANNOTATIONS,
+    ...(annotations ?? {}),
+  }
+
   // ApexCharts reads `config.plotOptions.line.isSlopeChart` unconditionally
   // during globalVars init (even when chart.type === "bar"). If react-apexcharts
   // ever calls updateOptions with a user-supplied `plotOptions` that drops the
@@ -103,15 +124,16 @@ export const LineChart = ({
       strokeDashArray: 7,
     },
     yaxis,
-    xaxis,
+    xaxis: { ...xaxis, categories },
   }
 
   if (legend) options.legend = legend
-  if (annotations) options.annotations = annotations
+  options.annotations = mergedAnnotations
 
   return (
     <div className={className}>
       <ReactApexChart
+        key={`${chartType}-${series.length}-${categories.join("|")}`}
         options={options}
         // `series` accepts both number[] (line) and {x,y}[] (scatter overlay).
         // Cast widens to ApexCharts' looser runtime type.

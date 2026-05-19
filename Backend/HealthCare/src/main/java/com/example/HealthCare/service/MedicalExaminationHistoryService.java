@@ -1,5 +1,6 @@
 package com.example.HealthCare.service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,4 +19,13 @@ public interface MedicalExaminationHistoryService {
       * dashboard.
       */
      List<VitalMetricPointResponse> getVitalMetricPoints(UUID patientId);
+
+     /**
+      * Range-restricted variant used by the new "patient-metrics" UI which
+      * navigates by week / month / year. Either bound may be {@code null}
+      * (interpreted as "open ended"); when both are {@code null} the
+      * full history is returned.
+      */
+     List<VitalMetricPointResponse> getVitalMetricPointsInRange(
+          UUID patientId, OffsetDateTime from, OffsetDateTime to);
 }

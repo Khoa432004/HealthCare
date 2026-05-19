@@ -1,4 +1,5 @@
 package com.example.HealthCare.service.impl;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -129,5 +130,15 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
         // medical-report-sourced signs with self-reported measurements and
         // sorts them by takenAt asc.
         return patientVitalMeasurementService.listVitalMetricPoints(patientId);
+    }
+
+    @Override
+    public List<VitalMetricPointResponse> getVitalMetricPointsInRange(
+            UUID patientId, OffsetDateTime from, OffsetDateTime to) {
+        if (from == null && to == null) {
+            return patientVitalMeasurementService.listVitalMetricPoints(patientId);
+        }
+        return patientVitalMeasurementService.listVitalMetricPointsInRange(
+                patientId, from, to);
     }
 }

@@ -228,8 +228,8 @@ function DoctorMonitoringContent() {
           </div>
         </header>
 
-        <div className="bg-white rounded-2xl flex-1 min-h-0 overflow-hidden border border-[#d6e7ec]">
-          <div className="border-b border-[#d6e7ec] bg-[#edf6f9]">
+        <div className="bg-white rounded-2xl flex-1 min-h-0 flex flex-col overflow-hidden border border-[#d6e7ec]">
+          <div className="shrink-0 border-b border-[#d6e7ec] bg-[#edf6f9]">
             <div className="px-5 pt-2.5 flex flex-wrap gap-5 text-sm">
             {STATUS_TABS.map((tab) => (
               <button
@@ -332,7 +332,7 @@ function DoctorMonitoringContent() {
             </div>
           </div>
 
-          <div className="px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
+          <div className="shrink-0 px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
             <p>
               {filteredRows.length > 0
                 ? `Showing ${(page - 1) * PAGE_SIZE + 1} - ${Math.min(page * PAGE_SIZE, filteredRows.length)} of ${filteredRows.length} items`

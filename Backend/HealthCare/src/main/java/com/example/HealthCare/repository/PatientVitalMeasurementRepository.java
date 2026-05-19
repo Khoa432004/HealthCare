@@ -21,9 +21,16 @@ public interface PatientVitalMeasurementRepository
     List<PatientVitalMeasurement> findAllByPatientOrderByTakenAtAsc(
         @Param("patientId") UUID patientId);
 
+    /**
+     * Range-restricted lookup. Both bounds are nullable so callers can request
+     * "since X" or "up to Y" without splitting the query. When both are null
+     * the query degenerates to "all measurements for the patient", matching
+     * {@link #findAllByPatientOrderByTakenAtAsc(UUID)}.
+     */
     @Query("select m from PatientVitalMeasurement m "
         + "where m.patientId = :patientId "
-        + "and m.takenAt between :from and :to "
+        + "and (:from is null or m.takenAt >= :from) "
+        + "and (:to is null or m.takenAt <= :to) "
         + "order by m.takenAt asc")
     List<PatientVitalMeasurement> findAllByPatientInRange(
         @Param("patientId") UUID patientId,
