@@ -33,7 +33,7 @@ import {
 
 function summarizePkg(p: ExamPackageRow | null | undefined): string {
   if (!p) return "—"
-  return `${p.packageName} · ${p.durationMinutes} min · ${Number(p.priceVnd).toLocaleString()} VND · ${p.applicable ? "Available" : "Hidden"}`
+  return `${p.packageName} · ${p.durationDays} days · ${Number(p.priceVnd).toLocaleString()} VND · ${p.applicable ? "Available" : "Hidden"}`
 }
 
 function changeBadgeVariant(t: ExamPackageChangeRow["changeType"]) {

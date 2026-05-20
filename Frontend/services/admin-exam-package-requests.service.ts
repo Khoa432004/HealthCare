@@ -12,7 +12,7 @@ export type PendingExamPackageRequestItem = {
 export type ExamPackageRow = {
   packageId: string | null
   packageName: string
-  durationMinutes: number
+  durationDays: number
   priceVnd: number
   applicable: boolean
   sortOrder?: number

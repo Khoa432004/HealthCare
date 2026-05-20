@@ -171,7 +171,7 @@ public class AdminDoctorExamPackageRequestServiceImpl implements AdminDoctorExam
 		if (!pub.getPackageName().trim().equals(name)) {
 			return false;
 		}
-		if (!pub.getDurationMinutes().equals(line.getDurationMinutes())) {
+		if (!pub.getDurationDays().equals(line.getDurationDays())) {
 			return false;
 		}
 		if (!pub.getPriceVnd().equals(line.getPriceVnd())) {
@@ -186,7 +186,7 @@ public class AdminDoctorExamPackageRequestServiceImpl implements AdminDoctorExam
 		return DoctorExamPackageResponse.builder()
 				.packageId(e.getId())
 				.packageName(e.getPackageName())
-				.durationMinutes(e.getDurationMinutes())
+				.durationDays(e.getDurationDays())
 				.priceVnd(e.getPriceVnd())
 				.applicable(Boolean.TRUE.equals(e.getApplicable()))
 				.sortOrder(e.getSortOrder())
@@ -197,7 +197,7 @@ public class AdminDoctorExamPackageRequestServiceImpl implements AdminDoctorExam
 		return DoctorExamPackageResponse.builder()
 				.packageId(line.getPackageId())
 				.packageName(line.getPackageName())
-				.durationMinutes(line.getDurationMinutes())
+				.durationDays(line.getDurationDays())
 				.priceVnd(line.getPriceVnd())
 				.applicable(Boolean.TRUE.equals(line.getApplicable()))
 				.sortOrder(sortOrder)
@@ -233,7 +233,7 @@ public class AdminDoctorExamPackageRequestServiceImpl implements AdminDoctorExam
 			DoctorExamPackage p = DoctorExamPackage.builder()
 					.doctorUserId(doctorId)
 					.packageName(line.getPackageName().trim())
-					.durationMinutes(line.getDurationMinutes())
+					.durationDays(line.getDurationDays())
 					.priceVnd(line.getPriceVnd())
 					.applicable(Boolean.TRUE.equals(line.getApplicable()))
 					.sortOrder(order++)

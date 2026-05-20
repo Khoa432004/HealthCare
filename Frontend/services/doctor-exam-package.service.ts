@@ -3,7 +3,7 @@ import { apiClient } from '@/lib/api-client'
 export type DoctorExamPackageRow = {
   packageId: string | null
   packageName: string
-  durationMinutes: number
+  durationDays: number
   priceVnd: number
   applicable: boolean
   sortOrder?: number
@@ -41,7 +41,7 @@ function normalizeRow(p: any): DoctorExamPackageRow {
   return {
     packageId: p.packageId ?? null,
     packageName: p.packageName ?? '',
-    durationMinutes: Number(p.durationMinutes ?? 30),
+    durationDays: Number(p.durationDays ?? 7),
     priceVnd: Number(p.priceVnd ?? 0),
     applicable: Boolean(p.applicable),
     sortOrder: p.sortOrder,
@@ -82,7 +82,7 @@ class DoctorExamPackageService {
       packages: packages.map((p) => ({
         packageId: p.packageId || null,
         packageName: p.packageName.trim(),
-        durationMinutes: p.durationMinutes,
+        durationDays: p.durationDays,
         priceVnd: p.priceVnd,
         applicable: p.applicable,
       })),

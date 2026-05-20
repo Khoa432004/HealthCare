@@ -24,8 +24,8 @@ public class ExamPackageLineRequest {
 
 	@NotNull
 	@Min(1)
-	@Max(24 * 60)
-	private Integer durationMinutes;
+	@Max(3650)
+	private Integer durationDays;
 
 	@NotNull
 	@Min(0)
