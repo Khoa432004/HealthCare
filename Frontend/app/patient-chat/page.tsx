@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { ChatLayout } from "@/components/chat"
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
@@ -58,7 +59,7 @@ function PatientChatContent() {
   const allowedFilters: InboxFilter[] = ["all", "doctor"]
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#e5f5f8" }}>
+    <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
       <SuppressAiFloatingChat />
       <PatientSidebar />
 
@@ -68,10 +69,13 @@ function PatientChatContent() {
           style={{ borderRadius: "14px", paddingLeft: "24px", paddingRight: "20px" }}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="w-4 h-4 text-[#16a1bd]" />
-              <h1 className="text-lg font-semibold text-gray-900">Chats</h1>
-            </div>
+            <PageHeaderTitleRow
+              role="patient"
+              icon={MessageSquare}
+              title="Chats"
+              iconClassName="text-[#007A94]"
+              titleClassName="text-lg"
+            />
 
             <div className="flex items-center space-x-3">
               <div className="relative flex-1 max-w-md">

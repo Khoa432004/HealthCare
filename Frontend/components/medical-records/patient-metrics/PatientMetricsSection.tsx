@@ -158,18 +158,18 @@ function MetricsCategoryTabs({
               onClick={() => onSelectTab(tab)}
               className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap pb-3 text-sm font-semibold transition ${
                 isSelected
-                  ? "text-[#1588A0]"
+                  ? "text-[#007A94]"
                   : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <Icon
                 className={`size-4 shrink-0 ${
-                  isSelected ? "text-[#1588A0]" : "text-gray-400"
+                  isSelected ? "text-[#007A94]" : "text-gray-400"
                 }`}
               />
               <span>{resolveTabLabel(tab, t)}</span>
               {isSelected ? (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#1588A0]" />
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#007A94]" />
               ) : null}
             </button>
           )
@@ -255,8 +255,10 @@ export function PatientMetricsSection({
 }: Props) {
   const { t } = useTranslation()
   const [state, setState] = useState<PatientMetricsUiState>(createInitialState)
-  const [points, setPoints] = useState<MedicalVitalMetricPoint[]>([])
-  const [loading, setLoading] = useState(true)
+  const [chartPoints, setChartPoints] = useState<MedicalVitalMetricPoint[]>([])
+  const [latestPoints, setLatestPoints] = useState<MedicalVitalMetricPoint[]>([])
+  const [chartLoading, setChartLoading] = useState(true)
+  const [latestLoading, setLatestLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddMeasurementOpen, setIsAddMeasurementOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -265,21 +267,16 @@ export function PatientMetricsSection({
     setState(createInitialState())
   }, [patientId])
 
-  /**
-   * Fetch points scoped to the currently-viewed period. The backend supports
-   * `?from=&to=` (and `period=` as a shorthand) so we send the calendar-aligned
-   * bounds for the anchor + granularity. When the user navigates to a prior
-   * month/year, the request is re-issued for that window.
-   */
+  /** Chart: scoped to the period the user is viewing (week / month / year). */
   useEffect(() => {
     if (!patientId) {
-      setPoints([])
-      setLoading(false)
+      setChartPoints([])
+      setChartLoading(false)
       return
     }
 
     let cancelled = false
-    setLoading(true)
+    setChartLoading(true)
     setError(null)
 
     const range = getPeriodRange(state.granularity, state.periodAnchor)
@@ -293,12 +290,12 @@ export function PatientMetricsSection({
             to: range.end.toISOString(),
           }
         )
-        if (!cancelled) setPoints(data)
+        if (!cancelled) setChartPoints(data)
       } catch (err) {
-        console.error("Failed to load vital metrics", err)
+        console.error("Failed to load vital metrics for chart", err)
         if (!cancelled) setError("Không thể tải chỉ số sức khỏe.")
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setChartLoading(false)
       }
     })()
 
@@ -307,19 +304,51 @@ export function PatientMetricsSection({
     }
   }, [patientId, refreshKey, state.granularity, state.periodAnchor])
 
-  const rawMetrics = useMemo(
-    () => adaptVitalMetricsToMetricData(points, patientId),
-    [points, patientId]
-  )
-  const metrics = useMemo(
-    () => mergeHealthMetricData(rawMetrics, []),
-    [rawMetrics]
-  )
+  /**
+   * Latest-measurements list: full history (no date filter), independent of
+   * chart navigation so past readings stay visible while browsing other periods.
+   */
+  useEffect(() => {
+    if (!patientId) {
+      setLatestPoints([])
+      setLatestLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLatestLoading(true)
+
+    ;(async () => {
+      try {
+        const data = await patientVitalMetricsService.getVitalMetrics(patientId)
+        if (!cancelled) setLatestPoints(data)
+      } catch (err) {
+        console.error("Failed to load vital metrics history", err)
+        if (!cancelled) setLatestPoints([])
+      } finally {
+        if (!cancelled) setLatestLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [patientId, refreshKey])
+
+  const chartMetrics = useMemo(() => {
+    const raw = adaptVitalMetricsToMetricData(chartPoints, patientId)
+    return mergeHealthMetricData(raw, [])
+  }, [chartPoints, patientId])
+
+  const latestMetrics = useMemo(() => {
+    const raw = adaptVitalMetricsToMetricData(latestPoints, patientId)
+    return mergeHealthMetricData(raw, [])
+  }, [latestPoints, patientId])
 
   const activeMetricType =
     state.primaryTab === "all" ? null : state.primaryTab
 
-  const latestGroups = useMetricsLatestGroups(metrics, activeMetricType)
+  const latestGroups = useMetricsLatestGroups(latestMetrics, activeMetricType)
 
   const handlePrimaryTabChange = useCallback((tab: MetricsPrimaryTab) => {
     setState((current) => ({
@@ -367,7 +396,7 @@ export function PatientMetricsSection({
           onSelectGranularity={handleGranularityChange}
         />
 
-        {loading && metrics.length === 0 ? (
+        {chartLoading && chartMetrics.length === 0 ? (
           <LoadingPanel />
         ) : error ? (
           <div className="flex min-h-[240px] items-center justify-center rounded-2xl bg-rose-50 text-sm text-rose-600 lg:min-h-[330px]">
@@ -378,7 +407,7 @@ export function PatientMetricsSection({
             activeMetricType={activeMetricType}
             anchorDate={state.periodAnchor}
             granularity={state.granularity}
-            metrics={metrics}
+            metrics={chartMetrics}
             selectedDate={state.selectedCalendarDay}
             onSelectDate={handleDateSelect}
           />
@@ -388,12 +417,12 @@ export function PatientMetricsSection({
           heading={t("latestMeasurements")}
           groups={latestGroups}
           isAggregateView={!activeMetricType}
-          isLoading={loading && metrics.length === 0}
+          isLoading={latestLoading && latestPoints.length === 0}
           trailingHeader={
             <button
               type="button"
               onClick={() => setIsAddMeasurementOpen(true)}
-              className="h-9 rounded-full border border-[#1588A0] bg-white px-4 text-xs font-semibold text-[#1588A0] transition hover:bg-[#E0F2F7] sm:h-10 sm:px-5 sm:text-sm"
+              className="h-9 rounded-full border border-[#007A94] bg-white px-4 text-xs font-semibold text-[#007A94] transition hover:bg-[#E0F2F7] sm:h-10 sm:px-5 sm:text-sm"
             >
               Thêm chỉ số
             </button>

@@ -10,8 +10,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #007a94;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -112,18 +112,25 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Ysalus chat UI palette (matches ysalus-web/src/index.css) */
-  --color-brand-0: #fcfeff;
-  --color-brand-025: #f7fefe;
-  --color-brand-05: #e5f5f8;
-  --color-brand-1: #b7e2eb;
-  --color-brand-4: #44b4ca;
-  --color-brand-5: #16a1bd;
-  --color-brand-6: #128197;
-  --color-brand-7: #0d6171;
+  /* iMed brand palette */
+  --color-brand-0: #fcfffe;
+  --color-brand-025: #f4faf8;
+  --color-brand-05: #e8f5f1;
+  --color-brand-1: #b7d9e4;
+  --color-brand-4: #3ba3b8;
+  --color-brand-5: #007a94;
+  --color-brand-6: #006884;
+  --color-brand-7: #005566;
   --color-brand-8: #09404c;
   --color-brand-9: #073039;
-  --color-brand-11: #ceebf2;
+  --color-brand-11: #c5e8e0;
+  --color-brand-accent: #28b463;
+  --color-brand-accent-dark: #1f9d55;
+  --imed-teal: #007a94;
+  --imed-teal-dark: #006884;
+  --imed-green: #28b463;
+  --imed-surface: #e8f5f1;
+  --imed-surface-active: #d4ede8;
   --color-dark-main: #0b0c0c;
   --color-dark-secondary: #404647;
   --color-indicator: #e4e7ec;
@@ -174,55 +181,67 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(22, 161, 189, 0.3);
+    background: rgba(0, 122, 148, 0.35);
     border-radius: 10px;
     transition: background 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(22, 161, 189, 0.5);
+    background: rgba(0, 122, 148, 0.55);
   }
 
   ::-webkit-scrollbar-thumb:active {
-    background: rgba(22, 161, 189, 0.7);
+    background: rgba(0, 104, 132, 0.75);
   }
 
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(22, 161, 189, 0.3) transparent;
+    scrollbar-color: rgba(0, 122, 148, 0.35) transparent;
   }
 }
 
 @layer utilities {
   /* Custom gradients */
   .gradient-primary {
-    background: linear-gradient(135deg, #16a1bd 0%, #0d6171 100%);
+    background: linear-gradient(135deg, #007a94 0%, #006884 55%, #28b463 100%);
   }
   
   .gradient-secondary {
-    background: linear-gradient(135deg, #b7e2eb 0%, #7ecfe0 100%);
+    background: linear-gradient(135deg, #b7d9e4 0%, #7ecfe0 100%);
   }
   
   .gradient-soft {
-    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(183,226,235,0.3) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(232, 245, 241, 0.85) 100%);
   }
   
   /* Smooth shadows */
   .shadow-soft {
-    box-shadow: 0 2px 8px rgba(22, 161, 189, 0.08), 0 1px 2px rgba(22, 161, 189, 0.04);
+    box-shadow: 0 2px 8px rgba(0, 122, 148, 0.08), 0 1px 2px rgba(0, 122, 148, 0.04);
   }
   
   .shadow-soft-md {
-    box-shadow: 0 4px 12px rgba(22, 161, 189, 0.1), 0 2px 4px rgba(22, 161, 189, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 122, 148, 0.1), 0 2px 4px rgba(0, 122, 148, 0.06);
   }
   
   .shadow-soft-lg {
-    box-shadow: 0 8px 24px rgba(22, 161, 189, 0.12), 0 4px 8px rgba(22, 161, 189, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 122, 148, 0.12), 0 4px 8px rgba(0, 122, 148, 0.08);
   }
   
   .shadow-soft-xl {
-    box-shadow: 0 12px 32px rgba(22, 161, 189, 0.15), 0 6px 12px rgba(22, 161, 189, 0.1);
+    box-shadow: 0 12px 32px rgba(0, 122, 148, 0.15), 0 6px 12px rgba(0, 122, 148, 0.1);
+  }
+
+  .bg-imed-surface {
+    background-color: var(--imed-surface);
+  }
+
+  .text-imed-teal {
+    color: var(--imed-teal);
+  }
+
+  .border-imed-teal {
+    border-color: var(--imed-teal);
   }
   
   /* Glass effect */
@@ -261,7 +280,7 @@
   
   /* Animated gradient background */
   .animated-gradient {
-    background: linear-gradient(-45deg, #b7e2eb, #7ecfe0, #16a1bd, #0d6171);
+    background: linear-gradient(-45deg, #b7e2eb, #7ecfe0, #007A94, #005566);
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }

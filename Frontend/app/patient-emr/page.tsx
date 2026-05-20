@@ -77,14 +77,14 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#e5f5f8]">
+      <div className="flex h-screen items-center justify-center bg-[#E8F5F1]">
         <p className="text-lg font-medium text-primary">Đang tải dữ liệu hồ sơ...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       <PatientSidebar />      {/* Header */}
 
       <main className="container mx-auto px-6 py-8 overflow-y-auto">

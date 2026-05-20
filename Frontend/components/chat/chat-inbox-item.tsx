@@ -31,7 +31,7 @@ export function ChatInboxItem({ conversation, isSelected, onClick }: ChatInboxIt
       <div className="relative shrink-0">
         <Avatar className="h-11 w-11 rounded-full">
           <AvatarImage src={conversation.avatarUrl} alt={conversation.participantName} />
-          <AvatarFallback className="rounded-full bg-[#16a1bd] text-white text-sm font-medium">
+          <AvatarFallback className="rounded-full bg-[#007A94] text-white text-sm font-medium">
             {initials}
           </AvatarFallback>
         </Avatar>

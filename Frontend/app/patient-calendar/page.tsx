@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { CalendarMonthView } from "@/components/calendar-month-view"
 import { CalendarWeekView } from "@/components/calendar-week-view"
 import { CalendarDayView } from "@/components/calendar-day-view"
@@ -439,19 +440,14 @@ export default function PatientCalendar() {
 
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       <PatientSidebar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5 text-gray-700" />
-                <h1 className="text-xl font-semibold text-gray-900">My Calendar</h1>
-              </div>
-            </div>
+            <PageHeaderTitleRow role="patient" icon={Calendar} title="My Calendar" />
 
             <div className="flex items-center space-x-4">
               {/* Search */}
@@ -506,7 +502,7 @@ export default function PatientCalendar() {
               <div className="flex items-center space-x-4">
                 <Button
                   variant="outline"
-                  className="glass border-[#16a1bd] text-[#16a1bd] hover:gradient-primary hover:text-white rounded-xl transition-smooth"
+                  className="glass border-[#007A94] text-[#007A94] hover:gradient-primary hover:text-white rounded-xl transition-smooth"
                   onClick={goToToday}
                 >
                   Today
@@ -529,10 +525,10 @@ export default function PatientCalendar() {
                   onOpenChange={handleFilterDropdownOpen}
                 >
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-xl border-[#16a1bd] glass hover:bg-white/50 transition-smooth relative" disabled={filterDropdownError}>
-                      <Filter className="w-4 h-4 text-[#16a1bd]" />
+                    <Button variant="outline" size="icon" className="rounded-xl border-[#007A94] glass hover:bg-white/50 transition-smooth relative" disabled={filterDropdownError}>
+                      <Filter className="w-4 h-4 text-[#007A94]" />
                       {getActiveFilterCount() > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-[#16a1bd] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        <span className="absolute -top-1 -right-1 bg-[#007A94] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                           {getActiveFilterCount()}
                         </span>
                       )}
@@ -588,7 +584,7 @@ export default function PatientCalendar() {
                 </DropdownMenu>
 
                 <Select value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
-                  <SelectTrigger className="w-32 glass border-[#16a1bd] rounded-xl">
+                  <SelectTrigger className="w-32 glass border-[#007A94] rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

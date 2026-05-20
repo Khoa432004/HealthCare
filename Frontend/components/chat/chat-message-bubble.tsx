@@ -60,7 +60,7 @@ export function ChatMessageBubble({ message, showAvatar = true, avatarUrl }: Cha
         <div className="relative shrink-0">
           <Avatar className="h-10 w-10 rounded-full">
             <AvatarImage src={avatarUrl} alt={message.senderName} />
-            <AvatarFallback className="rounded-full bg-[#16a1bd] text-white text-xs">
+            <AvatarFallback className="rounded-full bg-[#007A94] text-white text-xs">
               {initials}
             </AvatarFallback>
           </Avatar>

@@ -14,7 +14,7 @@ export default function ClinicAdminSignUpPage() {
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
           <div className="w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8">
             <div className="mb-8">
-              <Link href="/signup" className="text-[#16a1bd] hover:text-[#0d6171] font-semibold">
+              <Link href="/signup" className="text-[#007A94] hover:text-[#005566] font-semibold">
                 ← Back to role selection
               </Link>
             </div>
@@ -54,7 +54,7 @@ export default function ClinicAdminSignUpPage() {
                 <Input type="password" placeholder="Create a password" className="h-12" />
               </div>
 
-              <Button className="w-full h-12 bg-[#16a1bd] hover:bg-[#0d6171] text-white rounded-xl font-semibold">
+              <Button className="w-full h-12 bg-[#007A94] hover:bg-[#005566] text-white rounded-xl font-semibold">
                 Create Account
               </Button>
             </div>

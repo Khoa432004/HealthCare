@@ -38,7 +38,7 @@ export function NeedHelpBanner({
         </div>
         <div
           className="absolute top-4 right-4 w-9 h-8 rounded-full flex items-center justify-center border border-[#2ad9ff] shadow-md rotate-[13deg]"
-          style={{ backgroundColor: "#16a1bd" }}
+          style={{ backgroundColor: "#007A94" }}
         >
           <MessageCircle className="w-5 h-5 text-white" />
         </div>

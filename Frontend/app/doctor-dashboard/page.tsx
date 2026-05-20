@@ -7,14 +7,9 @@ import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DoctorUserMenu } from "@/components/doctor-user-menu"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import DoctorMetricsCards from "@/components/doctor-metrics-cards"
 import AppointmentStatusChart from "@/components/appointment-status-chart"
 import AppointmentTrendChart from "@/components/appointment-trend-chart"
@@ -297,14 +292,17 @@ function DoctorDashboardContent() {
       : 0
 
   return (
-    <div className="flex h-screen bg-[#e5f5f8]">
+    <div className="flex h-screen bg-[#E8F5F1]">
       <DoctorSidebar />
       <div className="flex-1 flex flex-col overflow-y-auto pt-3 px-3 pb-3">
         <header className="bg-white py-3 px-6 rounded-2xl mb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 text-gray-700" />
-              <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+            <PageHeaderTitleRow
+              role="doctor"
+              icon={LayoutDashboard}
+              title="Dashboard"
+              titleClassName="text-lg"
+            >
               <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as DashboardPeriod)}>
                 <SelectTrigger className="h-8 w-40 ml-2">
                   <SelectValue />
@@ -315,35 +313,11 @@ function DoctorDashboardContent() {
                   <SelectItem value="thisMonth">This month</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </PageHeaderTitleRow>
 
             <div className="flex items-center gap-3">
               <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="text-xs">{userInfo ? getInitials(userInfo.fullName) : 'DR'}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">{userInfo?.fullName || 'Doctor'}</p>
-                      <p className="text-[10px] text-gray-500">Bác sĩ</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push('/my-profile')}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                    </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DoctorUserMenu userInfo={userInfo} />
             </div>
           </div>
         </header>

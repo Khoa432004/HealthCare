@@ -158,7 +158,7 @@ export function PatientSearch({ value, onSelect }: PatientSearchProps) {
               className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-[#16a1bd] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="w-10 h-10 bg-[#007A94] rounded-full flex items-center justify-center text-white text-sm font-medium">
                   {patient.fullName
                     .split(" ")
                     .map((n) => n[0])

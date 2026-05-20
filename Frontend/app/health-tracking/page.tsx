@@ -8,6 +8,7 @@ import { AuthGuard } from "@/components/auth-guard"
 import { PatientMetricsSection } from "@/components/medical-records/patient-metrics/PatientMetricsSection"
 import { NotificationBell } from "@/components/notification-bell"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -87,7 +88,7 @@ function MetricsContent() {
     : userInfo?.fullName || "Patient"
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#e5f5f8" }}>
+    <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
       {isDoctor ? <DoctorSidebar /> : <PatientSidebar />}
 
       <div
@@ -104,12 +105,12 @@ function MetricsContent() {
           }}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-gray-700" />
-                <h1 className="text-lg font-semibold text-gray-900">Metrics</h1>
-              </div>
-            </div>
+            <PageHeaderTitleRow
+              role={isDoctor ? "doctor" : "patient"}
+              icon={Activity}
+              title="Metrics"
+              titleClassName="text-lg"
+            />
 
             <div className="flex items-center gap-3">
               <div className="relative flex-1 max-w-md">

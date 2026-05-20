@@ -111,14 +111,14 @@ export default function MedicalReportDetail() {
         {/* Back Button */}
           <Link
               href={backHref}
-              className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
+              className="mb-6 inline-flex items-center text-[#007A94] hover:text-[#005566] font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Link>
         {/* Header */}
         <Card className="mb-6 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-[#16a1bd] to-[#0d6171] text-white">
+          <CardHeader className="bg-gradient-to-r from-[#007A94] to-[#005566] text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -142,7 +142,7 @@ export default function MedicalReportDetail() {
                 {report.doctor.split(" ").pop()?.[0]}
               </div>
               <div>
-                <h3 className="text-xl font-bold text-[#16a1bd]">{"BS. "+report.doctor  }</h3>
+                <h3 className="text-xl font-bold text-[#007A94]">{"BS. "+report.doctor  }</h3>
                 <p className="text-sm text-gray-600">{report.doctorMajor}</p>
                 <p className="text-sm flex items-center gap-1 mt-1">
                   <FileText className="w-3.5 h-3.5" />
@@ -274,7 +274,7 @@ export default function MedicalReportDetail() {
               {report.prescriptions.length > 0 ? (
                 report.prescriptions.map((med, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-[#16a1bd] rounded-full mt-2 flex-shrink-0" />
+                    <div className="w-2 h-2 bg-[#007A94] rounded-full mt-2 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium">{med.name}</p>
                         <p className="text-sm text-gray-600">

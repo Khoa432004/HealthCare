@@ -1,7 +1,7 @@
 import type { MetricSeverityLevel } from "../types"
 import { METRIC_SEVERITY_STYLE } from "../utils/metricSeverity"
 
-const TOOLTIP_BRAND_ACCENT = "#1588A0"
+const TOOLTIP_BRAND_ACCENT = "#007A94"
 
 export type MetricsChartTooltipModel = {
   title: string
@@ -35,7 +35,7 @@ export function MetricsChartTooltip({
 
   return (
     <div
-      className="pointer-events-none fixed z-[100] max-w-[min(19rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl bg-white text-left shadow-md ring-1 ring-[#CDEFF5]"
+      className="pointer-events-none fixed z-[100] max-w-[min(19rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl bg-white text-left shadow-md ring-1 ring-[#C5E8E0]"
       style={{ left: anchorX + 12, top: anchorY + 12 }}
       role="tooltip"
     >
@@ -53,7 +53,7 @@ export function MetricsChartTooltip({
         </p>
 
         {valueLabel ? (
-          <p className="mt-2 text-lg font-bold tabular-nums leading-tight text-[#1588A0]">
+          <p className="mt-2 text-lg font-bold tabular-nums leading-tight text-[#007A94]">
             {valueLabel}
           </p>
         ) : null}

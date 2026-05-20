@@ -2,19 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, LogOut, MoreVertical, Search, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, MoreVertical, Search, User as UserIcon } from "lucide-react"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DoctorUserMenu } from "@/components/doctor-user-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
 import { userService, type User } from "@/services/user.service"
@@ -181,12 +176,16 @@ function DoctorMonitoringContent() {
   }
 
   return (
-    <div className="flex h-screen bg-[#e5f5f8]">
+    <div className="flex h-screen bg-[#E8F5F1]">
       <DoctorSidebar />
       <div className="flex-1 flex flex-col overflow-y-auto pt-3 px-3 pb-3">
         <header className="bg-white py-3 px-6 rounded-2xl mb-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-lg font-semibold text-gray-900">Monitoring</h1>
+            <PageHeaderTitleRow
+              role="doctor"
+              title="Monitoring"
+              titleClassName="text-lg"
+            />
             <div className="flex items-center gap-3">
               <div className="relative w-[280px] hidden md:block">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -199,31 +198,10 @@ function DoctorMonitoringContent() {
                 />
               </div>
               <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="text-xs">{userInfo ? getInitials(userInfo.fullName) : "DR"}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left hidden md:block">
-                      <p className="text-xs font-medium">{userInfo?.fullName || "Doctor"}</p>
-                      <p className="text-[10px] text-gray-500">Bác sĩ</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push("/my-profile")}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DoctorUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+              />
             </div>
           </div>
         </header>
@@ -237,7 +215,7 @@ function DoctorMonitoringContent() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`pb-2 border-b-2 transition-colors ${
                   activeTab === tab.key
-                    ? "border-[#0d8fae] text-[#0d8fae] font-semibold"
+                    ? "border-[#007A94] text-[#007A94] font-semibold"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -284,7 +262,7 @@ function DoctorMonitoringContent() {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-9 h-9">
-                            <AvatarFallback className="bg-[#e2f2f6] text-[#0d8fae] text-xs">
+                            <AvatarFallback className="bg-[#e2f2f6] text-[#007A94] text-xs">
                               {getInitials(row.patientName)}
                             </AvatarFallback>
                           </Avatar>
@@ -351,7 +329,7 @@ function DoctorMonitoringContent() {
                     type="button"
                     onClick={() => setPage(value)}
                     className={`h-6 min-w-6 rounded-md px-1 text-xs ${
-                      isActive ? "bg-[#d9edf3] text-[#0d8fae] font-semibold" : "text-gray-500 hover:bg-[#eef6f9]"
+                      isActive ? "bg-[#d9edf3] text-[#007A94] font-semibold" : "text-gray-500 hover:bg-[#EDF7F4]"
                     }`}
                   >
                     {value}

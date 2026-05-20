@@ -28,7 +28,7 @@ export function MetricsTrackerTimelineAxis({
           onClick={() => onSelectDate(point.date)}
           className={`min-w-0 justify-self-center flex h-11 w-11 max-w-full items-center justify-center rounded-full text-sm font-semibold transition sm:h-8 sm:w-8 lg:text-base ${
             point.isSelected
-              ? "bg-[#1588A0] text-white"
+              ? "bg-[#007A94] text-white"
               : "text-gray-950 hover:bg-[#E9F7FA]"
           }`}
         >

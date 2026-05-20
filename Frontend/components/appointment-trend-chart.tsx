@@ -91,10 +91,10 @@ export default function AppointmentTrendChart({
             <Line
               type="monotone"
               dataKey="appointment"
-              stroke="#16a1bd"
+              stroke="#007A94"
               strokeWidth={2}
-              dot={{ fill: "#16a1bd", r: 3 }}
-              activeDot={{ r: 6, fill: "#16a1bd" }}
+              dot={{ fill: "#007A94", r: 3 }}
+              activeDot={{ r: 6, fill: "#007A94" }}
               name="Appointment"
             />
             <Line
@@ -112,7 +112,7 @@ export default function AppointmentTrendChart({
 
       <div className="flex items-center justify-center space-x-6 mt-4">
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-[#16a1bd]" />
+          <div className="w-3 h-3 rounded-full bg-[#007A94]" />
           <span className="text-sm text-gray-700">Appointment</span>
         </div>
         <div className="flex items-center space-x-2">

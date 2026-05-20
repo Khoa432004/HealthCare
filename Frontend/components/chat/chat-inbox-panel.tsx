@@ -10,7 +10,7 @@ import type { Conversation, InboxFilter } from "@/types/chat"
 const MOCK_CONVERSATIONS: Conversation[] = [
   {
     id: "1",
-    participantName: "YSalus Admin",
+    participantName: "iMed Admin",
     participantType: "admin",
     lastMessage: "Hello, how can I help you today?",
     lastMessageTime: "02.08.24",

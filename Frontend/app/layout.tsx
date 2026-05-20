@@ -1,14 +1,17 @@
-'use client'
+import type { Metadata, Viewport } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { AppProviders } from "@/components/app-providers"
+import { buildRootMetadata } from "@/lib/site-metadata"
+import "./globals.css"
 
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import { Analytics } from '@vercel/analytics/next'
-import { Toaster } from '@/components/ui/toaster'
-import Head from 'next/head'
-import './globals.css'
-import ChatWidget from '@/components/chat-widget'
-import { ChatInboundSubscriber } from '@/components/chat-inbound-subscriber'
-import { AiFloatingChatProvider } from '@/components/ai-floating-chat-context'
+export const metadata: Metadata = buildRootMetadata()
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#007A94",
+}
 
 export default function RootLayout({
   children,
@@ -16,20 +19,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <Head>
-        <title>HealthCare - Hệ thống quản lý khám bệnh</title>
-        <meta name="description" content="Hệ thống quản lý khám bệnh trực tuyến" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
-        <AiFloatingChatProvider>
-          <ChatInboundSubscriber />
-          {children}
-          <Toaster />
-          <Analytics />
-          <ChatWidget />
-        </AiFloatingChatProvider>
+    <html lang="vi" suppressHydrationWarning>
+      <body
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}
+        suppressHydrationWarning
+      >
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   )

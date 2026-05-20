@@ -256,7 +256,7 @@ export default function PrescriptionDetail() {
           {/* Back Button */}
           <Link
             href={`/patient-medical-examination-history/${appointmentId}`}
-            className="mb-6 inline-flex items-center text-[#16a1bd] hover:text-[#0d6171] font-medium"
+            className="mb-6 inline-flex items-center text-[#007A94] hover:text-[#005566] font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
@@ -264,7 +264,7 @@ export default function PrescriptionDetail() {
 
           {/* Header */}
           <Card className="mb-6 overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-[#16a1bd] to-[#0d6171] text-white">
+            <CardHeader className="bg-gradient-to-r from-[#007A94] to-[#005566] text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -284,7 +284,7 @@ export default function PrescriptionDetail() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Stethoscope className="w-5 h-5 text-[#16a1bd]" />
+                <Stethoscope className="w-5 h-5 text-[#007A94]" />
                 Thông tin bác sĩ & cơ sở
               </CardTitle>
             </CardHeader>
@@ -292,7 +292,7 @@ export default function PrescriptionDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Tên & Học vị</p>
-                  <p className="font-semibold text-[#16a1bd]">{'BS. ' + report.doctor}</p>
+                  <p className="font-semibold text-[#007A94]">{'BS. ' + report.doctor}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Ngày kê đơn</p>
@@ -317,7 +317,7 @@ export default function PrescriptionDetail() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="w-5 h-5 text-[#16a1bd]" />
+                <User className="w-5 h-5 text-[#007A94]" />
                 Thông tin bệnh nhân
               </CardTitle>
             </CardHeader>
@@ -344,7 +344,7 @@ export default function PrescriptionDetail() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-lg">
                 <div className="flex items-center gap-2">
-                  <Pill className="w-5 h-5 text-[#16a1bd]" />
+                  <Pill className="w-5 h-5 text-[#007A94]" />
                   Danh sách thuốc
                 </div>
               </CardTitle>
@@ -370,7 +370,7 @@ export default function PrescriptionDetail() {
                       className="cursor-pointer hover:bg-blue-50 transition-colors"
                       onClick={() => handleDrugClick(med.name)}
                     >
-                      <TableCell className="font-medium text-[#16a1bd]">{med.name}</TableCell>
+                      <TableCell className="font-medium text-[#007A94]">{med.name}</TableCell>
                       <TableCell>{med.medicationType}</TableCell>
                       <TableCell>{med.dosage}</TableCell>
                       <TableCell>{getMealText(med.mealRelation)}</TableCell>
@@ -395,7 +395,7 @@ export default function PrescriptionDetail() {
                             handleDrugClick(med.name)
                           }}
                         >
-                          <Eye className="w-4 h-4 text-[#16a1bd]" />
+                          <Eye className="w-4 h-4 text-[#007A94]" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -412,7 +412,7 @@ export default function PrescriptionDetail() {
         <SheetContent side="right" className="w-[400px] sm:w-[540px] overflow-y-auto">
           {loadingDrug ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#16a1bd]" />
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#007A94]" />
               <p className="text-sm text-gray-500">Đang tải thông tin từ FDA...</p>
             </div>
           ) : DrugInfo ? (
@@ -437,7 +437,7 @@ export default function PrescriptionDetail() {
                   <div className="mb-4">
                     {loadingImage ? (
                       <div className="w-full h-48 bg-gray-100 border-2 border-dashed rounded-xl flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#16a1bd]" />
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#007A94]" />
                       </div>
                     ) : drugImage ? (
                       <img

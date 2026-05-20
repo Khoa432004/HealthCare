@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
 import { authService } from "@/services/auth.service"
 import { dashboardService, type PatientDashboardOverview } from "@/services/dashboard.service"
@@ -125,19 +126,19 @@ function PatientDashboardContent() {
 
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       <PatientSidebar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '12px' }}>
         <header className="bg-white py-3 mx-3 mb-3" style={{ borderRadius: '14px', paddingLeft: '24px', paddingRight: '20px' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <LayoutDashboard className="w-4 h-4 text-gray-700" />
-                <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
-              </div>
-            </div>
+            <PageHeaderTitleRow
+              role="patient"
+              icon={LayoutDashboard}
+              title="Dashboard"
+              titleClassName="text-lg"
+            />
 
             <div className="flex items-center space-x-3">
               {/* Search */}
@@ -207,7 +208,7 @@ function PatientDashboardContent() {
                 const Icon = item.icon
                 return (
                   <Link key={item.title} href={item.href}>
-                    <div className="h-[38px] bg-gradient-to-b from-[#2aa8c6] to-[#0d8fae] rounded-lg px-4 flex items-center justify-between hover:opacity-95 transition-smooth">
+                    <div className="h-[38px] bg-gradient-to-b from-[#2aa8c6] to-[#007A94] rounded-lg px-4 flex items-center justify-between hover:opacity-95 transition-smooth">
                       <span className="text-[12px] font-medium text-white">{item.title}</span>
                       <Icon className="w-3.5 h-3.5 text-white/90" />
                     </div>
@@ -283,9 +284,9 @@ function PatientDashboardContent() {
                           <Line
                             type="monotone"
                             dataKey="value"
-                            stroke="#0d8fae"
+                            stroke="#007A94"
                             strokeWidth={2}
-                            dot={{ r: 2.8, strokeWidth: 1.5, fill: "#0d8fae", stroke: "#ffffff" }}
+                            dot={{ r: 2.8, strokeWidth: 1.5, fill: "#007A94", stroke: "#ffffff" }}
                             activeDot={{ r: 4 }}
                           />
                         </RechartsLineChart>
@@ -311,7 +312,7 @@ function PatientDashboardContent() {
                     <>
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-lg bg-[#e9f7fb] flex items-center justify-center">
-                          <ClipboardList className="w-5 h-5 text-[#16a1bd]" />
+                          <ClipboardList className="w-5 h-5 text-[#007A94]" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-[#0f172a]">{currentPlan?.title}</p>
@@ -326,7 +327,7 @@ function PatientDashboardContent() {
                           <span>{currentPlan?.progressPercent ?? 0}%</span>
                         </div>
                         <div className="w-full h-2.5 rounded-full bg-[#dff2f7]">
-                          <div className="h-full rounded-full bg-[#16a1bd]" style={{ width: `${currentPlan?.progressPercent ?? 0}%` }} />
+                          <div className="h-full rounded-full bg-[#007A94]" style={{ width: `${currentPlan?.progressPercent ?? 0}%` }} />
                         </div>
                       </div>
                     </>
@@ -360,7 +361,7 @@ function PatientDashboardContent() {
                           <tr key={`${plan.drugName}-${idx}`} className="border-b border-[#eff5f7] last:border-b-0">
                             <td className="px-4 py-3 text-[11px] text-gray-700 text-center">
                               <span className="inline-flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-[#16a1bd]" />
+                                <Clock className="w-3.5 h-3.5 text-[#007A94]" />
                                 {plan.time}
                               </span>
                             </td>
@@ -370,7 +371,7 @@ function PatientDashboardContent() {
                               <Badge className="bg-[#dff5fa] text-[#0e8cac] border-0 text-[9px] h-5">{plan.instruction.toUpperCase()}</Badge>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <Button className={`h-7 px-4 text-[10px] rounded-full ${plan.status === "Taking" || plan.status === "Take" ? "bg-[#0d8fae] hover:bg-[#0c83a0] text-white" : "bg-white border border-[#0d8fae] hover:bg-[#ecf7fa] text-[#0d8fae]"}`}>
+                              <Button className={`h-7 px-4 text-[10px] rounded-full ${plan.status === "Taking" || plan.status === "Take" ? "bg-[#007A94] hover:bg-[#0c83a0] text-white" : "bg-white border border-[#007A94] hover:bg-[#ecf7fa] text-[#007A94]"}`}>
                                 <Pill className="w-3.5 h-3.5 mr-1.5" />
                                 {plan.status}
                               </Button>

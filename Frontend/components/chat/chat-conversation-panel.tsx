@@ -69,7 +69,7 @@ export function ChatConversationPanel({ conversation }: ChatConversationPanelPro
   return (
     <div className="flex-1 flex flex-col bg-white rounded-tr-[20px] overflow-hidden min-w-0">
       {/* Chat header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[#e5f5f8] flex-shrink-0">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-[#E8F5F1] flex-shrink-0">
         <div>
           <h3 className="text-base font-semibold text-[#0b0c0c]">{conversation.participantName}</h3>
           {conversation.subtitle && (

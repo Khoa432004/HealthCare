@@ -120,7 +120,7 @@ function LatestMeasurementCard({
     <button
       type="button"
       onClick={() => onClick?.(row)}
-      className={`relative flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-[#CDEFF5] bg-white p-3 text-left transition hover:border-[#99DDE8] hover:shadow-md lg:min-h-[82px] lg:flex-row lg:items-center lg:gap-4 lg:px-5 lg:py-4 ${
+      className={`relative flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-[#C5E8E0] bg-white p-3 text-left transition hover:border-[#99DDE8] hover:shadow-md lg:min-h-[82px] lg:flex-row lg:items-center lg:gap-4 lg:px-5 lg:py-4 ${
         isWide ? "md:col-span-2" : ""
       }`}
     >
@@ -194,7 +194,7 @@ export function MetricsLatestList({
           <h2 className="text-base font-bold text-gray-950">{heading}</h2>
           {trailingHeader}
         </div>
-        <div className="rounded-xl border border-dashed border-[#CDEFF5] py-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-[#C5E8E0] py-10 text-center text-sm text-gray-400">
           {t("noDataAvailable")}
         </div>
       </section>
@@ -219,7 +219,7 @@ export function MetricsLatestList({
                 key={`${group.dateLabel}-${group.date.getTime()}`}
                 className="flex min-w-0 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,70px)_minmax(0,1fr)] lg:gap-6"
               >
-                <div className="flex items-baseline gap-1.5 border-b border-[#CDEFF5]/50 pb-2 text-gray-600 sm:gap-2 lg:block lg:border-0 lg:pb-0 lg:pt-1">
+                <div className="flex items-baseline gap-1.5 border-b border-[#C5E8E0]/50 pb-2 text-gray-600 sm:gap-2 lg:block lg:border-0 lg:pb-0 lg:pt-1">
                   <div className="text-lg font-semibold leading-tight sm:text-xl">
                     {dayNumber}
                   </div>
