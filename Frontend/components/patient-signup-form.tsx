@@ -176,7 +176,7 @@ export function PatientSignUpForm() {
               <CardContent className="p-6 sm:p-8 lg:p-10">
                 {/* Back link */}
                 <div className="mb-6">
-                  <Link href="/signup" className="text-[#16a1bd] hover:text-[#0d6171] font-semibold text-sm">
+                  <Link href="/signup" className="text-[#007A94] hover:text-[#005566] font-semibold text-sm">
                     ← Quay lại chọn vai trò
                   </Link>
                 </div>
@@ -353,10 +353,10 @@ export function PatientSignUpForm() {
                       />
                       <Label htmlFor="terms" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                         Tôi đồng ý với các{" "}
-                        <Link href="/terms" className="text-[#16a1bd] hover:underline">
+                        <Link href="/terms" className="text-[#007A94] hover:underline">
                           Điều khoản & Chính sách sử dụng
                         </Link>{" "}
-                        của nền tảng Bác Sỹ Ơi
+                        của nền tảng iMed
                       </Label>
                     </div>
                   </div>

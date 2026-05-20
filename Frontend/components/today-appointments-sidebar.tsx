@@ -145,7 +145,7 @@ export default function TodayAppointmentsSidebar({ appointmentsData }: TodayAppo
     if (status === "IN_PROCESS") {
       return "border-[#f59e0b] bg-[#fffbeb] text-[#b45309]"
     }
-    return "border-[#16a1bd] bg-[#eef8fb] text-[#0f6f84]"
+    return "border-[#007A94] bg-[#eef8fb] text-[#0f6f84]"
   }
 
   return (

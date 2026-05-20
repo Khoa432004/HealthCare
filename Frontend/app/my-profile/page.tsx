@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
 import { Button } from "@/components/ui/button"
@@ -146,8 +147,8 @@ function MyProfilePageContent() {
         title: data.title || "",
         currentProvince: data.province || "",
         clinic: data.facilityName || "",
-        medicalCareAdults: data.careTarget?.includes("Người lớn") || data.careTarget?.includes("Adults") || false,
-        medicalCareChildren: data.careTarget?.includes("Trẻ em") || data.careTarget?.includes("Children") || false,
+        medicalCareAdults: data.careTarget?.includes("NgÆ°á»i lá»›n") || data.careTarget?.includes("Adults") || false,
+        medicalCareChildren: data.careTarget?.includes("Tráº» em") || data.careTarget?.includes("Children") || false,
         specialties: data.specialties || [],
         treatments: data.diseasesTreated || [],
         languages: data.languages || [],
@@ -322,8 +323,8 @@ function MyProfilePageContent() {
     } catch (error: any) {
       console.error('Error loading work schedule:', error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải lịch làm việc",
+        title: "Lá»—i",
+        description: error.message || "KhĂ´ng thá»ƒ táº£i lá»‹ch lĂ m viá»‡c",
         variant: "destructive",
       })
     } finally {
@@ -556,8 +557,8 @@ function MyProfilePageContent() {
         title: updatedInfo.title || "",
         currentProvince: updatedInfo.province || "",
         clinic: updatedInfo.facilityName || "",
-        medicalCareAdults: updatedInfo.careTarget?.includes("Người lớn") || updatedInfo.careTarget?.includes("Adults") || false,
-        medicalCareChildren: updatedInfo.careTarget?.includes("Trẻ em") || updatedInfo.careTarget?.includes("Children") || false,
+        medicalCareAdults: updatedInfo.careTarget?.includes("NgÆ°á»i lá»›n") || updatedInfo.careTarget?.includes("Adults") || false,
+        medicalCareChildren: updatedInfo.careTarget?.includes("Tráº» em") || updatedInfo.careTarget?.includes("Children") || false,
         specialties: updatedInfo.specialties || [],
         treatments: updatedInfo.diseasesTreated || [],
         languages: updatedInfo.languages || [],
@@ -730,30 +731,30 @@ function MyProfilePageContent() {
 
     // Validate appointment cost
     if (!workPlansData.appointmentCost || workPlansData.appointmentCost <= 0) {
-      errors.appointmentCost = "Giá khám phải lớn hơn 0"
+      errors.appointmentCost = "GiĂ¡ khĂ¡m pháº£i lá»›n hÆ¡n 0"
     }
 
     // Validate session duration
     const validDurations = [10, 15, 20, 30, 60]
     if (!validDurations.includes(workPlansData.sessionDuration)) {
-      errors.sessionDuration = "Thời lượng phiên không hợp lệ"
+      errors.sessionDuration = "Thá»i lÆ°á»£ng phiĂªn khĂ´ng há»£p lá»‡"
     }
 
     // Validate time slots for enabled days
     const dayLabels: Record<string, string> = {
-      monday: "Thứ 2",
-      tuesday: "Thứ 3",
-      wednesday: "Thứ 4",
-      thursday: "Thứ 5",
-      friday: "Thứ 6",
-      saturday: "Thứ 7",
-      sunday: "Chủ nhật"
+      monday: "Thá»© 2",
+      tuesday: "Thá»© 3",
+      wednesday: "Thá»© 4",
+      thursday: "Thá»© 5",
+      friday: "Thá»© 6",
+      saturday: "Thá»© 7",
+      sunday: "Chá»§ nháº­t"
     }
 
     Object.entries(workPlansData.days).forEach(([dayKey, dayData]) => {
       if (dayData.enabled) {
         if (dayData.timeSlots.length === 0) {
-          errors[`${dayKey}_slots`] = `${dayLabels[dayKey]} phải có ít nhất 1 khung giờ`
+          errors[`${dayKey}_slots`] = `${dayLabels[dayKey]} pháº£i cĂ³ Ă­t nháº¥t 1 khung giá»`
         }
 
         // Validate each time slot
@@ -762,7 +763,7 @@ function MyProfilePageContent() {
           const endTime = slot.endTime
 
           if (!startTime || !endTime) {
-            errors[`${dayKey}_slot_${index}`] = "Thời gian bắt đầu và kết thúc không được để trống"
+            errors[`${dayKey}_slot_${index}`] = "Thá»i gian báº¯t Ä‘áº§u vĂ  káº¿t thĂºc khĂ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"
             return
           }
 
@@ -772,7 +773,7 @@ function MyProfilePageContent() {
           const endMinutes = endHour * 60 + endMinute
 
           if (startMinutes >= endMinutes) {
-            errors[`${dayKey}_slot_${index}`] = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc"
+            errors[`${dayKey}_slot_${index}`] = "Thá»i gian báº¯t Ä‘áº§u pháº£i nhá» hÆ¡n thá»i gian káº¿t thĂºc"
           }
         })
 
@@ -792,7 +793,7 @@ function MyProfilePageContent() {
           const nextStartMinutes = nextStartHour * 60 + nextStartMin
 
           if (currentEndMinutes > nextStartMinutes) {
-            errors[`${dayKey}_overlap`] = `${dayLabels[dayKey]} có khung giờ bị trùng nhau`
+            errors[`${dayKey}_overlap`] = `${dayLabels[dayKey]} cĂ³ khung giá» bá»‹ trĂ¹ng nhau`
             break
           }
         }
@@ -806,8 +807,8 @@ function MyProfilePageContent() {
   const handleSaveWorkPlans = async () => {
     if (!validateWorkPlans()) {
       toast({
-        title: "Lỗi validation",
-        description: "Vui lòng kiểm tra lại thông tin đã nhập",
+        title: "Lá»—i validation",
+        description: "Vui lĂ²ng kiá»ƒm tra láº¡i thĂ´ng tin Ä‘Ă£ nháº­p",
         variant: "destructive",
       })
       return
@@ -885,14 +886,14 @@ function MyProfilePageContent() {
       setWorkPlansErrors({})
       
       toast({
-        title: "Lưu thành công",
-        description: "Lịch làm việc đã được cập nhật thành công",
+        title: "LÆ°u thĂ nh cĂ´ng",
+        description: "Lá»‹ch lĂ m viá»‡c Ä‘Ă£ Ä‘Æ°á»£c cáº­p nháº­t thĂ nh cĂ´ng",
       })
     } catch (error: any) {
       console.error('Error saving work plans:', error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể lưu lịch làm việc. Vui lòng thử lại sau.",
+        title: "Lá»—i",
+        description: error.message || "KhĂ´ng thá»ƒ lÆ°u lá»‹ch lĂ m viá»‡c. Vui lĂ²ng thá»­ láº¡i sau.",
         variant: "destructive",
       })
     } finally {
@@ -910,19 +911,14 @@ function MyProfilePageContent() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       <DoctorSidebar />
 
       <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         {/* Header */}
         <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="w-5 h-5 text-gray-700" />
-                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
-              </div>
-            </div>
+            <PageHeaderTitleRow role="doctor" icon={User} title="My Profile" />
 
             <div className="flex items-center space-x-4">
               {/* Search */}
@@ -948,7 +944,7 @@ function MyProfilePageContent() {
                     </Avatar>
                     <div className="text-left">
                       <p className="text-sm font-medium">{userInfo?.fullName || (userInfo?.role === 'PATIENT' ? 'Patient' : 'Doctor')}</p>
-                      <p className="text-xs text-gray-500">{userInfo?.role === 'PATIENT' ? 'Bệnh nhân' : 'Bác sĩ'}</p>
+                      <p className="text-xs text-gray-500">{userInfo?.role === 'PATIENT' ? 'Bá»‡nh nhĂ¢n' : 'BĂ¡c sÄ©'}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
@@ -957,15 +953,12 @@ function MyProfilePageContent() {
                     <User className="mr-2 h-4 w-4" />
                     <span>My Profile</span>
                   </DropdownMenuItem>
-                  {/* {userInfo?.role !== 'PATIENT' && (
-                    <>
-                      <DropdownMenuItem onClick={() => router.push('/settings')}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )} */}
+                  {userInfo?.role !== 'PATIENT' && (
+                    <DropdownMenuItem onClick={() => router.push('/settings')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -992,11 +985,9 @@ function MyProfilePageContent() {
                 <TabsList>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
                   <TabsTrigger value="professional">Professional</TabsTrigger>
-                  <TabsTrigger value="work-plans">Work Plans</TabsTrigger>
                 </TabsList>
 
-                {activeTab !== "work-plans" && (
-                  <div className="flex gap-2">
+                <div className="flex gap-2">
                     {!isEditMode ? (
                       <Button onClick={handleEdit} className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth">
                         <Edit className="w-4 h-4 mr-2" />
@@ -1008,7 +999,7 @@ function MyProfilePageContent() {
                           variant="outline"
                           onClick={handleCancel}
                           disabled={isSaving}
-                          className="glass border-[#16a1bd] text-[#16a1bd] hover:bg-white/50 transition-smooth"
+                          className="glass border-[#007A94] text-[#007A94] hover:bg-white/50 transition-smooth"
                         >
                           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                           Cancel
@@ -1019,8 +1010,7 @@ function MyProfilePageContent() {
                         </Button>
                       </>
                     )}
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Personal Tab */}
@@ -1117,8 +1107,8 @@ function MyProfilePageContent() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="+84">🇻🇳 +84</SelectItem>
-                                <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                                <SelectItem value="+84">đŸ‡»đŸ‡³ +84</SelectItem>
+                                <SelectItem value="+1">đŸ‡ºđŸ‡¸ +1</SelectItem>
                               </SelectContent>
                             </Select>
                             <Input
@@ -1285,11 +1275,11 @@ function MyProfilePageContent() {
                                 <SelectValue placeholder="Select title" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Bác sĩ">Bác sĩ</SelectItem>
-                                <SelectItem value="Thạc sĩ">Thạc sĩ</SelectItem>
-                                <SelectItem value="Tiến sĩ">Tiến sĩ</SelectItem>
-                                <SelectItem value="Phó Giáo sư">Phó Giáo sư</SelectItem>
-                                <SelectItem value="Giáo sư">Giáo sư</SelectItem>
+                                <SelectItem value="BĂ¡c sÄ©">BĂ¡c sÄ©</SelectItem>
+                                <SelectItem value="Tháº¡c sÄ©">Tháº¡c sÄ©</SelectItem>
+                                <SelectItem value="Tiáº¿n sÄ©">Tiáº¿n sÄ©</SelectItem>
+                                <SelectItem value="PhĂ³ GiĂ¡o sÆ°">PhĂ³ GiĂ¡o sÆ°</SelectItem>
+                                <SelectItem value="GiĂ¡o sÆ°">GiĂ¡o sÆ°</SelectItem>
                                 <SelectItem value="Doctor">Doctor</SelectItem>
                                 <SelectItem value="Specialist">Specialist</SelectItem>
                               </SelectContent>
@@ -1752,229 +1742,6 @@ function MyProfilePageContent() {
                 </div>
                 )}
               </TabsContent>
-
-              {/* Work Plans Tab */}
-              <TabsContent value="work-plans" className="space-y-6">
-                {isLoadingWorkSchedule ? (
-                  <div className="flex justify-center items-center py-12">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                <div className="glass rounded-3xl p-6 shadow-soft-lg border-white/50 hover-lift">
-                  <div className="space-y-6">
-                    {/* Session Duration and Appointment Cost */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="sessionDuration">
-                          Thời lượng phiên (phút) <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={workPlansData.sessionDuration.toString()}
-                          onValueChange={(value) =>
-                            setWorkPlansData({ ...workPlansData, sessionDuration: parseInt(value) })
-                          }
-                        >
-                          <SelectTrigger className={cn(workPlansErrors.sessionDuration && "border-red-500")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="10">10 phút</SelectItem>
-                            <SelectItem value="15">15 phút</SelectItem>
-                            <SelectItem value="20">20 phút</SelectItem>
-                            <SelectItem value="30">30 phút</SelectItem>
-                            <SelectItem value="60">60 phút</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {workPlansErrors.sessionDuration && (
-                          <p className="text-sm text-red-500 mt-1">{workPlansErrors.sessionDuration}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="appointmentCost">
-                          Giá khám (VND) <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="appointmentCost"
-                          type="number"
-                          min="0"
-                          value={workPlansData.appointmentCost}
-                          onChange={(e) =>
-                            setWorkPlansData({ ...workPlansData, appointmentCost: parseInt(e.target.value) || 0 })
-                          }
-                          className={cn(workPlansErrors.appointmentCost && "border-red-500")}
-                        />
-                        {workPlansErrors.appointmentCost && (
-                          <p className="text-sm text-red-500 mt-1">{workPlansErrors.appointmentCost}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Days Configuration */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Cấu hình lịch làm việc theo ngày</h3>
-                      <div className="space-y-4">
-                        {Object.entries(workPlansData.days).map(([dayKey, dayData]) => {
-                          const dayLabels: Record<string, string> = {
-                            monday: "Thứ 2",
-                            tuesday: "Thứ 3",
-                            wednesday: "Thứ 4",
-                            thursday: "Thứ 5",
-                            friday: "Thứ 6",
-                            saturday: "Thứ 7",
-                            sunday: "Chủ nhật"
-                          }
-
-                          return (
-                            <div
-                              key={dayKey}
-                              className={cn(
-                                "border rounded-lg p-4 space-y-3",
-                                !dayData.enabled && "opacity-50 bg-gray-50"
-                              )}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Switch
-                                    checked={dayData.enabled}
-                                    onCheckedChange={() => toggleDayEnabled(dayKey as keyof typeof workPlansData.days)}
-                                  />
-                                  <Label className="text-base font-medium cursor-pointer" htmlFor={dayKey}>
-                                    {dayLabels[dayKey]}
-                                  </Label>
-                                </div>
-                                {dayData.enabled && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => addTimeSlot(dayKey as keyof typeof workPlansData.days)}
-                                    className="gap-2"
-                                  >
-                                    <Plus className="w-4 h-4" />
-                                    Thêm khung giờ
-                                  </Button>
-                                )}
-                              </div>
-
-                              {dayData.enabled && (
-                                <div className="space-y-3 pl-8">
-                                  {workPlansErrors[`${dayKey}_slots`] && (
-                                    <p className="text-sm text-red-500">{workPlansErrors[`${dayKey}_slots`]}</p>
-                                  )}
-                                  {workPlansErrors[`${dayKey}_overlap`] && (
-                                    <p className="text-sm text-red-500">{workPlansErrors[`${dayKey}_overlap`]}</p>
-                                  )}
-
-                                  {dayData.timeSlots.length === 0 ? (
-                                    <p className="text-sm text-gray-500 italic">Chưa có khung giờ nào</p>
-                                  ) : (
-                                    dayData.timeSlots.map((slot, slotIndex) => (
-                                      <div
-                                        key={slotIndex}
-                                        className="flex items-center gap-3 p-3 bg-white rounded-md border"
-                                      >
-                                        <div className="flex items-center gap-2 flex-1">
-                                          <Clock className="w-4 h-4 text-gray-400" />
-                                          <div className="flex items-center gap-2">
-                                            <Input
-                                              type="time"
-                                              value={slot.startTime}
-                                              onChange={(e) =>
-                                                updateTimeSlot(
-                                                  dayKey as keyof typeof workPlansData.days,
-                                                  slotIndex,
-                                                  'startTime',
-                                                  e.target.value
-                                                )
-                                              }
-                                              className={cn(
-                                                "w-32",
-                                                workPlansErrors[`${dayKey}_slot_${slotIndex}`] && "border-red-500"
-                                              )}
-                                            />
-                                            <span className="text-gray-500">-</span>
-                                            <Input
-                                              type="time"
-                                              value={slot.endTime}
-                                              onChange={(e) =>
-                                                updateTimeSlot(
-                                                  dayKey as keyof typeof workPlansData.days,
-                                                  slotIndex,
-                                                  'endTime',
-                                                  e.target.value
-                                                )
-                                              }
-                                              className={cn(
-                                                "w-32",
-                                                workPlansErrors[`${dayKey}_slot_${slotIndex}`] && "border-red-500"
-                                              )}
-                                            />
-                                          </div>
-                                          {workPlansErrors[`${dayKey}_slot_${slotIndex}`] && (
-                                            <p className="text-xs text-red-500">
-                                              {workPlansErrors[`${dayKey}_slot_${slotIndex}`]}
-                                            </p>
-                                          )}
-                                        </div>
-                                        {dayData.timeSlots.length > 1 && (
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                              removeTimeSlot(dayKey as keyof typeof workPlansData.days, slotIndex)
-                                            }
-                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                          >
-                                            <X className="w-4 h-4" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancelWorkPlans}
-                        disabled={isSavingWorkPlans}
-                        className="glass border-[#16a1bd] text-[#16a1bd] hover:bg-white/50 transition-smooth"
-                      >
-                        Hủy
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleSaveWorkPlans}
-                        disabled={isSavingWorkPlans}
-                        className="gradient-primary hover:opacity-90 text-white shadow-soft-lg hover:shadow-soft-xl transition-smooth"
-                      >
-                        {isSavingWorkPlans ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Đang lưu...
-                          </>
-                        ) : (
-                          <>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Lưu lịch
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                )}
-              </TabsContent>
             </Tabs>
           </div>
         </main>
@@ -1985,8 +1752,8 @@ function MyProfilePageContent() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#16a1bd]/10 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-[#16a1bd]" />
+              <div className="w-12 h-12 rounded-full bg-[#007A94]/10 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-[#007A94]" />
               </div>
               <div>
                 <AlertDialogTitle>Changes Not Saved</AlertDialogTitle>
@@ -1998,7 +1765,7 @@ function MyProfilePageContent() {
             <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>Stay</AlertDialogCancel>
             <AlertDialogAction
               onClick={pendingNavigation ? confirmNavigation : confirmCancel}
-              className="bg-[#16a1bd] hover:bg-[#138a9f]"
+              className="bg-[#007A94] hover:bg-[#006884]"
             >
               Yes, Cancel
             </AlertDialogAction>

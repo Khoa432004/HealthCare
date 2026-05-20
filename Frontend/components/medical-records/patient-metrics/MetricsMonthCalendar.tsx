@@ -129,7 +129,7 @@ export function MetricsMonthCalendar({
             <h3 className="text-sm font-semibold text-gray-900">{monthTitle}</h3>
             <p className="text-xs text-gray-400">{t("latestMeasurements")}</p>
           </div>
-          <span className="rounded-full bg-[#E0F2F7] px-3 py-1 text-xs font-medium text-[#1588A0]">
+          <span className="rounded-full bg-[#E0F2F7] px-3 py-1 text-xs font-medium text-[#007A94]">
             {t("today")}
           </span>
         </div>
@@ -164,7 +164,7 @@ export function MetricsMonthCalendar({
                   : "border-transparent bg-gray-50 text-gray-300"
               } ${
                 isSelected
-                  ? "border-[#1588A0] bg-[#E0F2F7] shadow-sm"
+                  ? "border-[#007A94] bg-[#E0F2F7] shadow-sm"
                   : ""
               }`}
             >
@@ -181,7 +181,7 @@ export function MetricsMonthCalendar({
                   count > 0
                     ? isSelected
                       ? "bg-white"
-                      : "bg-[#1588A0]"
+                      : "bg-[#007A94]"
                     : "bg-transparent"
                 }`}
               />

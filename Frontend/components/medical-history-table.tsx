@@ -113,7 +113,7 @@ export default function MedicalHistoryTable() {
   return (
     <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#16a1bd] bg-clip-text text-transparent">
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#007A94] bg-clip-text text-transparent">
           Medical History
         </h3>
         <div className="flex items-center space-x-3">

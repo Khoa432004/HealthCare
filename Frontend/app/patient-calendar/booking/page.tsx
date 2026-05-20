@@ -447,7 +447,7 @@ const handleConfirmAppointment = async () => {
                 <div className="w-5 h-5 gradient-primary rounded-lg flex items-center justify-center">
                   <Calendar className="w-3.5 h-3.5 text-white" />
                 </div>
-                <h1 className="text-xl font-semibold text-[#16a1bd]">My calendar</h1>
+                <h1 className="text-xl font-semibold text-[#007A94]">My calendar</h1>
               </div>
             </div>
 
@@ -516,13 +516,13 @@ const handleConfirmAppointment = async () => {
                   </div>
                   <Link href="/patient-profile">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <User className="w-4 h-4 text-[#16a1bd]" />
+                      <User className="w-4 h-4 text-[#007A94]" />
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/settings">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <Settings className="w-4 h-4 text-[#16a1bd]" />
+                      <Settings className="w-4 h-4 text-[#007A94]" />
                       <span className="font-medium">Settings</span>
                     </DropdownMenuItem>
                   </Link>
@@ -542,60 +542,60 @@ const handleConfirmAppointment = async () => {
           <div className="flex-1 h-full overflow-y-auto p-3 bg-white rounded-2xl shadow-lg [scrollbar-width:none] [-ms-overflow-style:none]">
             <button
               onClick={handleTopBack}
-              className="flex items-center space-x-2 text-[#16a1bd] hover:text-[#0d6171] transition-smooth bg-transparent border-0 p-0"
+              className="flex items-center space-x-2 text-[#007A94] hover:text-[#005566] transition-smooth bg-transparent border-0 p-0"
             >
               <ArrowLeft className="w-4 h-4 text-neutral-400" />
               <span className="text-base inline text-neutral-400 font-semibold">Back</span>
             </button>
-            <span className="text-1rem font-bold text-[#0d6171]">Set a new appointment</span>
+            <span className="text-1rem font-bold text-[#005566]">Set a new appointment</span>
 
             {/* Steps Progress */}
             <div className="flex items-center justify-center space-x-8 mb-8">
               <div className="flex flex-col items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    currentStep >= 1 ? "bg-[#16a1bd] text-white" : "bg-gray-300 text-gray-600"
+                    currentStep >= 1 ? "bg-[#007A94] text-white" : "bg-gray-300 text-gray-600"
                   }`}
                 >
                   <Stethoscope className="w-5 h-5" />
                 </div>
                 <p
                   className={`mt-2 text-sm font-medium ${
-                    currentStep >= 1 ? "text-[#16a1bd] font-bold" : "text-gray-500"
+                    currentStep >= 1 ? "text-[#007A94] font-bold" : "text-gray-500"
                   }`}
                 >
                   Step 1 Pick Doctor
                 </p>
               </div>
-              <div className={`h-0.5 w-16 ${currentStep > 1 ? "bg-[#16a1bd]" : "bg-gray-300"} transition-all`}></div>
+              <div className={`h-0.5 w-16 ${currentStep > 1 ? "bg-[#007A94]" : "bg-gray-300"} transition-all`}></div>
               <div className="flex flex-col items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    currentStep >= 2 ? "bg-[#16a1bd] text-white" : "bg-gray-300 text-gray-600"
+                    currentStep >= 2 ? "bg-[#007A94] text-white" : "bg-gray-300 text-gray-600"
                   }`}
                 >
                   <Clock className="w-5 h-5" />
                 </div>
                 <p
                   className={`mt-2 text-sm font-medium ${
-                    currentStep >= 2 ? "text-[#16a1bd] font-bold" : "text-gray-500"
+                    currentStep >= 2 ? "text-[#007A94] font-bold" : "text-gray-500"
                   }`}
                 >
                   Step 2 Details
                 </p>
               </div>
-              <div className={`h-0.5 w-16 ${currentStep > 2 ? "bg-[#16a1bd]" : "bg-gray-300"} transition-all`}></div>
+              <div className={`h-0.5 w-16 ${currentStep > 2 ? "bg-[#007A94]" : "bg-gray-300"} transition-all`}></div>
               <div className="flex flex-col items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    currentStep >= 3 ? "bg-[#16a1bd] text-white" : "bg-gray-300 text-gray-600"
+                    currentStep >= 3 ? "bg-[#007A94] text-white" : "bg-gray-300 text-gray-600"
                   }`}
                 >
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <p
                   className={`mt-2 text-sm font-medium ${
-                    currentStep >= 3 ? "text-[#16a1bd] font-bold" : "text-gray-500"
+                    currentStep >= 3 ? "text-[#007A94] font-bold" : "text-gray-500"
                   }`}
                 >
                   Step 3 Confirm
@@ -604,11 +604,11 @@ const handleConfirmAppointment = async () => {
             </div>
 
             <div className="flex items-center space-x-4 mb-8">
-              <div className="p-1 bg-white border border-[#16a1bd] rounded-full flex gap-1 w-full max-w-lg mx-auto">
+              <div className="p-1 bg-white border border-[#007A94] rounded-full flex gap-1 w-full max-w-lg mx-auto">
                 <Button
                   className={`
                     flex-1 rounded-full px-6 py-2 h-auto text-sm transition-colors duration-200
-                    bg-[#16a1bd] hover:bg-[#0d6171] text-white font-semibold
+                    bg-[#007A94] hover:bg-[#005566] text-white font-semibold
                   `}
                 >
                   At Clinic
@@ -645,7 +645,7 @@ const handleConfirmAppointment = async () => {
                             <select
                               value={filters.specialty}
                               onChange={(e) => setFilters({ ...filters, specialty: e.target.value })}
-                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16a1bd]"
+                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A94]"
                             >
                               <option value="">Tất cả</option>
                               {Array.from(new Set(doctors.map(d => d.specialty))).map(s => (
@@ -660,7 +660,7 @@ const handleConfirmAppointment = async () => {
                             <select
                               value={filters.costRange}
                               onChange={(e) => setFilters({ ...filters, costRange: e.target.value })}
-                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16a1bd]"
+                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A94]"
                             >
                               <option value="all">Tất cả</option>
                               <option value="under500k">Dưới 500.000đ</option>
@@ -675,7 +675,7 @@ const handleConfirmAppointment = async () => {
                             <select
                               value={filters.experience}
                               onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
-                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16a1bd]"
+                              className="mt-1 w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A94]"
                             >
                               <option value="all">Tất cả</option>
                               <option value="under5">Dưới 5 năm</option>
@@ -703,7 +703,7 @@ const handleConfirmAppointment = async () => {
                         <p className="text-gray-500">Rất tiếc, không có bác sĩ nào có lịch trống vào ngày này.</p>
                         <button 
                           onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-                          className="text-[#16a1bd] font-semibold mt-2 underline"
+                          className="text-[#007A94] font-semibold mt-2 underline"
                         >
                           Xem lịch hôm nay
                         </button>
@@ -714,7 +714,7 @@ const handleConfirmAppointment = async () => {
                       key={doctor.id}
                       className={`rounded-2xl p-4 cursor-pointer transition-all hover:shadow-lg border-2 shadow-md 
                         ${
-                          selectedDoctor === doctor.id ? "border-[#16a1bd] bg-[#e5f5f8]" : "border-transparent bg-white"
+                          selectedDoctor === doctor.id ? "border-[#007A94] bg-[#E8F5F1]" : "border-transparent bg-white"
                         }`}
                       onClick={() => setSelectedDoctor(doctor.id)}
                     >
@@ -723,7 +723,7 @@ const handleConfirmAppointment = async () => {
                         <div className="flex items-start gap-3">
                           <Avatar className="w-12 h-12">
                             <AvatarImage src="/placeholder-user.jpg" />
-                            <AvatarFallback className="bg-[#16a1bd] text-white">{doctor.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="bg-[#007A94] text-white">{doctor.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-lg text-gray-900 mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
@@ -743,7 +743,7 @@ const handleConfirmAppointment = async () => {
                       {/* Clinic & Cost Info */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[#16a1bd] flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[#007A94] flex-shrink-0">
                             <MapPin className="w-4 h-4" />
                           </div>
                           <div>
@@ -753,7 +753,7 @@ const handleConfirmAppointment = async () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full bg-[#16a1bd] flex items-center justify-center text-white flex-shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[#007A94] flex items-center justify-center text-white flex-shrink-0">
                             <svg
                               width="1em"
                               height="1em"
@@ -799,7 +799,7 @@ const handleConfirmAppointment = async () => {
                   <Button
                     onClick={handleNextStep}
                     disabled={!selectedDoctor}
-                    className="bg-[#16a1bd] hover:bg-[#0d6171] text-white shadow-soft hover:shadow-soft-md transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#007A94] hover:bg-[#005566] text-white shadow-soft hover:shadow-soft-md transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </Button>
@@ -817,7 +817,7 @@ const handleConfirmAppointment = async () => {
                     <select
                       value={formData.whoNeedsVisit}
                       onChange={(e) => handleFormChange("whoNeedsVisit", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd] bg-white"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94] bg-white"
                     >
                       <option value="">Select option</option>
                       <option value="myself">For myself</option>
@@ -856,7 +856,7 @@ const handleConfirmAppointment = async () => {
                             onClick={() => d.enabled && setSelectedDate(d.dateStr)}
                             disabled={!d.enabled}
                             className={`px-2 py-2 text-sm rounded-lg text-center transition-all ${
-                              selectedDate === d.dateStr ? "bg-[#16a1bd] text-white" : d.enabled ? "bg-white hover:bg-blue-50" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              selectedDate === d.dateStr ? "bg-[#007A94] text-white" : d.enabled ? "bg-white hover:bg-blue-50" : "bg-gray-100 text-gray-400 cursor-not-allowed"
                             }`}
                           >
                             <div className="font-medium">{d.date.getDate()}</div>
@@ -879,8 +879,8 @@ const handleConfirmAppointment = async () => {
                               onClick={() => setSelectedTime((prev) => ({ ...prev, [selectedDoctor || ""]: time }))}
                               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                                 selectedTime[selectedDoctor || ""] === time
-                                  ? "bg-[#16a1bd] text-white"
-                                  : "bg-blue-50 text-[#16a1bd] hover:bg-blue-100"
+                                  ? "bg-[#007A94] text-white"
+                                  : "bg-blue-50 text-[#007A94] hover:bg-blue-100"
                               }`}
                             >
                               {time}
@@ -900,7 +900,7 @@ const handleConfirmAppointment = async () => {
                       type="text"
                       value={formData.appointmentReason}
                       onChange={(e) => handleFormChange("appointmentReason", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94]"
                     />
                   </div>
 
@@ -912,7 +912,7 @@ const handleConfirmAppointment = async () => {
                     <textarea
                       value={formData.appointmentDetails}
                       onChange={(e) => handleFormChange("appointmentDetails", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd] resize-none"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94] resize-none"
                       rows={4}
                     />
                   </div>
@@ -926,7 +926,7 @@ const handleConfirmAppointment = async () => {
                       type="text"
                       value={formData.symptomStartDate}
                       onChange={(e) => handleFormChange("symptomStartDate", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94]"
                     />
                   </div>
 
@@ -939,7 +939,7 @@ const handleConfirmAppointment = async () => {
                       type="text"
                       value={formData.symptomSeverity}
                       onChange={(e) => handleFormChange("symptomSeverity", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94]"
                     />
                   </div>
 
@@ -952,7 +952,7 @@ const handleConfirmAppointment = async () => {
                       type="text"
                       value={formData.medication}
                       onChange={(e) => handleFormChange("medication", e.target.value)}
-                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                      className="w-full px-4 py-3 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94]"
                     />
                   </div>
 
@@ -963,7 +963,7 @@ const handleConfirmAppointment = async () => {
                     </label>
                     <label className="w-full px-4 py-3 border border-cyan-200 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between">
                       <span className="text-gray-600">{fileName}</span>
-                      <Upload className="w-4 h-4 text-[#16a1bd]" />
+                      <Upload className="w-4 h-4 text-[#007A94]" />
                       <input type="file" onChange={handleFileChange} className="hidden" />
                     </label>
                   </div>
@@ -975,7 +975,7 @@ const handleConfirmAppointment = async () => {
                       id="agree"
                       checked={formData.agreeToShare}
                       onChange={(e) => handleFormChange("agreeToShare", e.target.checked)}
-                      className="w-5 h-5 rounded border-gray-300 text-[#16a1bd] cursor-pointer mt-1"
+                      className="w-5 h-5 rounded border-gray-300 text-[#007A94] cursor-pointer mt-1"
                     />
                     <label htmlFor="agree" className="text-sm text-gray-700 cursor-pointer">
                       I agree to share my medical data with the Doctor / Clinic
@@ -988,14 +988,14 @@ const handleConfirmAppointment = async () => {
                       <Button 
                         onClick={handlePreviousStep}
                         variant="outline"
-                        className="px-12 py-4 text-lg font-bold border-2 border-[#16a1bd] text-[#16a1bd] hover:bg-[#16a1bd] hover:text-white transition-all rounded-xl"
+                        className="px-12 py-4 text-lg font-bold border-2 border-[#007A94] text-[#007A94] hover:bg-[#007A94] hover:text-white transition-all rounded-xl"
                       >
                         ← Back
                       </Button>
                       <Button
                         onClick={handleNextStep}
                         disabled={!selectedDate || !selectedTime[selectedDoctor!]}
-                        className="px-12 py-4 text-lg font-bold bg-[#16a1bd] hover:bg-[#0d6171] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all **rounded-xl**"                      >
+                        className="px-12 py-4 text-lg font-bold bg-[#007A94] hover:bg-[#005566] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all **rounded-xl**"                      >
                         Next →
                       </Button>
                     </div>
@@ -1009,7 +1009,7 @@ const handleConfirmAppointment = async () => {
                   {/* Appointment Summary Card */}
                   <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-2xl p-6 flex items-start justify-between border border-cyan-200">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-[#16a1bd] rounded-full flex items-center justify-center text-white">
+                      <div className="w-12 h-12 bg-[#007A94] rounded-full flex items-center justify-center text-white">
                         <Calendar className="w-6 h-6" />
                       </div>
                       <div>
@@ -1032,7 +1032,7 @@ const handleConfirmAppointment = async () => {
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src="/placeholder-user.jpg" />
-                        <AvatarFallback className="bg-blue-100 text-[#16a1bd]">NT</AvatarFallback>
+                        <AvatarFallback className="bg-blue-100 text-[#007A94]">NT</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-gray-900">Nguyen Van Tung</p>
@@ -1049,7 +1049,7 @@ const handleConfirmAppointment = async () => {
                         <div className="flex items-center gap-3">
                           <Avatar className="w-12 h-12">
                             <AvatarImage src="/placeholder-user.jpg" />
-                            <AvatarFallback className="bg-[#16a1bd] text-white">
+                            <AvatarFallback className="bg-[#007A94] text-white">
                               {selectedDoctorData.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
@@ -1061,7 +1061,7 @@ const handleConfirmAppointment = async () => {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-[#16a1bd]">
+                          <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-[#007A94]">
                             <svg
                               width="16"
                               height="16"
@@ -1079,7 +1079,7 @@ const handleConfirmAppointment = async () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-[#16a1bd]">
+                          <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-[#007A94]">
                             <MapPin className="w-4 h-4" />
                           </div>
                           <div>
@@ -1107,8 +1107,8 @@ const handleConfirmAppointment = async () => {
                         { icon: "📊", title: "Reason", value: formData.medication || "None" },
                       ].map((item, index) => (
                         <div key={index} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-[#16a1bd] flex-shrink-0">
-                            <div className="w-3 h-3 rounded-full bg-[#16a1bd]"></div>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-[#007A94] flex-shrink-0">
+                            <div className="w-3 h-3 rounded-full bg-[#007A94]"></div>
                           </div>
                           <div className="flex-1">
                             <p className="font-semibold text-gray-900 text-sm">{item.title}</p>
@@ -1125,9 +1125,9 @@ const handleConfirmAppointment = async () => {
                     <div className="flex gap-3">
                       <Input
                         placeholder="Code"
-                        className="flex-1 px-4 py-2 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#16a1bd]"
+                        className="flex-1 px-4 py-2 border border-cyan-200 rounded-lg focus:outline-none focus:border-[#007A94]"
                       />
-                      <Button className="bg-[#16a1bd] hover:bg-[#0d6171] text-white px-6 rounded-full font-semibold">
+                      <Button className="bg-[#007A94] hover:bg-[#005566] text-white px-6 rounded-full font-semibold">
                         Ap...
                       </Button>
                     </div>
@@ -1185,11 +1185,11 @@ const handleConfirmAppointment = async () => {
                       id="confirm-terms"
                       checked={confirmTerms}
                       onChange={(e) => setConfirmTerms(e.target.checked)}
-                      className="w-5 h-5 rounded border-gray-300 text-[#16a1bd] cursor-pointer mt-0.5 flex-shrink-0"
+                      className="w-5 h-5 rounded border-gray-300 text-[#007A94] cursor-pointer mt-0.5 flex-shrink-0"
                     />
                     <label htmlFor="confirm-terms" className="text-sm text-gray-700 cursor-pointer flex-1">
                       I confirm{" "}
-                      <Link href="#" className="text-[#16a1bd] hover:underline font-semibold">
+                      <Link href="#" className="text-[#007A94] hover:underline font-semibold">
                         Privacy Policy and Term of Use
                       </Link>
                     </label>
@@ -1207,7 +1207,7 @@ const handleConfirmAppointment = async () => {
                       </Button>
                       <Button
                         onClick={handleConfirmAppointment}
-                        className="flex-1 px-8 py-3 bg-[#16a1bd] hover:bg-[#0d6171] text-white rounded-full font-semibold disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+                        className="flex-1 px-8 py-3 bg-[#007A94] hover:bg-[#005566] text-white rounded-full font-semibold disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
                         disabled={ !confirmTerms}
                       >
                         Confirm And Pay
@@ -1226,7 +1226,7 @@ const handleConfirmAppointment = async () => {
                 <div className="text-center mb-6">
                   <Avatar className="w-20 h-20 mx-auto mb-4">
                     <AvatarImage src="/placeholder-user.jpg" />
-                    <AvatarFallback className="bg-[#16a1bd] text-white text-lg">
+                    <AvatarFallback className="bg-[#007A94] text-white text-lg">
                       {selectedDoctorData.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -1244,21 +1244,21 @@ const handleConfirmAppointment = async () => {
                 <div className="grid grid-cols-3 gap-3 mb-6 pb-6 border-b border-gray-200">
                   <div className="text-center">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <Clock className="w-4 h-4 text-[#16a1bd]" />
+                      <Clock className="w-4 h-4 text-[#007A94]" />
                     </div>
                     <p className="text-xs text-gray-600">Experience</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedDoctorData.experience}</p>
                   </div>
                   <div className="text-center">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <Users className="w-4 h-4 text-[#16a1bd]" />
+                      <Users className="w-4 h-4 text-[#007A94]" />
                     </div>
                     <p className="text-xs text-gray-600">Consultations</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedDoctorData.consultations}</p>
                   </div>
                   <div className="text-center">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <DollarSign className="w-4 h-4 text-[#16a1bd]" />
+                      <DollarSign className="w-4 h-4 text-[#007A94]" />
                     </div>
                     <p className="text-xs text-gray-600">Cost</p>
                     <p className="text-sm font-semibold text-gray-900">890,000đ</p>
@@ -1273,7 +1273,7 @@ const handleConfirmAppointment = async () => {
                       <Badge
                         key={condition}
                         variant="outline"
-                        className="rounded-full border-[#16a1bd] text-[#16a1bd] hover:bg-blue-50 text-xs"
+                        className="rounded-full border-[#007A94] text-[#007A94] hover:bg-blue-50 text-xs"
                       >
                         {condition}
                       </Badge>
@@ -1288,7 +1288,7 @@ const handleConfirmAppointment = async () => {
                     {selectedDoctorData.certificates.map((cert, index) => (
                       <div key={index} className="flex gap-3">
                         <div
-                          className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${index === 0 ? "bg-[#16a1bd]" : "bg-blue-200"}`}
+                          className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${index === 0 ? "bg-[#007A94]" : "bg-blue-200"}`}
                         />
                         <div>
                           <p className="font-semibold text-gray-900">{cert.year}</p>

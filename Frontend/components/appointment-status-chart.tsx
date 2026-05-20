@@ -11,7 +11,7 @@ interface StatusChartItem {
 }
 
 const defaultData: StatusChartItem[] = [
-  { name: "Completed", value: 53, color: "#16a1bd", percentage: "81%" },
+  { name: "Completed", value: 53, color: "#007A94", percentage: "81%" },
   { name: "Pending", value: 10, color: "#F59E0B", percentage: "15%" },
   { name: "Cancel", value: 2, color: "#EF4444", percentage: "3%" },
 ]
@@ -57,7 +57,7 @@ export default function AppointmentStatusChart({ data = defaultData }: Appointme
   return (
     <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 h-full min-h-[520px] hover-lift flex flex-col">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Appointment Status Breakdown</h3>
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">Appointment Status Breakdown</h3>
         <span className="text-sm text-gray-500 font-medium">In month</span>
       </div>
 

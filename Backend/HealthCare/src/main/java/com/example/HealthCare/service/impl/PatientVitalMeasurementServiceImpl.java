@@ -152,8 +152,20 @@ public class PatientVitalMeasurementServiceImpl
     public List<VitalMetricPointResponse> listVitalMetricPointsInRange(
         UUID patientId, OffsetDateTime from, OffsetDateTime to
     ) {
-        return buildPointsFromSelfMeasurements(
-            measurementRepository.findAllByPatientInRange(patientId, from, to));
+        List<PatientVitalMeasurement> measurements;
+        if (from != null && to != null) {
+            measurements = measurementRepository
+                .findByPatientIdAndTakenAtBetweenOrderByTakenAtAsc(patientId, from, to);
+        } else if (from != null) {
+            measurements = measurementRepository
+                .findByPatientIdAndTakenAtGreaterThanEqualOrderByTakenAtAsc(patientId, from);
+        } else if (to != null) {
+            measurements = measurementRepository
+                .findByPatientIdAndTakenAtLessThanEqualOrderByTakenAtAsc(patientId, to);
+        } else {
+            measurements = measurementRepository.findAllByPatientOrderByTakenAtAsc(patientId);
+        }
+        return buildPointsFromSelfMeasurements(measurements);
     }
 
     // -------------------------------------------------------------------

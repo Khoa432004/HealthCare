@@ -3,6 +3,7 @@
 import { ArrowRight, Stethoscope, Grid3X3, Rocket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { BrandLogo } from "@/components/brand-logo"
 
 export default function HomePage() {
   return (
@@ -25,15 +26,14 @@ export default function HomePage() {
             style={{ backgroundColor: 'rgba(255, 255, 255, 0.68)' }}
           >
             {/* Header Section */}
-            <div className="space-y-2">
-              <h1
-                className="text-center font-semibold text-[#131313] text-3xl sm:text-4xl md:text-[32px] lg:text-[36px] leading-snug sm:leading-tight md:leading-[40px] lg:leading-[44px]"
-                style={{
-                  fontFamily: 'Montserrat, sans-serif',
-                }}
+            <div className="flex flex-col items-center space-y-3">
+              <BrandLogo variant="full" priority />
+              <p
+                className="text-center text-[#475467] text-sm sm:text-base"
+                style={{ fontFamily: "Montserrat, sans-serif" }}
               >
-                Welcome to
-              </h1>
+                Hệ thống quản lý khám bệnh
+              </p>
             </div>
 
             {/* Feature Cards Section */}
@@ -43,7 +43,7 @@ export default function HomePage() {
                 className="bg-[#FCFEFF] rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-4 flex items-start space-x-4 border shadow-sm hover:shadow-md transition-all duration-300 w-full" 
                 style={{ borderColor: 'rgba(183, 226, 235, 0.68)' }}
               >
-                <div className="bg-[#16a1bd] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
+                <div className="bg-[#007A94] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
                   <Stethoscope className="w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -61,7 +61,7 @@ export default function HomePage() {
                 className="bg-[#FCFEFF] rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-4 flex items-start space-x-4 border shadow-sm hover:shadow-md transition-all duration-300 w-full" 
                 style={{ borderColor: 'rgba(183, 226, 235, 0.68)' }}
               >
-                <div className="bg-[#16a1bd] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
+                <div className="bg-[#007A94] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
                   <Grid3X3 className="w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -79,7 +79,7 @@ export default function HomePage() {
                 className="bg-[#FCFEFF] rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-4 flex items-start space-x-4 border shadow-sm hover:shadow-md transition-all duration-300 w-full" 
                 style={{ borderColor: 'rgba(183, 226, 235, 0.68)' }}
               >
-                <div className="bg-[#16a1bd] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
+                <div className="bg-[#007A94] rounded-full p-3 sm:p-3.5 md:p-3.5 flex-shrink-0">
                   <Rocket className="w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export default function HomePage() {
               <Link href="/login">
                 <Button 
                   size="lg" 
-                  className="bg-[#0d6171] hover:bg-[#0a4d5a] text-white px-8 sm:px-10 md:px-9 py-3 sm:py-3.5 md:py-3.5 font-bold text-base sm:text-lg md:text-base lg:text-[17px] flex items-center space-x-2 sm:space-x-3 rounded-xl shadow-md hover:shadow-lg group transition-all duration-300"
+                  className="bg-[#005566] hover:bg-[#0a4d5a] text-white px-8 sm:px-10 md:px-9 py-3 sm:py-3.5 md:py-3.5 font-bold text-base sm:text-lg md:text-base lg:text-[17px] flex items-center space-x-2 sm:space-x-3 rounded-xl shadow-md hover:shadow-lg group transition-all duration-300"
                 >
                   <span>Bắt đầu ngay</span>
                   <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 md:w-5 md:h-5 group-hover:translate-x-2 transition-transform duration-300" />

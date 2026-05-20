@@ -286,7 +286,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   <div className="w-5 h-5 gradient-primary rounded-lg flex items-center justify-center">
                     <Calendar className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <h1 className="text-xl font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">
+                  <h1 className="text-xl font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">
                     Appointment #{appointment.id.substring(0, 8)}
                   </h1>
                 </div>
@@ -311,7 +311,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                     <Button
                       type="button"
                       size="sm"
-                      className="ml-2 bg-[#16a1bd] text-white hover:bg-[#0d6171]"
+                      className="ml-2 bg-[#007A94] text-white hover:bg-[#005566]"
                     >
                       <Video className="mr-2 h-4 w-4" />
                       Video call
@@ -393,13 +393,13 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   </div>
                   <Link href="/my-profile">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <User className="w-4 h-4 text-[#16a1bd]" />
+                      <User className="w-4 h-4 text-[#007A94]" />
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
                   </Link>
                   {/* <Link href="/settings">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <Settings className="w-4 h-4 text-[#16a1bd]" />
+                      <Settings className="w-4 h-4 text-[#007A94]" />
                       <span className="font-medium">Settings</span>
                     </DropdownMenuItem>
                   </Link> */}
@@ -657,8 +657,8 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                   <div className="space-y-4">
                     {/* Name */}
                     <div className="flex items-start space-x-3">
-                      <div className="rounded-full bg-[#e5f5f8] flex items-center justify-center h-10 w-10">
-                        <User className="w-5 h-5 text-[#128197]" />
+                      <div className="rounded-full bg-[#E8F5F1] flex items-center justify-center h-10 w-10">
+                        <User className="w-5 h-5 text-[#006884]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500">Name</p>
@@ -671,8 +671,8 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
                     {/* Gender */}
                     {appointment.patientGender && (
                       <div className="flex items-start space-x-3">
-                        <div className="rounded-full bg-[#e5f5f8] flex items-center justify-center h-10 w-10">
-                          <User className="w-5 h-5 text-[#128197]" />
+                        <div className="rounded-full bg-[#E8F5F1] flex items-center justify-center h-10 w-10">
+                          <User className="w-5 h-5 text-[#006884]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500">Gender</p>

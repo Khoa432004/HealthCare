@@ -10,6 +10,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Eye, EyeOff } from "lucide-react"
+import { AuthPageHeader } from "@/components/auth-page-header"
 
 export default function VerifyOTPPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
@@ -94,24 +95,16 @@ return (
     <div className="w-full h-full px-4 sm:px-5 md:px-0 py-4 sm:py-5 md:py-0 relative z-10">
       <div className="grid md:grid-cols-2 gap-0 items-center h-full">
         {/* Left Content - Combined OTP and Password Reset Form */}
-        <div className="w-full h-full flex items-center justify-center md:justify-start order-1">
-          <div className="w-full max-w-full md:max-w-lg lg:max-w-xl px-5 py-8 sm:px-6 sm:py-10 md:pl-12 lg:pl-16 md:pr-8 lg:pr-10 md:py-8 rounded-2xl bg-white/70 md:bg-transparent overflow-y-auto max-h-[90vh] md:max-h-full">
-            <div className="space-y-3.5 sm:space-y-4 md:space-y-3.5 lg:space-y-4 mx-auto w-full max-w-md md:max-w-full">
-              {/* Logo */}
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <span className="text-3xl sm:text-4xl md:text-[36px] lg:text-[40px] font-bold text-[#16a1bd]">Bác sỹ</span>
-                <span className="text-3xl sm:text-4xl md:text-[36px] lg:text-[40px] font-bold text-[#16a1bd]">ơi</span>
-                <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 bg-gradient-to-r from-red-400 to-red-500 rounded-full ml-1 sm:ml-1.5 shadow-soft pulse-soft"></div>
-              </div>
-
-              {/* Header */}
-              <div className="space-y-1.5 md:space-y-1">
-                <h1 className="text-2xl sm:text-3xl md:text-[24px] lg:text-[26px] font-bold text-slate-800">Reset Password</h1>
-                <p className="text-base sm:text-lg md:text-[15px] lg:text-base text-slate-600">Enter the verification code and your new password</p>
-              </div>
+        <div className="w-full h-full flex items-center justify-center order-1">
+          <div className="w-full max-w-full md:max-w-lg lg:max-w-xl px-5 py-8 sm:px-6 sm:py-10 md:px-8 lg:px-10 md:py-8 rounded-2xl bg-white/70 md:bg-transparent overflow-y-auto max-h-[90vh] md:max-h-full flex flex-col items-center">
+            <div className="space-y-3.5 sm:space-y-4 md:space-y-3.5 lg:space-y-4 mx-auto w-full max-w-md flex flex-col items-center">
+              <AuthPageHeader
+                title="Reset Password"
+                description="Enter the verification code and your new password"
+              />
 
               {/* Form */}
-              <div className="space-y-3 sm:space-y-3.5 md:space-y-3">
+              <div className="w-full space-y-3 sm:space-y-3.5 md:space-y-3">
                 <div className="space-y-2.5 md:space-y-2">
                   <div className="space-y-1.5 md:space-y-1.5">
                     <Label htmlFor="username" className="text-slate-700 font-semibold text-sm md:text-xs lg:text-[13px]">
@@ -153,7 +146,7 @@ return (
                         Didn't receive the code?{" "}
                         <button
                           onClick={handleResendOTP}
-                          className="text-[#16a1bd] font-medium hover:underline"
+                          className="text-[#007A94] font-medium hover:underline"
                           disabled={!username}
                         >
                           Resend OTP
@@ -224,7 +217,7 @@ return (
                   <Link href="/forgot-password" className="flex-1">
                     <Button
                       variant="outline"
-                      className="inline-flex items-center justify-center rounded-lg truncate font-bold select-none w-full px-4 h-12 md:h-10 lg:h-10 text-base md:text-sm lg:text-sm bg-white/70 backdrop-blur-sm border-2 border-[#16a1bd] text-[#16a1bd] hover:bg-[#16a1bd] hover:text-white transition-all duration-300 hover:scale-[1.02]"
+                      className="inline-flex items-center justify-center rounded-lg truncate font-bold select-none w-full px-4 h-12 md:h-10 lg:h-10 text-base md:text-sm lg:text-sm bg-white/70 backdrop-blur-sm border-2 border-[#007A94] text-[#007A94] hover:bg-[#007A94] hover:text-white transition-all duration-300 hover:scale-[1.02]"
                     >
                       Back
                     </Button>
@@ -232,7 +225,7 @@ return (
                   <Button
                     onClick={handleResetPassword}
                     disabled={!isFormValid || isLoading}
-                    className="flex-1 inline-flex items-center justify-center rounded-lg truncate transition font-bold select-none w-full px-4 h-12 md:h-10 lg:h-10 text-base md:text-sm lg:text-sm bg-[#0d6171] hover:bg-[#0a4d5a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 inline-flex items-center justify-center rounded-lg truncate transition font-bold select-none w-full px-4 h-12 md:h-10 lg:h-10 text-base md:text-sm lg:text-sm bg-[#005566] hover:bg-[#0a4d5a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <div className="flex items-center space-x-2">

@@ -61,7 +61,7 @@ export default function PatientAppointmentsSidebar({
               </div>
             </div>
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#0d8fae] text-[#0d8fae]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#007A94] text-[#007A94]"
               onClick={(e) => {
                 e.stopPropagation()
                 openAppointment(pendingAppointment.id)
@@ -113,7 +113,7 @@ export default function PatientAppointmentsSidebar({
                         </Avatar>
                       </div>
                     </div>
-                    <PlusCircle className="h-4 w-4 text-[#0d8fae]" />
+                    <PlusCircle className="h-4 w-4 text-[#007A94]" />
                   </div>
                 </div>
               </div>

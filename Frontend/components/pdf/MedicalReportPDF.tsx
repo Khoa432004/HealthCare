@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#16a1bd',
+        color: '#007A94',
         marginBottom: 5,
     },
     clinicName: {
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#e6f7fa',
         padding: 5,
         marginBottom: 8,
-        color: '#0d6171',
+        color: '#005566',
     },
     row: {
         flexDirection: 'row',
@@ -231,7 +231,7 @@ const MedicalReportPDF: React.FC<Props> = ({ report }) => (
 
             {/* Footer */}
             <View style={styles.footer}>
-                <Text>HealthCare System - Báo cáo này được tạo tự động vào ngày {format(new Date(), 'dd/MM/yyyy HH:mm')}</Text>
+                <Text>iMed - Báo cáo này được tạo tự động vào ngày {format(new Date(), 'dd/MM/yyyy HH:mm')}</Text>
             </View>
         </Page>
     </Document>

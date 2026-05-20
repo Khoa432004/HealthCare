@@ -342,7 +342,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                     <div className="space-y-3">
                       {selectedEvent.reason && (
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#E8F5F1] flex items-center justify-center flex-shrink-0">
                             <Stethoscope className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
@@ -354,7 +354,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
 
                       {selectedEvent.symptomsOnset && (
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#E8F5F1] flex items-center justify-center flex-shrink-0">
                             <Heart className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
@@ -366,7 +366,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
 
                       {selectedEvent.symptomsSeverity && (
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#E8F5F1] flex items-center justify-center flex-shrink-0">
                             <Frown className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
@@ -378,7 +378,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
 
                       {selectedEvent.medicationsUsed && (
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#e5f5f8] flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#E8F5F1] flex items-center justify-center flex-shrink-0">
                             <Pill className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
@@ -395,7 +395,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
               {/* Footer with View Details button */}
               <div className="px-6 py-4 border-t border-gray-200">
                 <Link href={userRole === 'PATIENT' ? `/patient-calendar/appointment/${selectedEvent.id}` : `/calendar/appointment/${selectedEvent.id}`} className="w-full">
-                  <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#e5f5f8] border border-[#0d6171] text-[#0d6171]" type="button">
+                  <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#E8F5F1] border border-[#005566] text-[#005566]" type="button">
                     View details
                   </button>
                 </Link>

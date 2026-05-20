@@ -125,7 +125,7 @@ function AdminDashboardContent() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       {/* Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 

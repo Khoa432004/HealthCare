@@ -58,7 +58,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
     <div className="space-y-6">
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Top Critical Cases</h3>
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">Top Critical Cases</h3>
         </div>
 
         <div className="overflow-x-auto">
@@ -134,8 +134,8 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
 
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Pending Medical Report</h3>
-          <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50 transition-smooth">
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">Pending Medical Report</h3>
+          <Button variant="ghost" size="sm" className="text-[#007A94] hover:bg-white/50 transition-smooth">
             See details <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
@@ -186,7 +186,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
                   </td>
                   <td className="py-4 px-4 text-right">
                     <Link href={`/calendar/appointment/${appointment.id}?tab=medical-report`}>
-                      <Button size="sm" className="bg-[#16a1bd] hover:bg-[#0d6171] text-white">
+                      <Button size="sm" className="bg-[#007A94] hover:bg-[#005566] text-white">
                         Complete report
                       </Button>
                     </Link>

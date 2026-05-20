@@ -599,7 +599,7 @@ export function SignUpForm() {
               <Button
                 onClick={handleContinue}
                 disabled={false}
-                className="bg-[#0d6171] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#005566] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </Button>
@@ -886,7 +886,7 @@ export function SignUpForm() {
                 />
                 <Label htmlFor="terms" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                   By clicking Sign Up, I confirm that I have read, understood and accepted all the Terms of Use,
-                  Application Using Policy and Privacy Policy of Bác Sỹ Ơi platform
+                  Application Using Policy and Privacy Policy of iMed platform
                 </Label>
               </div>
               <div className="flex items-start space-x-2">

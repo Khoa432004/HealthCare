@@ -160,7 +160,7 @@ export function ExamPackageRequestsTable() {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <Package className="w-5 h-5 text-[#00a8cc]" />
+          <Package className="w-5 h-5 text-[#007A94]" />
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Exam package change requests</h2>
             <p className="text-sm text-muted-foreground">
@@ -204,7 +204,7 @@ export function ExamPackageRequestsTable() {
                       type="button"
                       size="sm"
                       variant="default"
-                      className="bg-[#00a8cc] hover:bg-[#0096b8]"
+                      className="bg-[#007A94] hover:bg-[#006884]"
                       onClick={() => openReview(row.requestId)}
                     >
                       <Eye className="w-3.5 h-3.5 mr-1" />

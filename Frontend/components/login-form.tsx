@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FirstLoginPasswordModal } from "@/components/first-login-password-modal"
+import { AuthPageHeader } from "@/components/auth-page-header"
+import { BRAND_COLORS } from "@/lib/brand"
 
 export function LoginForm() {
   const router = useRouter()
@@ -128,21 +130,15 @@ export function LoginForm() {
   }
 
   return (
-  <div className="w-full max-w-full md:max-w-lg lg:max-w-xl h-full flex flex-col justify-center px-5 py-8 sm:px-6 sm:py-10 md:pl-12 lg:pl-16 md:pr-8 lg:pr-10 md:py-8 rounded-2xl bg-white/70 md:bg-transparent overflow-y-auto max-h-[90vh] md:max-h-full">
-    <div className="space-y-5 sm:space-y-6 md:space-y-5 lg:space-y-6 mx-auto w-full max-w-md md:max-w-full">
-      {/* Logo and Header */}
-      <div className="space-y-3 sm:space-y-3 md:space-y-2 lg:space-y-3">
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <span className="text-3xl sm:text-4xl md:text-[36px] lg:text-[40px] font-bold text-[#16a1bd]">Bác sỹ</span>
-          <span className="text-3xl sm:text-4xl md:text-[36px] lg:text-[40px] font-bold text-[#16a1bd]">ơi</span>
-          <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 bg-gradient-to-r from-red-400 to-red-500 rounded-full ml-1 sm:ml-1.5 shadow-soft pulse-soft"></div>
-        </div>
-        <h1 className="text-2xl sm:text-3xl md:text-[24px] lg:text-[26px] font-bold text-slate-800">Chào mừng trở lại!</h1>
-        <p className="text-base sm:text-lg md:text-[15px] lg:text-base text-slate-600 leading-relaxed">Đăng nhập để tiếp tục hành trình chăm sóc sức khỏe</p>
-      </div>
+  <div className="w-full max-w-full md:max-w-lg lg:max-w-xl h-full flex flex-col justify-center items-center px-5 py-8 sm:px-6 sm:py-10 md:px-8 lg:px-10 md:py-8 rounded-2xl bg-white/70 md:bg-transparent overflow-y-auto max-h-[90vh] md:max-h-full">
+    <div className="space-y-5 sm:space-y-6 md:space-y-5 lg:space-y-6 mx-auto w-full max-w-md flex flex-col items-center">
+      <AuthPageHeader
+        title="Chào mừng trở lại!"
+        description="Đăng nhập để tiếp tục hành trình chăm sóc sức khỏe"
+      />
 
       {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4 md:space-y-3.5">
+      <form onSubmit={handleSubmit} className="w-full space-y-3.5 sm:space-y-4 md:space-y-3.5">
         {/* Error Alert */}
         {error && (
           <Alert variant="destructive" className="bg-red-50 border-red-200">
@@ -212,7 +208,7 @@ export function LoginForm() {
         <div className="text-right pt-0.5">
           <Link
             href="/forgot-password"
-            className="text-[#16a1bd] hover:text-[#0d6171] text-base md:text-xs lg:text-sm font-medium underline transition-all duration-300 hover:translate-x-1 inline-block"
+            className="text-[#007A94] hover:text-[#005566] text-base md:text-xs lg:text-sm font-medium underline transition-all duration-300 hover:translate-x-1 inline-block"
           >
             Quên mật khẩu?
           </Link>
@@ -223,7 +219,7 @@ export function LoginForm() {
           type="submit"
           size="lg"
           disabled={isLoading}
-          className="w-full bg-[#0d6171] hover:bg-[#16a1bd] text-white font-bold text-base md:text-sm lg:text-sm h-12 md:h-10 lg:h-10 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+          className="w-full bg-[#005566] hover:bg-[#007A94] text-white font-bold text-base md:text-sm lg:text-sm h-12 md:h-10 lg:h-10 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
@@ -238,7 +234,7 @@ export function LoginForm() {
         {/* Sign Up Link */}
         <div className="text-center text-slate-600 text-sm md:text-xs lg:text-[13px] pt-1">
           Chưa có tài khoản?{" "}
-          <Link href="/signup" className="text-[#16a1bd] hover:text-[#0d6171] font-semibold underline transition-all duration-300">
+          <Link href="/signup" className="text-[#007A94] hover:text-[#005566] font-semibold underline transition-all duration-300">
             Đăng ký ngay
           </Link>
         </div>
