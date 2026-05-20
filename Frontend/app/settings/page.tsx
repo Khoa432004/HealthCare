@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
-import { Search, Calendar, Users, ExternalLink, Pencil, Plus, LayoutDashboard, User, Settings, LogOut } from "lucide-react"
+import { Search, Calendar, Users, Pencil, Plus, LayoutDashboard, User, Settings, LogOut, Loader2, ExternalLink } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { doctorExamPackageService, type DoctorExamPackageRow } from "@/services/doctor-exam-package.service"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -28,12 +30,15 @@ import { authService } from "@/services/auth.service"
 
 function SettingsPageContent() {
   const router = useRouter()
+  const { toast } = useToast()
   const [userInfo, setUserInfo] = useState<any>(null)
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false)
   const [selectedDuration, setSelectedDuration] = useState("10 mins")
   const [selectedClinic, setSelectedClinic] = useState("Clinic 1")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [packages, setPackages] = useState<DoctorExamPackageRow[]>([])
+  const [togglingPackageId, setTogglingPackageId] = useState<string | null>(null)
 
   useEffect(() => {
     const user = authService.getUserInfo()
@@ -61,22 +66,48 @@ function SettingsPageContent() {
     }
   }
 
-  useEffect(() => {
-    // Simulate initial data loading
-    const loadData = async () => {
-      setIsLoading(true)
-      try {
-        // Simulate API calls for settings data
-        await new Promise(resolve => setTimeout(resolve, 600))
-      } catch (error) {
-        console.error('Error loading settings data:', error)
-      } finally {
-        setIsLoading(false)
-      }
+  const loadData = async () => {
+    setIsLoading(true)
+    try {
+      const workspaceData = await doctorExamPackageService.getWorkspace()
+      setPackages(workspaceData.approvedPackages)
+    } catch (error) {
+      console.error('Error loading settings data:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadData()
   }, [])
+
+  const handleTogglePackage = async (pkgId: string | null, newApplicable: boolean) => {
+    if (!pkgId) return
+    setTogglingPackageId(pkgId)
+    try {
+      const updatedPackages = packages.map((p) =>
+        p.packageId === pkgId ? { ...p, applicable: newApplicable } : p
+      )
+      setPackages(updatedPackages)
+      await doctorExamPackageService.submitPackages(updatedPackages)
+      toast({
+        title: "Success",
+        description: "Yêu cầu thay đổi trạng thái gói khám đã được gửi duyệt.",
+      })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Có lỗi xảy ra"
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive"
+      })
+      const workspaceData = await doctorExamPackageService.getWorkspace()
+      setPackages(workspaceData.approvedPackages)
+    } finally {
+      setTogglingPackageId(null)
+    }
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -129,14 +160,7 @@ function SettingsPageContent() {
     },
   ]
 
-  const packages = [
-    { name: "TRIAL PACKAGE", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-    { name: "1 MONTH", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-    { name: "3 MONTHS", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-    { name: "5 MONTHS", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-    { name: "6 MONTHS", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-    { name: "9 MONTHS", valid: "30/08/2025", duration: "7 days", cost: "300000 đ", tags: ["A0", "B1", "C2"] },
-  ]
+
 
   if (isLoading) {
     return <PageLoadingSpinner />
@@ -315,9 +339,6 @@ function SettingsPageContent() {
                         <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50">
                           Edit <Pencil className="w-4 h-4 ml-1" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50">
-                          Share <ExternalLink className="w-4 h-4 ml-1" />
-                        </Button>
                       </div>
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
@@ -338,38 +359,92 @@ function SettingsPageContent() {
 
             {/* Package Programs Tab */}
             <TabsContent value="packages" className="mt-0">
-              <div className="grid grid-cols-2 gap-6">
-                {packages.map((pkg, index) => (
-                  <Card key={index} className="p-6 glass rounded-3xl shadow-soft-lg border-white/50 hover-lift">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-[#16a1bd]">{pkg.name}</h3>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50">
-                          Edit <Pencil className="w-4 h-4 ml-1" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50">
-                          Share <ExternalLink className="w-4 h-4 ml-1" />
-                        </Button>
+              {packages.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-[#d0eef5] p-12 text-center text-sm text-gray-500 bg-white/50">
+                  Chưa có gói khám nào được duyệt.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {packages.map((pkg) => (
+                    <Card
+                      key={pkg.packageId}
+                      className="p-6 rounded-3xl border border-[#d0eef5] bg-[#eef9fb]/80 hover:shadow-md transition-all duration-300 relative group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between mb-4">
+                          <h3 className="text-lg font-bold text-[#0d8fae] tracking-tight uppercase">
+                            {pkg.packageName}
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#0d8fae] hover:bg-[#d0eef5]/50 rounded-xl h-8 px-2.5 text-xs font-semibold gap-1"
+                              onClick={() => router.push("/doctor-dashboard/package-program")}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              Sửa
+                            </Button>
+                            <Switch
+                              checked={pkg.applicable}
+                              disabled={togglingPackageId === pkg.packageId}
+                              onCheckedChange={(checked) => handleTogglePackage(pkg.packageId, checked)}
+                              aria-label={`Toggle active state for ${pkg.packageName}`}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2.5 text-sm text-gray-600 mb-6 font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400 text-xs">Hạn dùng:</span>
+                            <span className="text-gray-800">31/12/2026</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400 text-xs">Thời hạn gói:</span>
+                            <span className="text-gray-800 font-semibold">{pkg.durationDays} ngày</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400 text-xs">Giá gói:</span>
+                            <span className="text-[#0d8fae] font-bold text-base">
+                              {Number(pkg.priceVnd).toLocaleString("vi-VN")} đ
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <p>Valid: {pkg.valid}</p>
-                      <p>Package duration: {pkg.duration}</p>
-                      <p>Total package cost: {pkg.cost}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      {pkg.tags.map((tag, tagIndex) => (
-                        <span
-                          key={tagIndex}
-                          className="px-3 py-1 bg-white/60 rounded-full text-xs font-medium text-gray-700"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </Card>
-                ))}
-              </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-[#d0eef5]">
+                        <div className="flex gap-1">
+                          <span className="px-2.5 py-0.5 bg-white/60 rounded-full text-[10px] font-semibold text-gray-600 border border-[#d0eef5]/30">
+                            A0
+                          </span>
+                          <span className="px-2.5 py-0.5 bg-white/60 rounded-full text-[10px] font-semibold text-gray-600 border border-[#d0eef5]/30">
+                            B1
+                          </span>
+                        </div>
+                        <div className="flex -space-x-2 overflow-hidden">
+                          <img
+                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
+                            alt="Patient 1"
+                          />
+                          <img
+                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80"
+                            alt="Patient 2"
+                          />
+                          <img
+                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&auto=format&fit=crop&q=80"
+                            alt="Patient 3"
+                          />
+                          <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-2 ring-[#d0eef5] text-[9px] font-bold text-gray-500">
+                            +9
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Appointments Tab */}

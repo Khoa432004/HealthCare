@@ -2,19 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Package, User, LogOut, Loader2, Save, Plus, RotateCcw, Trash2 } from "lucide-react"
+import { Package, User, LogOut, Loader2, Save, Plus, RotateCcw, Trash2, Pencil, Calendar, DollarSign, Clock } from "lucide-react"
 import Link from "next/link"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -23,6 +21,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { authService } from "@/services/auth.service"
 import {
   doctorExamPackageService,
@@ -30,7 +35,6 @@ import {
   type ExamPackageWorkspace,
 } from "@/services/doctor-exam-package.service"
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
 
 type DraftLine = DoctorExamPackageRow & { clientId: string }
 
@@ -43,15 +47,14 @@ function newEmptyDraftLine(): DraftLine {
     clientId: newClientId(),
     packageId: null,
     packageName: "",
-    durationMinutes: 30,
+    durationDays: 7,
     priceVnd: 0,
-    applicable: false,
+    applicable: true,
   }
 }
 
-/** New edits always start from published (approved) packages — each submit creates another pending request. */
 function baselineDraftFromApproved(approved: DoctorExamPackageRow[]): DraftLine[] {
-  if (approved.length === 0) return [newEmptyDraftLine()]
+  if (approved.length === 0) return []
   return approved.map((p) => ({
     ...p,
     clientId: newClientId(),
@@ -68,10 +71,9 @@ function PackageProgramContent() {
   const [userInfo, setUserInfo] = useState<{ fullName: string } | null>(null)
   const [workspace, setWorkspace] = useState<ExamPackageWorkspace | null>(null)
   const [editLines, setEditLines] = useState<DraftLine[]>([])
-  /** Snapshot when the page loaded or after a successful submit — used to restore draft. */
   const [initialDraftSnapshot, setInitialDraftSnapshot] = useState<DraftLine[]>([])
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
-  const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -89,7 +91,7 @@ function PackageProgramContent() {
       setEditLines(baseline)
       setInitialDraftSnapshot(cloneDraft(baseline))
       setSelectedClientId(null)
-      setSelectedForDelete(new Set())
+      setIsModalOpen(false)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not load exam packages."
       toast({ title: "Error", description: msg, variant: "destructive" })
@@ -130,44 +132,27 @@ function PackageProgramContent() {
 
   const handleAddPackage = () => {
     const row: DraftLine = newEmptyDraftLine()
-    setEditLines((prev) => {
-      const next = [...prev, row]
-      return next
-    })
+    setEditLines((prev) => [...prev, row])
     setSelectedClientId(row.clientId)
+    setIsModalOpen(true)
   }
 
-  const toggleDeleteSelect = (clientId: string, checked: boolean | "indeterminate") => {
-    setSelectedForDelete((prev) => {
-      const next = new Set(prev)
-      if (checked === true) {
-        next.add(clientId)
-      } else {
-        next.delete(clientId)
-      }
-      return next
-    })
-  }
-
-  const handleDeleteSelected = () => {
-    if (selectedForDelete.size === 0) return
-    setEditLines((prev) => prev.filter((row) => !selectedForDelete.has(row.clientId)))
-    if (selectedClientId && selectedForDelete.has(selectedClientId)) {
+  const handleDeletePackage = (clientId: string) => {
+    setEditLines((prev) => prev.filter((row) => row.clientId !== clientId))
+    if (selectedClientId === clientId) {
       setSelectedClientId(null)
     }
-    setSelectedForDelete(new Set())
     toast({
       title: "Draft updated",
-      description: "Selected packages were removed from draft. Click Save to send approval request to admin.",
+      description: "Package removed from draft list. Click Save to send approval request to admin.",
     })
   }
 
-  /** Same state as when you first opened the page (or right after a successful submit). */
   const restoreDraftToInitial = (options?: { showToast?: boolean }) => {
     if (initialDraftSnapshot.length === 0) return
     setEditLines(cloneDraft(initialDraftSnapshot))
     setSelectedClientId(null)
-    setSelectedForDelete(new Set())
+    setIsModalOpen(false)
     if (options?.showToast !== false) {
       toast({
         title: "Draft restored",
@@ -176,20 +161,12 @@ function PackageProgramContent() {
     }
   }
 
-  const handleDraftRowClick = (clientId: string) => {
-    if (selectedClientId === clientId) {
-      restoreDraftToInitial({ showToast: false })
-      return
-    }
-    setSelectedClientId(clientId)
-  }
-
   const validateLines = (): string | null => {
     if (editLines.length === 0) return "Add at least one exam package."
     for (let i = 0; i < editLines.length; i++) {
       const row = editLines[i]
       if (!row.packageName || !row.packageName.trim()) return `Package #${i + 1}: name is required.`
-      if (row.durationMinutes < 1 || row.durationMinutes > 24 * 60) return `Package "${row.packageName}": invalid duration.`
+      if (row.durationDays < 1 || row.durationDays > 3650) return `Package "${row.packageName}": invalid duration.`
       if (row.priceVnd < 0) return `Package "${row.packageName}": price cannot be negative.`
     }
     return null
@@ -206,7 +183,7 @@ function PackageProgramContent() {
       const payload = editLines.map(({ clientId: _c, ...row }) => ({
         packageId: row.packageId,
         packageName: row.packageName.trim(),
-        durationMinutes: row.durationMinutes,
+        durationDays: row.durationDays,
         priceVnd: row.priceVnd,
         applicable: row.applicable,
       }))
@@ -216,11 +193,10 @@ function PackageProgramContent() {
       setEditLines(nextBaseline)
       setInitialDraftSnapshot(cloneDraft(nextBaseline))
       setSelectedClientId(null)
-      setSelectedForDelete(new Set())
+      setIsModalOpen(false)
       toast({
         title: "Success",
-        description:
-          "Request submitted. You can send another request anytime; each appears in the queue until an admin approves it.",
+        description: "Request submitted. Admin will review the changes shortly.",
       })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Submit failed. Please try again."
@@ -236,38 +212,38 @@ function PackageProgramContent() {
     <div className="flex h-screen bg-[#e5f5f8]">
       <DoctorSidebar />
       <div className="flex-1 flex flex-col overflow-y-auto pt-3 px-3 pb-3">
-        <header className="bg-white py-3 px-6 rounded-2xl mb-3">
+        <header className="bg-white py-3 px-6 rounded-2xl mb-3 shadow-sm border border-white/80">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-gray-700" />
-              <h1 className="text-lg font-semibold text-gray-900">Package Program</h1>
+              <h1 className="text-lg font-bold text-gray-900 tracking-tight">Configure Monitoring Packages</h1>
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 hover:bg-gray-100 rounded-xl">
                     <Avatar className="w-7 h-7">
                       <AvatarImage src="/clean-female-doctor.png" />
                       <AvatarFallback className="text-xs">
                         {userInfo ? getInitials(userInfo.fullName) : "DR"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">{userInfo?.fullName || "Doctor"}</p>
-                      <p className="text-[10px] text-gray-500">Bác sĩ</p>
+                    <div className="text-left hidden sm:block">
+                      <p className="text-xs font-semibold text-gray-800">{userInfo?.fullName || "Doctor"}</p>
+                      <p className="text-[10px] text-gray-500">Doctor</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-md border-gray-100">
                   <DropdownMenuItem asChild>
-                    <Link href="/my-profile">
-                      <User className="mr-2 h-3.5 w-3.5" />
+                    <Link href="/my-profile" className="cursor-pointer">
+                      <User className="mr-2 h-3.5 w-3.5 text-gray-500" />
                       <span className="text-sm">My Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 hover:text-red-700">
                     <LogOut className="mr-2 h-3.5 w-3.5" />
                     <span className="text-sm">Logout</span>
                   </DropdownMenuItem>
@@ -277,232 +253,258 @@ function PackageProgramContent() {
           </div>
         </header>
 
-        <div className="flex-1 max-w-5xl mx-auto w-full">
-          <Card className="rounded-2xl border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Package className="w-5 h-5 text-[#00a8cc]" />
-                Exam packages
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {pendingCount > 0 && workspace && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Pending approval ({pendingCount})</Label>
-                  <div className="space-y-2">
-                    {workspace.pendingSubmissions.map((req) => (
-                      <Alert key={req.requestId} className="border-amber-200 bg-amber-50/80">
-                        <AlertTitle className="text-sm">
-                          Submitted {new Date(req.submittedAt).toLocaleString()}
-                        </AlertTitle>
-                        <AlertDescription className="mt-2 space-y-1 text-xs">
-                          {req.packages.map((p, i) => (
-                            <div key={`${req.requestId}-${i}`} className="flex flex-wrap gap-x-3 gap-y-0.5 border-b border-amber-100/80 pb-1 last:border-0">
-                              <span className="font-medium">{p.packageName || "(unnamed)"}</span>
-                              <span>{p.durationMinutes} min</span>
-                              <span>{p.priceVnd.toLocaleString()} VND</span>
-                              <span>{p.applicable ? "Available" : "Hidden"}</span>
-                            </div>
-                          ))}
-                        </AlertDescription>
-                      </Alert>
-                    ))}
+        <div className="flex-1 max-w-6xl w-full mx-auto space-y-6 pb-8">
+          {pendingCount > 0 && workspace && (
+            <Alert className="border-amber-200 bg-amber-50/80 rounded-2xl shadow-sm">
+              <AlertTitle className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Pending approval requests ({pendingCount})
+              </AlertTitle>
+              <AlertDescription className="mt-2 space-y-2">
+                {workspace.pendingSubmissions.map((req) => (
+                  <div key={req.requestId} className="text-xs text-amber-700">
+                    <p className="font-medium mb-1">
+                      Submitted at {new Date(req.submittedAt).toLocaleString()}:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-3 border-l-2 border-amber-300">
+                      {req.packages.map((p, i) => (
+                        <div key={`${req.requestId}-${i}`} className="bg-white/50 p-2 rounded-lg">
+                          <span className="font-bold block text-gray-800">{p.packageName}</span>
+                          <span className="text-gray-600">{p.durationDays} days · {p.priceVnd.toLocaleString("vi-VN")} đ</span>
+                          <span className="inline-block ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-bold uppercase">
+                            {p.applicable ? "Available" : "Hidden"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </AlertDescription>
+            </Alert>
+          )}
 
-              {loading ? (
-                <div className="flex justify-center py-16 text-gray-500">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {workspace && workspace.approvedPackages.length > 0 && (
-                    <div className="rounded-xl border bg-white/80 p-3">
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Published in database (live)
-                      </Label>
-                      <ul className="mt-2 space-y-1.5 text-sm">
-                        {workspace.approvedPackages.map((p) => (
-                          <li
-                            key={p.packageId ?? p.packageName}
-                            className="flex justify-between gap-2 border-b border-dashed last:border-0 pb-1.5 last:pb-0"
-                          >
-                            <span className="font-medium truncate">{p.packageName}</span>
-                            <span className="text-muted-foreground shrink-0 text-xs">
-                              {p.durationMinutes} min · {p.priceVnd.toLocaleString()} VND
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+          <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-white/80">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Draft under modification</h2>
+              <p className="text-xs text-gray-500 font-medium">
+                Submit changes for admin approval to officially apply them.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => restoreDraftToInitial({ showToast: true })}
+                disabled={initialDraftSnapshot.length === 0 && editLines.length === 0}
+                className="rounded-xl h-9 text-xs border-[#0d8fae]/30 text-[#0d8fae] hover:bg-[#0d8fae]/10 gap-1 font-semibold"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restore draft
+              </Button>
+              <Button
+                type="button"
+                className="rounded-xl h-9 text-xs bg-[#0d8fae] hover:bg-[#0b7d99] text-white gap-1 font-semibold"
+                onClick={handleSave}
+                disabled={saving || loading}
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                Save &amp; submit for approval
+              </Button>
+            </div>
+          </div>
 
-                  <div className="grid gap-4 md:grid-cols-12">
-                    <div className="md:col-span-5 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-semibold">Draft (next request)</Label>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={handleDeleteSelected}
-                            disabled={selectedForDelete.size === 0 || saving || loading}
-                            className="gap-1 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete selected ({selectedForDelete.size})
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={handleAddPackage} className="gap-1">
-                            <Plus className="w-3.5 h-3.5" />
-                            Add package
-                          </Button>
-                        </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-[#0d8fae]" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {editLines.map((row) => (
+                <Card
+                  key={row.clientId}
+                  className="p-6 rounded-3xl border border-[#d0eef5] bg-[#eef9fb]/80 hover:shadow-md transition-all duration-300 relative group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-bold text-[#0d8fae] tracking-tight uppercase truncate max-w-[200px]" title={row.packageName || "Untitled package"}>
+                        {row.packageName || "Untitled package"}
+                      </h3>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#0d8fae] hover:bg-[#d0eef5]/60 rounded-xl h-8 px-2.5 text-xs font-semibold gap-1"
+                          onClick={() => {
+                            setSelectedClientId(row.clientId)
+                            setIsModalOpen(true)
+                          }}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-700 rounded-xl h-8 px-2"
+                          onClick={() => handleDeletePackage(row.clientId)}
+                          title="Delete package"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Switch
+                          checked={row.applicable}
+                          onCheckedChange={(checked) => {
+                            setEditLines((prev) =>
+                              prev.map((p) =>
+                                p.clientId === row.clientId ? { ...p, applicable: checked } : p
+                              )
+                            )
+                          }}
+                          aria-label={`Toggle active state for ${row.packageName}`}
+                        />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Published: {workspace?.approvedPackages.length ?? 0} · Lines in draft: {editLines.length}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground leading-snug">
-                        Tick checkbox to mark delete. Select a row to edit. Click the same row again to discard all draft
-                        edits and go back to this initial list.
-                      </p>
-                      <ScrollArea className="h-[min(420px,50vh)] rounded-xl border bg-white">
-                        <div className="p-1 space-y-1">
-                          {editLines.map((row) => (
-                            <div
-                              key={row.clientId}
-                              className={cn(
-                                "w-full rounded-lg px-3 py-2.5 text-sm transition-colors border border-transparent",
-                                selectedClientId === row.clientId
-                                  ? "bg-[#d0eef5] border-[#00a8cc]/30 font-medium"
-                                  : "hover:bg-gray-50",
-                              )}
-                            >
-                              <div className="flex items-start gap-2">
-                                <Checkbox
-                                  checked={selectedForDelete.has(row.clientId)}
-                                  onCheckedChange={(checked) => toggleDeleteSelect(row.clientId, checked)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  aria-label={`Select ${row.packageName || "package"} for deletion`}
-                                  className="mt-0.5"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleDraftRowClick(row.clientId)}
-                                  className="flex-1 text-left"
-                                >
-                                  <div className="truncate">{row.packageName?.trim() || "(Untitled package)"}</div>
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {row.durationMinutes} min · {row.priceVnd.toLocaleString()} VND
-                                    {row.applicable ? " · On" : " · Off"}
-                                  </div>
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
                     </div>
-
-                    <div className="md:col-span-7 space-y-4">
-                      {selectedRow ? (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="pkg-name">Package name</Label>
-                            <Input
-                              id="pkg-name"
-                              value={selectedRow.packageName}
-                              onChange={(e) => updateSelected({ packageName: e.target.value })}
-                              placeholder="e.g. Annual check-up bundle"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                              <Label htmlFor="pkg-dur">Duration (minutes)</Label>
-                              <Input
-                                id="pkg-dur"
-                                type="number"
-                                min={1}
-                                max={1440}
-                                value={selectedRow.durationMinutes}
-                                onChange={(e) =>
-                                  updateSelected({
-                                    durationMinutes: Math.max(1, Number(e.target.value) || 1),
-                                  })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="pkg-price">Price (VND)</Label>
-                              <Input
-                                id="pkg-price"
-                                type="number"
-                                min={0}
-                                value={selectedRow.priceVnd}
-                                onChange={(e) =>
-                                  updateSelected({
-                                    priceVnd: Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              id="pkg-app"
-                              checked={selectedRow.applicable}
-                              onCheckedChange={(v) => updateSelected({ applicable: v })}
-                            />
-                            <Label htmlFor="pkg-app" className="cursor-pointer">
-                              Available for patients
-                            </Label>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {selectedRow.packageId
-                              ? "Includes reference id from published row."
-                              : "New row — server assigns id after approval."}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                          Select a package on the left to edit, or add a package.
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        <Button
-                          type="button"
-                          className="bg-[#00a8cc] hover:bg-[#0096b8]"
-                          onClick={handleSave}
-                          disabled={saving || loading || editLines.length === 0}
-                        >
-                          {saving ? (
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          ) : (
-                            <Save className="w-4 h-4 mr-2" />
-                          )}
-                          Save &amp; request approval
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => restoreDraftToInitial({ showToast: true })}
-                          disabled={initialDraftSnapshot.length === 0}
-                          className="gap-1"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Restore draft
-                        </Button>
+                    <div className="space-y-2.5 text-sm text-gray-600 mb-6 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-xs">Valid until:</span>
+                        <span className="text-gray-800">31/12/2026</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-xs">Package duration:</span>
+                        <span className="text-gray-800 font-semibold">{row.durationDays} days</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-xs">Package price:</span>
+                        <span className="text-[#0d8fae] font-bold text-base">
+                          {Number(row.priceVnd).toLocaleString("vi-VN")} đ
+                        </span>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-dashed border-[#d0eef5]">
+                    <div className="flex gap-1">
+                      <span className="px-2.5 py-0.5 bg-white/60 rounded-full text-[10px] font-semibold text-gray-600 border border-[#d0eef5]/30">
+                        A0
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-white/60 rounded-full text-[10px] font-semibold text-gray-600 border border-[#d0eef5]/30">
+                        B1
+                      </span>
+                    </div>
+                    <div className="flex -space-x-2 overflow-hidden">
+                      <img
+                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
+                        alt="Patient 1"
+                      />
+                      <img
+                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80"
+                        alt="Patient 2"
+                      />
+                      <img
+                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&auto=format&fit=crop&q=80"
+                        alt="Patient 3"
+                      />
+                      <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-2 ring-[#d0eef5] text-[9px] font-bold text-gray-500">
+                        +9
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleAddPackage}
+                className="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-[#0d8fae]/30 hover:border-[#0d8fae]/60 bg-white/50 hover:bg-white hover:shadow-sm transition-all duration-300 min-h-[220px] text-gray-500 hover:text-[#0d8fae] gap-2 cursor-pointer"
+              >
+                <Plus className="w-8 h-8 text-[#0d8fae]" />
+                <span className="font-bold text-sm">Add new package</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <Dialog open={isModalOpen} onOpenChange={(open) => !open && (setIsModalOpen(false), setSelectedClientId(null))}>
+        <DialogContent className="sm:max-w-[480px] rounded-3xl bg-white border border-[#d0eef5]">
+          <DialogHeader>
+            <DialogTitle className="text-[#0d8fae] font-bold text-lg flex items-center gap-2">
+              <Package className="w-5 h-5 text-[#0d8fae]" />
+              {selectedRow?.packageId ? "Edit Monitoring Package" : "Create New Monitoring Package"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedRow && (
+            <div className="space-y-4 py-3">
+              <div className="space-y-2">
+                <Label htmlFor="pkg-name" className="text-sm font-semibold text-gray-700">Package Name</Label>
+                <Input
+                  id="pkg-name"
+                  value={selectedRow.packageName}
+                  onChange={(e) => updateSelected({ packageName: e.target.value })}
+                  placeholder="e.g. 1-month monitoring package"
+                  className="rounded-xl border-gray-200 focus:border-[#0d8fae] focus:ring-1 focus:ring-[#0d8fae]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pkg-dur" className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-gray-400" /> Duration (days)
+                  </Label>
+                  <Input
+                    id="pkg-dur"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={selectedRow.durationDays}
+                    onChange={(e) =>
+                      updateSelected({
+                        durationDays: Math.max(1, Number(e.target.value) || 1),
+                      })
+                    }
+                    className="rounded-xl border-gray-200 focus:border-[#0d8fae] focus:ring-1 focus:ring-[#0d8fae]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pkg-price" className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-gray-400" /> Price (VND)
+                  </Label>
+                  <Input
+                    id="pkg-price"
+                    type="number"
+                    min={0}
+                    value={selectedRow.priceVnd}
+                    onChange={(e) =>
+                      updateSelected({
+                        priceVnd: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                      })
+                    }
+                    className="rounded-xl border-gray-200 focus:border-[#0d8fae] focus:ring-1 focus:ring-[#0d8fae]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              className="w-full bg-[#0d8fae] hover:bg-[#0b7d99] text-white rounded-xl font-semibold text-sm h-10 transition-colors"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
