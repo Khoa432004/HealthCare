@@ -21,9 +21,20 @@ function PaymentResultContent() {
       return
     }
 
-    // If payment was successful, create the appointment
+    // If payment was successful, create the appointment or package purchase
     if (payment === "success") {
-      createAppointment()
+      // Check what type of purchase is pending
+      const appointmentData = localStorage.getItem("pendingAppointment")
+      const packageData = localStorage.getItem("pendingPackagePurchase")
+
+      if (appointmentData) {
+        createAppointment()
+      } else if (packageData) {
+        createPackagePurchase()
+      } else {
+        // No pending purchase data
+        router.replace("/patient-dashboard")
+      }
     }
   }, [payment, router])
 
@@ -112,11 +123,104 @@ function PaymentResultContent() {
       // Clear the stored appointment data
       localStorage.removeItem("pendingAppointment")
 
-      // Show success and allow redirect
+      // Show success and auto-redirect after a short delay
       setError(null)
+      setTimeout(() => {
+        router.push("/patient-calendar")
+      }, 2000)
     } catch (err: any) {
       console.error("Error creating appointment:", err)
       setError(err.message || "Failed to create appointment. Please contact support.")
+    } finally {
+      setIsCreatingAppointment(false)
+    }
+  }
+
+  const createPackagePurchase = async () => {
+    try {
+      setIsCreatingAppointment(true)
+      setError(null)
+
+      // Retrieve package purchase details from localStorage
+      const packageData = localStorage.getItem("pendingPackagePurchase")
+      if (!packageData) {
+        setError("Package data not found. Please try purchasing again.")
+        setIsCreatingAppointment(false)
+        return
+      }
+
+      const data = JSON.parse(packageData)
+
+      // Extract VNPay params (if any)
+      const vnpTransactionNo = searchParams?.get("vnp_TransactionNo")
+      const vnpTxnRef = searchParams?.get("vnp_TxnRef")
+      const vnpPayDate = searchParams?.get("vnp_PayDate")
+      const vnpAmount = searchParams?.get("vnp_Amount")
+
+      // VNPay amount is multiplied by 100 in the VNPay request
+      // Fallback to stored package priceVnd if VNPay didn't provide amount
+      const totalAmount = vnpAmount ? Number(vnpAmount) / 100 : (data.priceVnd ?? null)
+
+      // Try to parse VNPay pay date to an ISO datetime if possible
+      let paymentTime = null
+      if (vnpPayDate) {
+        try {
+          // VNPay typically returns vnp_PayDate in format yyyyMMddHHmmss
+          const s = vnpPayDate
+          if (/^\d{14}$/.test(s)) {
+            const y = s.substring(0, 4)
+            const m = s.substring(4, 6)
+            const d = s.substring(6, 8)
+            const hh = s.substring(8, 10)
+            const mm = s.substring(10, 12)
+            const ss = s.substring(12, 14)
+            paymentTime = `${y}-${m}-${d}T${hh}:${mm}:${ss}+07:00`
+          }
+        } catch (err) {
+          console.warn('Failed to parse vnp_PayDate', err)
+        }
+      }
+
+      // Call the backend API to create package purchase
+      // Backend will extract patientId from JWT token in Authorization header
+      const response = await fetch(`${API_BASE_URL}/api/v1/patient-packages/purchase-from-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        body: JSON.stringify({
+          doctorId: data.doctorId,
+          packageId: data.packageId,
+          packageName: data.packageName,
+          priceVnd: data.priceVnd,
+          durationDays: data.durationDays,
+          // payment fields
+          totalAmount,
+          method: vnpTransactionNo ? "vnpay" : undefined,
+          status: vnpTransactionNo ? "paid" : undefined,
+          transactionId: vnpTransactionNo || undefined,
+          transactionRef: vnpTxnRef || undefined,
+          paymentTime: paymentTime || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to process package purchase")
+      }
+
+      // Clear the stored package data
+      localStorage.removeItem("pendingPackagePurchase")
+
+      // Show success and auto-redirect after a short delay
+      setError(null)
+      setTimeout(() => {
+        router.push("/patient-purchased-packages")
+      }, 2000)
+    } catch (err: any) {
+      console.error("Error creating package purchase:", err)
+      setError(err.message || "Failed to complete package purchase. Please contact support.")
     } finally {
       setIsCreatingAppointment(false)
     }
@@ -136,7 +240,7 @@ function PaymentResultContent() {
 
         {isCreatingAppointment && (
           <div className="p-4 rounded-md mb-4 bg-blue-50 border border-blue-200 text-blue-800">
-            Creating appointment... please wait.
+            Processing your order... please wait.
           </div>
         )}
 
@@ -148,17 +252,32 @@ function PaymentResultContent() {
 
         {!isCreatingAppointment && payment === "success" && !error && (
           <div className="p-4 rounded-md mb-4 bg-green-50 border border-green-200 text-green-800">
-            Appointment created successfully! Redirecting to dashboard...
+            {localStorage.getItem("pendingPackagePurchase")
+              ? "Package purchase completed successfully! Redirecting..."
+              : "Appointment created successfully! Redirecting to dashboard..."}
           </div>
         )}
 
         <div className="flex gap-3">
-          <Button onClick={() => router.push('/patient-dashboard')} disabled={isCreatingAppointment}>
-            Go to Dashboard
-          </Button>
-          <Button variant="outline" onClick={() => router.push('/login?redirect=%2Fpatient-dashboard')} disabled={isCreatingAppointment}>
-            Login
-          </Button>
+          {localStorage.getItem("pendingPackagePurchase") ? (
+            <>
+              <Button onClick={() => router.push('/patient-purchased-packages')} disabled={isCreatingAppointment}>
+                View My Packages
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/patient-dashboard')} disabled={isCreatingAppointment}>
+                Go to Dashboard
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => router.push('/patient-dashboard')} disabled={isCreatingAppointment}>
+                Go to Dashboard
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/login?redirect=%2Fpatient-dashboard')} disabled={isCreatingAppointment}>
+                Login
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ function PurchasedPackagesContent() {
   const router = useRouter();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPackages();
@@ -23,11 +24,13 @@ function PurchasedPackagesContent() {
 
   const loadPackages = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await patientExamPackageService.getMyPackages();
       setPackages(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading packages:", error);
+      setError(error?.message || "Failed to load packages. Please try again later.");
       setPackages([]);
     } finally {
       setLoading(false);
@@ -67,6 +70,20 @@ function PurchasedPackagesContent() {
           {/* Main Content */}
           <ScrollArea className="flex-1">
             <div className="p-6 max-w-7xl mx-auto">
+              {/* Error Message */}
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 font-medium">Error: {error}</p>
+                  <Button
+                    onClick={loadPackages}
+                    className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+                    size="sm"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="mb-8 flex gap-3">
                 <Link href="/patient-package">

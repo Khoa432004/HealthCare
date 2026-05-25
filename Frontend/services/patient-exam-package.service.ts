@@ -116,10 +116,16 @@ class PatientExamPackageService {
   /**
    * Get patient's purchased packages
    */
+  /**
+   * Get patient's purchased packages
+   */
   async getMyPackages(): Promise<any[]> {
     try {
       const response = await apiClient.get('/api/v1/patient-packages/my-packages')
-      return Array.isArray(response) ? response : response?.data || []
+
+      // Sửa như sau:
+      return unwrapData(response) as any[]
+
     } catch (error) {
       console.error('Error fetching my packages:', error)
       return []

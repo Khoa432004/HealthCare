@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { patientExamPackageService } from "@/services/patient-exam-package.service";
 import { NotificationBell } from "@/components/notification-bell";
 import { AuthGuard } from "@/components/auth-guard";
+import { API_BASE_URL } from "@/lib/api-config";
 
 function PatientPackageContent() {
   const router = useRouter();
@@ -366,18 +367,45 @@ function PackageDetailView({
   onPurchaseSuccess,
 }: PackageDetailProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePayment = async () => {
-    setIsProcessing(true);
     try {
-      // For now, just simulate payment
-      // TODO: Integrate with payment gateway (VNPay, Stripe, etc.)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      onPurchaseSuccess();
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert("Payment failed. Please try again.");
-    } finally {
+      setIsProcessing(true);
+      setError(null);
+
+      // Get access token - backend will extract patientId from JWT token
+      const accessToken = localStorage.getItem("access_token");
+      if (!accessToken) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      // Calculate order amount and info
+      const orderTotal = pkg.priceVnd; // in VND
+      const orderInfo = `Thanh toan goi kham - ${pkg.packageName} - Bac si ${doctor.name}`;
+
+      // Store pending package purchase data in localStorage
+      // Backend will extract patientId from JWT token, similar to booking calendar
+      const pendingPackagePurchase = {
+        doctorId: doctor.id,
+        packageId: pkg.packageId,
+        packageName: pkg.packageName,
+        priceVnd: pkg.priceVnd,
+        durationDays: pkg.durationDays,
+        purchaseDate: new Date().toISOString(),
+      };
+
+      localStorage.setItem("pendingPackagePurchase", JSON.stringify(pendingPackagePurchase));
+
+      // Redirect to VNPay payment gateway
+      // VNPay will redirect back to /payment-result after payment, which now handles both appointment and package purchases
+      const submitUrl = `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`;
+      const paymentUrl = `${API_BASE_URL}${submitUrl}`;
+
+      window.location.href = paymentUrl;
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setError(err?.message || "Payment failed. Please try again.");
       setIsProcessing(false);
     }
   };
@@ -407,13 +435,13 @@ function PackageDetailView({
             </div>
           </div>
 
-          {/* Main Content */}
-          <ScrollArea className="flex-1">
+          {/* Main Content with proper scrolling */}
+          <div className="flex-1 overflow-y-auto">
             <div className="p-6 max-w-4xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Package Details */}
-                <div className="lg:col-span-2">
-                  <Card className="border-0 shadow-sm mb-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <Card className="border-0 shadow-sm">
                     <CardContent className="p-6">
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">
                         {pkg.packageName}
@@ -503,9 +531,9 @@ function PackageDetailView({
                   </Card>
                 </div>
 
-                {/* Payment Summary */}
+                {/* Payment Summary - Fixed sidebar */}
                 <div>
-                  <Card className="border-0 shadow-sm sticky top-28">
+                  <Card className="border-0 shadow-sm">
                     <CardContent className="p-6">
                       <h3 className="font-semibold text-gray-900 mb-6">Order Summary</h3>
 
@@ -544,6 +572,13 @@ function PackageDetailView({
                           </span>
                         </div>
                       </div>
+
+                      {/* Error Message */}
+                      {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-sm text-red-800">{error}</p>
+                        </div>
+                      )}
 
                       {/* Payment Methods */}
                       <div className="mb-6">
@@ -600,7 +635,7 @@ function PackageDetailView({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
     </div>
