@@ -12,6 +12,7 @@ import com.example.HealthCare.enums.UserRole;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -26,6 +27,7 @@ import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "user_account")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

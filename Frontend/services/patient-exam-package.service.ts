@@ -116,16 +116,27 @@ class PatientExamPackageService {
   /**
    * Get patient's purchased packages
    */
-  /**
-   * Get patient's purchased packages
-   */
   async getMyPackages(): Promise<any[]> {
     try {
       const response = await apiClient.get('/api/v1/patient-packages/my-packages')
-
-      // Sửa như sau:
-      return unwrapData(response) as any[]
-
+      const raw = unwrapData(response) as any[]
+      if (!Array.isArray(raw)) return []
+      return raw.map(p => ({
+        id: p.id ?? p.purchasedPackageId ?? p._id ?? '',
+        packageId: p.packageId ?? '',
+        packageName: p.packageName ?? p.package_name ?? '',
+        doctorId: p.doctorId ?? p.doctor_id ?? '',
+        doctorName: p.doctorName ?? p.doctor_name ?? p.doctorFullName ?? p.doctor?.name ?? '',
+        doctorSpecialty: p.doctorSpecialty ?? p.doctor_specialty ?? p.specialty ?? p.doctor?.specialty ?? '',
+        durationDays: Number(p.durationDays ?? p.duration_days ?? 0),
+        priceVnd: Number(p.priceVnd ?? p.price_vnd ?? p.price ?? 0),
+        purchaseDate: p.purchaseDate ?? p.purchase_date ?? p.createdAt ?? '',
+        expirationDate: p.expirationDate ?? p.expiration_date ?? p.expiredAt ?? '',
+        status: p.status ?? 'pending',
+        remainingDays: Number(p.remainingDays ?? p.remaining_days ?? 0),
+        messagesRemaining: Number(p.messagesRemaining ?? p.messages_remaining ?? 0),
+        sessionsRemaining: Number(p.sessionsRemaining ?? p.sessions_remaining ?? 0),
+      }))
     } catch (error) {
       console.error('Error fetching my packages:', error)
       return []
