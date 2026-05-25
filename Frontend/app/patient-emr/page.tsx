@@ -102,6 +102,12 @@ const Index = () => {
                 Lịch sử thanh toán
               </Button>
             </Link>
+            <Link href="/patient-purchased-packages">
+              <Button className="bg-emerald-600 text-white hover:bg-emerald-700">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Gói khám của tôi
+              </Button>
+            </Link>
           </div>
           {/* Thông tin cá nhân */}
           <Card>

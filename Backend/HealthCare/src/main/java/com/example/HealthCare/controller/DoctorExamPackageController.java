@@ -1,5 +1,6 @@
 package com.example.HealthCare.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -8,14 +9,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HealthCare.dto.request.SubmitExamPackagesRequest;
+import com.example.HealthCare.dto.response.DoctorExamPackageResponse;
 import com.example.HealthCare.dto.response.ResponseSuccess;
+import com.example.HealthCare.model.DoctorExamPackage;
 import com.example.HealthCare.model.UserAccount;
+import com.example.HealthCare.repository.DoctorExamPackageRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 import com.example.HealthCare.service.DoctorExamPackageService;
 
@@ -31,6 +36,7 @@ public class DoctorExamPackageController {
 
 	private final DoctorExamPackageService doctorExamPackageService;
 	private final UserAccountRepository userAccountRepository;
+	private final DoctorExamPackageRepository doctorExamPackageRepository;
 
 	@GetMapping
 	@PreAuthorize("hasAuthority('CONFIGURE_EXAM_PACKAGE')")
@@ -48,6 +54,28 @@ public class DoctorExamPackageController {
 		return ResponseEntity.ok(new ResponseSuccess(HttpStatus.OK,
 				"Your changes have been submitted for admin approval.",
 				doctorExamPackageService.submitChanges(doctorUserId, request)));
+	}
+
+	// Public endpoint for patients to view doctor's exam packages
+	@GetMapping("/{doctorId}")
+	public ResponseEntity<List<DoctorExamPackageResponse>> getDoctorExamPackages(@PathVariable UUID doctorId) {
+		try {
+			List<DoctorExamPackage> packages = doctorExamPackageRepository.findByDoctorUserIdOrderBySortOrderAsc(doctorId);
+			List<DoctorExamPackageResponse> responses = packages.stream()
+					.map(pkg -> DoctorExamPackageResponse.builder()
+							.packageId(pkg.getId())
+							.packageName(pkg.getPackageName())
+							.durationDays(pkg.getDurationDays())
+							.priceVnd(pkg.getPriceVnd())
+							.applicable(Boolean.TRUE.equals(pkg.getApplicable()))
+							.sortOrder(pkg.getSortOrder())
+							.build())
+					.toList();
+			return ResponseEntity.ok(responses);
+		} catch (Exception e) {
+			log.error("Error fetching exam packages for doctor {}", doctorId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	private UUID getCurrentUserId() {

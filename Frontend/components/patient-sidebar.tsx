@@ -9,6 +9,7 @@ import {
   Activity,
   MessageSquare,
   HelpCircle,
+  ShoppingBag,
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
@@ -21,6 +22,7 @@ const sidebarItems = [
   { icon: MessageSquare, label: "Chats", href: "/patient-chat" },
   { icon: HelpCircle, label: "Help Centre", href: "/help" },
   { icon: FileText, label: "EMR", href: "/patient-emr" },
+  { icon: ShoppingBag, label: "Package", href: "/patient-package" },
 ]
 
 export function PatientSidebar() {
