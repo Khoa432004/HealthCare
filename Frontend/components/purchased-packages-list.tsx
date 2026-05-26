@@ -4,22 +4,16 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { patientExamPackageService } from '@/services/patient-exam-package.service'
 import {
   Clock,
-  Calendar,
   CalendarCheck,
   CalendarX,
-  CheckCircle2,
   XCircle,
   AlertTriangle,
   Package,
   Stethoscope,
-  DollarSign,
-  Timer,
   ShoppingCart,
-  Phone,
   Building2,
   MapPin,
-  User,
-  Activity,
+  CheckCircle2,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -144,18 +138,14 @@ function getStatusKey(pkg: PurchasedPackage): keyof typeof STATUS_CONFIG {
 }
 
 // ─────────────────────────────────────────────
-// Service In Use Banner — matches reference image
+// Service In Use Banner
 // ─────────────────────────────────────────────
 function ServiceInUseBanner({
   pkg,
   doctorInfo,
-  familyMode,
-  onToggleFamilyMode,
 }: {
   pkg: PurchasedPackage
   doctorInfo?: DoctorInfo | null
-  familyMode: boolean
-  onToggleFamilyMode: () => void
 }) {
   const remaining = pkg.remainingDays || calcRemainingDays(pkg.expirationDate)
   const progress = progressPercent(pkg)
@@ -173,17 +163,7 @@ function ServiceInUseBanner({
 
   const stats = [
     {
-      icon: Phone,
-      label: 'Call (From Doctor)',
-      value: `${pkg.messagesRemaining ?? 0} Mins`,
-    },
-    {
       icon: CalendarCheck,
-      label: 'Appointments',
-      value: `${pkg.sessionsRemaining ?? 0} sessions`,
-    },
-    {
-      icon: Calendar,
       label: 'Start date',
       value: formatDateShort(pkg.purchaseDate),
     },
@@ -201,34 +181,9 @@ function ServiceInUseBanner({
 
   return (
     <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      {/* Top bar: title + tabs */}
-      <div className="px-6 pt-4 pb-3 flex items-center justify-between border-b border-gray-100">
+      {/* Top bar */}
+      <div className="px-6 pt-4 pb-3 border-b border-gray-100">
         <h2 className="text-sm font-semibold text-gray-600">Service in use</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              // Nếu hàm tồn tại và chế độ family đang tắt (!familyMode), thì tiến hành gọi hàm
-              if (onToggleFamilyMode && !familyMode) {
-                onToggleFamilyMode();
-              }
-            }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${!familyMode
-              ? 'bg-white border-[#0CC8C8] text-[#007A94] shadow-sm'
-              : 'border-gray-200 text-gray-400 hover:border-gray-300'
-              }`}
-          >
-            My Package
-          </button>
-          <button
-            onClick={onToggleFamilyMode}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${familyMode
-              ? 'bg-white border-[#0CC8C8] text-[#007A94] shadow-sm'
-              : 'border-gray-200 text-gray-400 hover:border-gray-300'
-              }`}
-          >
-            My Family
-          </button>
-        </div>
       </div>
 
       {/* Inner card */}
@@ -261,22 +216,14 @@ function ServiceInUseBanner({
             </div>
           </div>
 
-          {/* Doctor avatar(s) */}
+          {/* Doctor avatar */}
           <div className="flex-shrink-0 ml-2">
-            <div className="flex -space-x-2">
-              <Avatar className="w-9 h-9 ring-2 ring-white shadow-sm">
-                <AvatarImage
-                  src={doctorInfo?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${displayName}&backgroundColor=0CC8C8&textColor=ffffff`}
-                />
-                <AvatarFallback className="bg-[#0CC8C8] text-white text-xs font-bold">{initials}</AvatarFallback>
-              </Avatar>
-              <Avatar className="w-9 h-9 ring-2 ring-white shadow-sm">
-                <AvatarImage
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${(displayName) + '2'}`}
-                />
-                <AvatarFallback className="bg-[#007A94] text-white text-xs font-bold">DR</AvatarFallback>
-              </Avatar>
-            </div>
+            <Avatar className="w-9 h-9 ring-2 ring-white shadow-sm">
+              <AvatarImage
+                src={doctorInfo?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${displayName}&backgroundColor=0CC8C8&textColor=ffffff`}
+              />
+              <AvatarFallback className="bg-[#0CC8C8] text-white text-xs font-bold">{initials}</AvatarFallback>
+            </Avatar>
           </div>
         </div>
 
@@ -308,7 +255,7 @@ function ServiceInUseBanner({
               </div>
             </div>
           )}
-          {/* Clinic stat — from fetched doctor info */}
+          {/* Clinic stat — only when present */}
           {doctorInfo?.clinic && (
             <div className="flex items-center gap-2.5 min-w-fit">
               <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -355,9 +302,9 @@ function PackageCard({
   const remaining = pkg.remainingDays || calcRemainingDays(pkg.expirationDate)
 
   const displayName = doctorInfo?.doctorName || pkg.doctorName || 'Bác sĩ'
-  const clinicName = doctorInfo?.clinic || '—'
-  const provinceName = doctorInfo?.province || '—'
-  const specialtyName = doctorInfo?.specialty || pkg.doctorSpecialty || '—'
+  const clinicName = doctorInfo?.clinic || ''
+  const provinceName = doctorInfo?.province || ''
+  const specialtyName = doctorInfo?.specialty || pkg.doctorSpecialty || ''
 
   const initials = displayName
     .split(' ')
@@ -366,13 +313,12 @@ function PackageCard({
     .join('')
     .toUpperCase()
   const formatSpecialtyText = (str: string) => {
-    if (!str || str === '—') return '';
-    const cleaned = str.replace(/[{}]/g, "").replace(/"/g, "");
-    // Thay dấu phẩy thành dấu gạch đứng hoặc dấu chấm giữa cho đẹp
-    return cleaned.split(",").map(item => item.trim()).join(" • ");
-  };
+    if (!str) return ''
+    const cleaned = str.replace(/[{}]/g, '').replace(/"/g, '')
+    return cleaned.split(',').map(item => item.trim()).filter(Boolean).join(' • ')
+  }
 
-  const cleanSpecialty = formatSpecialtyText(specialtyName);
+  const cleanSpecialty = formatSpecialtyText(specialtyName)
   return (
     <div
       onClick={() => onSelect(pkg)}
@@ -455,30 +401,34 @@ function PackageCard({
             </div>
           </div>
 
-          {/* Clinic */}
-          <div className="flex items-start gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-[#F0FBFF] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Building2 className="w-3.5 h-3.5 text-[#007A94]" />
+          {/* Clinic — only when present */}
+          {clinicName && (
+            <div className="flex items-start gap-2.5">
+              <div className="w-6 h-6 rounded-md bg-[#F0FBFF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Building2 className="w-3.5 h-3.5 text-[#007A94]" />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Clinic</p>
+                <p className="text-xs font-semibold text-gray-700">{clinicName}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Clinic</p>
-              <p className="text-xs font-semibold text-gray-700">{clinicName}</p>
-            </div>
-          </div>
+          )}
 
-          {/* Province */}
-          <div className="flex items-start gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-[#F0FBFF] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-[#007A94]" />
+          {/* Province — only when present */}
+          {provinceName && (
+            <div className="flex items-start gap-2.5">
+              <div className="w-6 h-6 rounded-md bg-[#F0FBFF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MapPin className="w-3.5 h-3.5 text-[#007A94]" />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Province</p>
+                <p className="text-xs font-semibold text-gray-700">{provinceName}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Province</p>
-              <p className="text-xs font-semibold text-gray-700">{provinceName}</p>
-            </div>
-          </div>
+          )}
 
           {/* Dates */}
-          <div className="flex items-center gap-5 pt-0.5">
+          <div className="flex items-center justify-between gap-5 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md bg-[#F0FBFF] flex items-center justify-center flex-shrink-0">
                 <CalendarCheck className="w-3.5 h-3.5 text-[#007A94]" />
@@ -497,26 +447,9 @@ function PackageCard({
                 <p className="text-xs font-semibold text-gray-800">{formatDateShort(pkg.expirationDate)}</p>
               </div>
             </div>
-          </div>
-
-          {/* Patient row */}
-          <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-            <div>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-1">Patient</p>
-              <div className="flex items-center gap-1.5">
-                <Avatar className="w-5 h-5">
-                  <AvatarFallback className="bg-gray-200 text-gray-500 text-[8px] font-bold">US</AvatarFallback>
-                </Avatar>
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-semibold">
-                  Child
-                </span>
-              </div>
-            </div>
             {isSelected && (
-              <div className="w-5 h-5 rounded-full bg-[#0CC8C8] flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="w-5 h-5 rounded-full bg-[#0CC8C8] flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
               </div>
             )}
           </div>
@@ -613,16 +546,13 @@ function SkeletonBanner() {
 interface PurchasedPackagesListProps {
   packages: PurchasedPackage[]
   loading?: boolean
-  onUsePackage?: (packageId: string) => void
 }
 
 export function PurchasedPackagesList({
   packages,
   loading,
-  onUsePackage,
 }: PurchasedPackagesListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
-  const [familyMode, setFamilyMode] = useState(false)
   // doctorInfoMap: doctorId → DoctorInfo fetched from API
   const [doctorInfoMap, setDoctorInfoMap] = useState<Record<string, DoctorInfo>>({})
 
@@ -727,8 +657,6 @@ export function PurchasedPackagesList({
         <ServiceInUseBanner
           pkg={resolvedSelected}
           doctorInfo={doctorInfoMap[resolvedSelected.doctorId] ?? null}
-          familyMode={familyMode}
-          onToggleFamilyMode={() => setFamilyMode(f => !f)}
         />
       )}
 

@@ -7,7 +7,6 @@ import {
   Calendar,
   Activity,
   MessageSquare,
-  HelpCircle,
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
@@ -18,7 +17,6 @@ const sidebarItems = [
   { icon: Calendar, label: "Calendar", href: "/calendar" },
   { icon: Activity, label: "Monitoring", href: "/monitoring" },
   { icon: MessageSquare, label: "Chats", href: "/doctor-chat" },
-  { icon: HelpCircle, label: "Help Centre", href: "/help" },
 ]
 
 export default function DoctorSidebar() {

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.HealthCare.dto.request.PurchasePackageFromPaymentRequest;
 import com.example.HealthCare.dto.response.ResponseSuccess;
 import com.example.HealthCare.dto.response.DoctorProfileDto;
@@ -134,6 +136,42 @@ public class PatientPackageController {
                     new ResponseSuccess(
                             HttpStatus.INTERNAL_SERVER_ERROR,
                             "Failed to create package purchase: " + e.getMessage(),
+                            null
+                    )
+            );
+        }
+    }
+
+    /**
+     * Get patients who currently have an active package with the authenticated doctor.
+     * Used by the doctor monitoring page to only display patients linked via active packages.
+     */
+    @GetMapping("/my-patients")
+    @PreAuthorize("hasAuthority('VIEW_APPOINTMENTS')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getMyDoctorPatients() {
+        try {
+            UUID doctorId = getCurrentUserId();
+            log.info("Fetching active package patients for doctor {}", doctorId);
+
+            List<PatientExamPackagePurchase> purchases = packagePurchaseRepository
+                    .findByDoctorIdAndStatusOrderByPurchaseDateDesc(doctorId, "active");
+
+            List<PatientExamPackagePurchaseDto> dtoList = purchases.stream()
+                    .map(this::toDto)
+                    .toList();
+
+            return ResponseEntity.ok(new ResponseSuccess(
+                    HttpStatus.OK,
+                    "Active patient packages retrieved successfully",
+                    dtoList
+            ));
+        } catch (Exception e) {
+            log.error("Error fetching doctor's active patients:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ResponseSuccess(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Failed to fetch active patient packages: " + e.getMessage(),
                             null
                     )
             );
