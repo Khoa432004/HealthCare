@@ -2,14 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { Package, Search, LogOut, User, RefreshCw } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PurchasedPackagesList } from "@/components/purchased-packages-list";
 import { patientExamPackageService } from "@/services/patient-exam-package.service";
 import { NotificationBell } from "@/components/notification-bell";
 import { AuthGuard } from "@/components/auth-guard";
+import { PageHeaderTitleRow } from "@/components/page-header-title-row";
+import { authService } from "@/services/auth.service";
 
 function PurchasedPackagesContent() {
   const router = useRouter();
@@ -17,6 +27,22 @@ function PurchasedPackagesContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null);
+
+  useEffect(() => {
+    const user = authService.getUserInfo();
+    if (user) {
+      setUserInfo({ fullName: user.fullName || "Patient", role: user.role || "PATIENT" });
+    }
+  }, []);
+
+  const getInitials = (name: string) => {
+    if (!name) return "PT";
+    const parts = name.trim().split(" ");
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : name.substring(0, 2).toUpperCase();
+  };
 
   const loadPackages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -39,72 +65,112 @@ function PurchasedPackagesContent() {
     loadPackages();
   }, [loadPackages]);
 
-  const handleUsePackage = (packageId: string) => {
-    router.push(`/patient-package?activePackage=${packageId}`);
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      router.push("/login");
+    } catch {
+      authService.clearAuthData();
+      router.push("/login");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#E8F5F1]">
-      <div className="flex h-screen">
-        <PatientSidebar />
+    <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
+      <PatientSidebar />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="sticky top-0 z-40 bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => router.back()}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5 text-gray-700" />
-                </button>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Gói khám của tôi</h1>
-                  <p className="text-xs text-gray-500 mt-0.5">Theo dõi và quản lý các gói khám đã mua</p>
-                </div>
+      {/* Main content — overflow-y-auto enables full-page scroll like dashboard */}
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: "12px" }}>
+        {/* ── Header — same style as dashboard ── */}
+        <header
+          className="bg-white py-3 mx-3 mb-3 flex-shrink-0"
+          style={{ borderRadius: "14px", paddingLeft: "24px", paddingRight: "20px" }}
+        >
+          <div className="flex items-center justify-between">
+            <PageHeaderTitleRow
+              role="patient"
+              icon={Package}
+              title="My Packages"
+              titleClassName="text-lg"
+            />
+
+            <div className="flex items-center space-x-3">
+              {/* Search */}
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                <Input
+                  type="search"
+                  placeholder="Search packages..."
+                  className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadPackages(true)}
-                  disabled={refreshing}
-                  className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
-                  Làm mới
-                </Button>
-                <NotificationBell />
-              </div>
+
+              {/* Refresh */}
+              <button
+                onClick={() => loadPackages(true)}
+                disabled={refreshing}
+                className="p-2 hover:bg-gray-50 rounded-xl transition-colors disabled:opacity-50"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`} />
+              </button>
+
+              {/* Notifications */}
+              <NotificationBell />
+
+              {/* User menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+                    <Avatar className="w-7 h-7">
+                      <AvatarImage src="/placeholder-user.jpg" />
+                      <AvatarFallback className="text-xs">
+                        {userInfo ? getInitials(userInfo.fullName) : "PT"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="text-xs font-medium">{userInfo?.fullName || "Patient"}</p>
+                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
+                    <User className="mr-2 h-3.5 w-3.5" />
+                    <span className="text-sm">My Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-3.5 w-3.5" />
+                    <span className="text-sm">Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
+        </header>
 
-          {/* Main Content */}
-          <ScrollArea className="flex-1">
-            <div className="p-6 max-w-7xl mx-auto">
-              {/* Error state */}
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between">
-                  <p className="text-red-800 text-sm font-medium">⚠️ {error}</p>
-                  <Button
-                    onClick={() => loadPackages()}
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white rounded-lg ml-4"
-                  >
-                    Thử lại
-                  </Button>
-                </div>
-              )}
-
-              {/* Packages list */}
-              <PurchasedPackagesList
-                packages={packages}
-                loading={loading}
-                onUsePackage={handleUsePackage}
-              />
+        {/* ── Main content area ── */}
+        <div className="flex-1 px-3 pb-4">
+          {/* Error banner */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between">
+              <p className="text-red-800 text-sm font-medium">⚠️ {error}</p>
+              <Button
+                onClick={() => loadPackages()}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white rounded-lg ml-4"
+              >
+                Thử lại
+              </Button>
             </div>
-          </ScrollArea>
+          )}
+
+          <PurchasedPackagesList
+            packages={packages}
+            loading={loading}
+            onUsePackage={(packageId) => router.push(`/patient-package?activePackage=${packageId}`)}
+          />
         </div>
       </div>
     </div>

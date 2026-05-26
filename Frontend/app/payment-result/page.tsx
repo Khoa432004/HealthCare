@@ -10,9 +10,16 @@ function PaymentResultContent() {
   const router = useRouter()
   const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPackagePurchase, setIsPackagePurchase] = useState(false)
 
   const payment = searchParams?.get("payment")
   const orderInfo = searchParams?.get("orderInfo")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsPackagePurchase(!!localStorage.getItem("pendingPackagePurchase"))
+    }
+  }, [])
 
   useEffect(() => {
     // If no payment param, redirect to dashboard
@@ -252,14 +259,14 @@ function PaymentResultContent() {
 
         {!isCreatingAppointment && payment === "success" && !error && (
           <div className="p-4 rounded-md mb-4 bg-green-50 border border-green-200 text-green-800">
-            {localStorage.getItem("pendingPackagePurchase")
+            {isPackagePurchase
               ? "Package purchase completed successfully! Redirecting..."
               : "Appointment created successfully! Redirecting to dashboard..."}
           </div>
         )}
 
         <div className="flex gap-3">
-          {localStorage.getItem("pendingPackagePurchase") ? (
+          {isPackagePurchase ? (
             <>
               <Button onClick={() => router.push('/patient-purchased-packages')} disabled={isCreatingAppointment}>
                 View My Packages
