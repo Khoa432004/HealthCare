@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Package, Search, LogOut, User, RefreshCw } from "lucide-react";
+import { Package, LogOut, User, ShoppingCart } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -26,7 +25,6 @@ function PurchasedPackagesContent() {
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null);
 
   useEffect(() => {
@@ -44,9 +42,8 @@ function PurchasedPackagesContent() {
       : name.substring(0, 2).toUpperCase();
   };
 
-  const loadPackages = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
+  const loadPackages = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
       const data = await patientExamPackageService.getMyPackages();
@@ -57,7 +54,6 @@ function PurchasedPackagesContent() {
       setPackages([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -95,25 +91,14 @@ function PurchasedPackagesContent() {
             />
 
             <div className="flex items-center space-x-3">
-              {/* Search */}
-              <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                <Input
-                  type="search"
-                  placeholder="Search packages..."
-                  className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm"
-                />
-              </div>
-
-              {/* Refresh */}
-              <button
-                onClick={() => loadPackages(true)}
-                disabled={refreshing}
-                className="p-2 hover:bg-gray-50 rounded-xl transition-colors disabled:opacity-50"
-                title="Refresh"
+              {/* Buy Package CTA */}
+              <Button
+                onClick={() => router.push("/patient-package")}
+                className="h-9 px-4 bg-gradient-to-r from-[#007A94] to-[#0CC8C8] hover:from-[#006080] hover:to-[#00AAAA] text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2"
               >
-                <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? "animate-spin" : ""}`} />
-              </button>
+                <ShoppingCart className="w-4 h-4" />
+                Buy Package
+              </Button>
 
               {/* Notifications */}
               <NotificationBell />
@@ -166,11 +151,7 @@ function PurchasedPackagesContent() {
             </div>
           )}
 
-          <PurchasedPackagesList
-            packages={packages}
-            loading={loading}
-            onUsePackage={(packageId) => router.push(`/patient-package?activePackage=${packageId}`)}
-          />
+          <PurchasedPackagesList packages={packages} loading={loading} />
         </div>
       </div>
     </div>

@@ -13,4 +13,5 @@ public interface PatientExamPackagePurchaseRepository extends JpaRepository<Pati
     List<PatientExamPackagePurchase> findByPatientIdOrderByPurchaseDateDesc(UUID patientId);
     List<PatientExamPackagePurchase> findByDoctorId(UUID doctorId);
     List<PatientExamPackagePurchase> findByPatientIdAndStatus(UUID patientId, String status);
+    List<PatientExamPackagePurchase> findByDoctorIdAndStatusOrderByPurchaseDateDesc(UUID doctorId, String status);
 }

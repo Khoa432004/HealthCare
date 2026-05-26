@@ -114,6 +114,37 @@ class PatientExamPackageService {
   }
 
   /**
+   * Doctor — get all patients who currently have an active package with this doctor.
+   * Backend returns a list of PatientExamPackagePurchaseDto with patient & doctor summaries.
+   */
+  async getMyActivePatients(): Promise<any[]> {
+    try {
+      const response = await apiClient.get('/api/v1/patient-packages/my-patients')
+      const raw = unwrapData(response) as any[]
+      if (!Array.isArray(raw)) return []
+      return raw.map((p: any) => ({
+        purchaseId: p.id ?? '',
+        patientId: p.patientId ?? p.patient?.id ?? '',
+        patientName: p.patient?.fullName ?? '',
+        patientEmail: p.patient?.email ?? '',
+        patientPhone: p.patient?.phoneNumber ?? '',
+        packageId: p.packageId ?? '',
+        packageName: p.packageName ?? '',
+        durationDays: Number(p.durationDays ?? 0),
+        priceVnd: Number(p.priceVnd ?? 0),
+        purchaseDate: p.purchaseDate ?? '',
+        expirationDate: p.expirationDate ?? '',
+        status: p.status ?? 'active',
+        remainingMessages: Number(p.remainingMessages ?? 0),
+        remainingSessions: Number(p.remainingSessions ?? 0),
+      }))
+    } catch (error) {
+      console.error('Error fetching doctor active patients:', error)
+      return []
+    }
+  }
+
+  /**
    * Get patient's purchased packages
    */
   async getMyPackages(): Promise<any[]> {

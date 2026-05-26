@@ -6,24 +6,15 @@ import {
   ArrowLeft,
   Search,
   MapPin,
-  Star,
   Clock,
-  MessageSquare,
-  ChevronRight,
   SlidersHorizontal,
-  Video,
-  UserCheck,
   CalendarDays,
   ArrowRight,
-  CheckCircle2,
   Calendar,
-  X,
-  LayoutDashboard,
   User,
   LogOut,
   ClipboardList,
   AlertCircle,
-  Flame,
   Lock as LockIcon
 } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
@@ -88,6 +79,8 @@ function PackageDetailView({
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmedPolicy, setIsConfirmedPolicy] = useState<boolean>(false);
+  const [isAgreedShareData, setIsAgreedShareData] = useState<boolean>(false);
 
   const handlePayment = async () => {
     try {
@@ -135,12 +128,6 @@ function PackageDetailView({
 
   const formatPrice = (amount: number) =>
     amount > 0 ? Number(amount).toLocaleString("vi-VN") + " đ" : "0 đ";
-  const [extraDays, setExtraDays] = useState<number>(0);
-  const [extraMins, setExtraMins] = useState<number>(0);
-  const [extraSessions, setExtraSessions] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<string>("VNPAY");
-  const [isConfirmedPolicy, setIsConfirmedPolicy] = useState<boolean>(false);
-  const [isAgreedShareData, setIsAgreedShareData] = useState<boolean>(false);
   return (
     <>
       {/* Main Content — rendered inside the parent's flex column */}
@@ -222,9 +209,8 @@ function PackageDetailView({
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Package information</h3>
                 <div className="border border-gray-100 rounded-xl overflow-hidden">
-                  <div className="grid grid-cols-2">
-                    {/* Row 1 */}
-                    <div className="flex items-start gap-3 p-4 border-b border-r border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-3">
+                    <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
                       <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
                         <Clock className="w-4 h-4 text-teal-600" />
                       </div>
@@ -233,7 +219,7 @@ function PackageDetailView({
                         <p className="text-sm font-bold text-gray-900">{pkg.durationDays} days</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-4 border-b border-gray-100">
+                    <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
                       <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-4 h-4 text-teal-600" />
                       </div>
@@ -242,9 +228,7 @@ function PackageDetailView({
                         <p className="text-sm font-bold text-gray-900">{formatDate()}</p>
                       </div>
                     </div>
-
-                    {/* Row 2 */}
-                    <div className="flex items-start gap-3 p-4 border-b border-r border-gray-100">
+                    <div className="flex items-start gap-3 p-4">
                       <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-4 h-4 text-teal-600" />
                       </div>
@@ -255,175 +239,7 @@ function PackageDetailView({
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-4 border-b border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Response time</p>
-                        <p className="text-sm font-bold text-gray-900"> within 24 hours</p>
-                      </div>
-                    </div>
-
-                    {/* Row 3 */}
-                    <div className="flex items-start gap-3 p-4 border-b border-r border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <MessageSquare className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Messages</p>
-                        <p className="text-sm font-bold text-gray-900">10</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-4 border-b border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <MessageSquare className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Call (from doctor)</p>
-                        <p className="text-sm font-bold text-gray-900">30 minutes</p>
-                      </div>
-                    </div>
-
-                    {/* Row 4 */}
-                    <div className="flex items-start gap-3 p-4 border-b border-r border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <SlidersHorizontal className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Monitoring frequency</p>
-                        <p className="text-sm font-bold text-gray-900">3 times per day</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-4 border-b border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <Video className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Online consultation sessions</p>
-                        <p className="text-sm font-bold text-gray-900">1</p>
-                      </div>
-                    </div>
-
-                    {/* Row 5 */}
-                    <div className="flex items-start gap-3 p-4 border-r border-gray-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                        <UserCheck className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Offline sessions</p>
-                        <p className="text-sm font-bold text-gray-900">0</p>
-                      </div>
-                    </div>
-                    <div className="p-4" />
                   </div>
-                </div>
-              </div>
-
-              {/* Add-ons */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Add-ons</h3>
-                <div className="space-y-3">
-
-                  {/* 1. Extra days */}
-                  <div className="flex items-center justify-between py-3 px-4 border border-gray-100 rounded-xl bg-white hover:border-gray-200 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                        <CalendarDays className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Extra days</p>
-                        <p className="text-xs text-gray-400">+35,000 đ/day</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* Nút giảm: Chỉ cho bấm nếu số lượng đang lớn hơn 0 */}
-                      <button
-                        onClick={() => setExtraDays(prev => Math.max(0, prev - 1))}
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none
-            ${extraDays > 0
-                            ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                            : "border-gray-100 text-gray-300 cursor-not-allowed"
-                          }`}
-                        disabled={extraDays === 0}
-                      >
-                        −
-                      </button>
-                      <span className="text-sm font-semibold text-gray-700 w-6 text-center select-none">{extraDays}</span>
-                      {/* Nút tăng */}
-                      <button
-                        onClick={() => setExtraDays(prev => prev + 1)}
-                        className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-teal-50 hover:border-teal-300 transition text-gray-500 hover:text-teal-600 text-base leading-none select-none"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 2. Extra call minutes */}
-                  <div className="flex items-center justify-between py-3 px-4 border border-gray-100 rounded-xl bg-white hover:border-gray-200 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Extra call minutes</p>
-                        <p className="text-xs text-gray-400">+3,000 đ/min</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setExtraMins(prev => Math.max(0, prev - 1))}
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none${extraMins > 0
-                          ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                          : "border-gray-100 text-gray-300 cursor-not-allowed"
-                          }`}
-                        disabled={extraMins === 0}
-                      >
-                        −
-                      </button>
-                      <span className="text-sm font-semibold text-gray-700 w-6 text-center select-none">{extraMins}</span>
-                      <button
-                        onClick={() => setExtraMins(prev => prev + 1)}
-                        className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-teal-50 hover:border-teal-300 transition text-gray-500 hover:text-teal-600 text-base leading-none select-none"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 3. Extra online consultation */}
-                  <div className="flex items-center justify-between py-3 px-4 border border-gray-100 rounded-xl bg-white hover:border-gray-200 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                        <Video className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Extra online consultation</p>
-                        <p className="text-xs text-gray-400">+50,000 đ/session</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setExtraSessions(prev => Math.max(0, prev - 1))}
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none${extraSessions > 0
-                          ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                          : "border-gray-100 text-gray-300 cursor-not-allowed"
-                          }`}
-                        disabled={extraSessions === 0}
-                      >
-                        −
-                      </button>
-                      <span className="text-sm font-semibold text-gray-700 w-6 text-center select-none">{extraSessions}</span>
-                      <button
-                        onClick={() => setExtraSessions(prev => prev + 1)}
-                        className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-teal-50 hover:border-teal-300 transition text-gray-500 hover:text-teal-600 text-base leading-none select-none"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
                 </div>
               </div>
             </div>
@@ -437,82 +253,16 @@ function PackageDetailView({
                 </div>
 
                 <div className="p-5 space-y-4">
-                  {/* Promotion Code */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-2">Promotion Code</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Code"
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-100 placeholder:text-gray-300"
-                      />
-                      <button className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Fee Breakdown */}
-                  <div className="space-y-2.5 pt-1 border-t border-gray-100">
-                    <div className="flex justify-between text-sm pt-3">
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Service fee</span>
                       <span className="font-medium text-gray-900">{formatPrice(pkg.priceVnd)}</span>
                     </div>
-
-                    {/* Supplementary fee */}
-                    <div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 flex items-center gap-1">
-                          <span className="text-gray-400 text-xs">∨</span>
-                          Supplementary fee
-                        </span>
-                        <span className="font-medium text-gray-900">0 đ</span>
-                      </div>
-                      <div className="pl-4 space-y-1 mt-1.5">
-                        {["Extra days", "Call minutes", "Online consultation", "Offline consultation"].map(
-                          (label) => (
-                            <div key={label} className="flex justify-between text-xs text-gray-400">
-                              <span>{label}</span>
-                              <span>0 đ</span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-teal-600 font-medium">Discount</span>
-                      <span className="text-teal-600 font-medium">-0 đ</span>
-                    </div>
-
-                    <div className="flex justify-between text-xs text-gray-400">
-                      <span className="flex items-center gap-1">
-                        Application fee
-                        <span className="w-3.5 h-3.5 rounded-full border border-gray-300 inline-flex items-center justify-center text-[9px] font-bold">
-                          i
-                        </span>
-                      </span>
-                      <span>0 đ</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400">
-                      <span>Tax included, where applicable</span>
-                      <span>0 đ</span>
-                    </div>
-                    <p className="text-xs text-gray-400">Includes tax + platform fee</p>
-                  </div>
-
-                  {/* Deposit Box */}
-                  <div className="border border-yellow-300 bg-yellow-50 rounded-xl p-3">
-                    <p className="text-sm font-bold text-gray-900">
-                      Deposit: {formatPrice(pkg.priceVnd)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Remaining balance due when the package starts
-                    </p>
                   </div>
 
                   {/* Total */}
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                     <span className="text-sm font-semibold text-gray-900">Total cost</span>
                     <span className="text-lg font-bold text-red-500">{formatPrice(pkg.priceVnd)}</span>
                   </div>
@@ -520,68 +270,20 @@ function PackageDetailView({
                   {/* Payment Method */}
                   <div>
                     <p className="text-sm font-bold text-gray-900 mb-3">Phương thức thanh toán</p>
-                    <div className="space-y-2.5">
-
-                      {/* 1. Lựa chọn MOMO */}
-                      <label
-                        className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 select-none ${paymentMethod === "MOMO"
-                          ? "border-teal-500 bg-teal-50/20 ring-1 ring-teal-500"
-                          : "border-gray-100 bg-white hover:bg-gray-50/80 hover:border-gray-200"
-                          }`}
-                      >
-                        <div className="flex items-center gap-3.5">
-                          {/* Khung chứa Logo MoMo chính thức */}
-                          <div className="w-10 h-10 rounded-xl bg-[#A50064] flex items-center justify-center p-1.5 shadow-sm shrink-0">
-                            <img
-                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTX_lhzXKH3YCLQx-PMJFQfjFp6q0MINsHA9Q&s"
-                              alt="MoMo Logo"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-gray-800">Ví điện tử MoMo</span>
-                            <span className="text-[11px] text-gray-400">Thanh toán qua ứng dụng MoMo</span>
-                          </div>
+                    <div className="flex items-center justify-between p-3.5 border border-teal-500 bg-teal-50/20 ring-1 ring-teal-500 rounded-xl select-none">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center p-1.5 shadow-sm shrink-0">
+                          <img
+                            src="https://dsvn.vn/images/logo-dvtt-VNP.png"
+                            alt="VNPAY Logo"
+                            className="w-full h-full object-contain"
+                          />
                         </div>
-                        <input
-                          type="radio"
-                          name="pkgPayment"
-                          checked={paymentMethod === "MOMO"}
-                          onChange={() => setPaymentMethod("MOMO")}
-                          className="accent-teal-600 w-4 h-4 cursor-pointer"
-                        />
-                      </label>
-
-                      {/* 2. Lựa chọn VNPAY */}
-                      <label
-                        className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all duration-200 select-none${paymentMethod === "VNPAY"
-                          ? "border-teal-500 bg-teal-50/20 ring-1 ring-teal-500"
-                          : "border-gray-100 bg-white hover:bg-gray-50/80 hover:border-gray-200"
-                          }`}
-                      >
-                        <div className="flex items-center gap-3.5">
-                          {/* Khung chứa Logo VNPAY chính thức */}
-                          <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center p-1.5 shadow-sm shrink-0">
-                            <img
-                              src="https://dsvn.vn/images/logo-dvtt-VNP.png"
-                              alt="VNPAY Logo"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-gray-800">Cổng thanh toán VNPAY</span>
-                            <span className="text-[11px] text-gray-400">Hỗ trợ ứng dụng ngân hàng & Thẻ ATM</span>
-                          </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-800">Cổng thanh toán VNPAY</span>
+                          <span className="text-[11px] text-gray-400">Hỗ trợ ứng dụng ngân hàng & Thẻ ATM</span>
                         </div>
-                        <input
-                          type="radio"
-                          name="pkgPayment"
-                          checked={paymentMethod === "VNPAY"}
-                          onChange={() => setPaymentMethod("VNPAY")}
-                          className="accent-teal-600 w-4 h-4 cursor-pointer"
-                        />
-                      </label>
-
+                      </div>
                     </div>
                   </div>
 
@@ -673,9 +375,10 @@ function PatientPackageContent() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [doctorsWithPackages, setDoctorsWithPackages] = useState<DoctorWithPackages[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showSurveyBanner, setShowSurveyBanner] = useState(true);
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null);
+  // doctorIds the patient currently holds an active/pending package with
+  const [blockedDoctorIds, setBlockedDoctorIds] = useState<Set<string>>(new Set());
 
   // Detail view state
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorWithPackages | null>(null);
@@ -692,6 +395,24 @@ function PatientPackageContent() {
     }
   }, []);
 
+  // Load patient's currently held packages → block buying from same doctor
+  useEffect(() => {
+    (async () => {
+      try {
+        const myPackages = await patientExamPackageService.getMyPackages();
+        const ids = new Set<string>(
+          (myPackages || [])
+            .filter((p: any) => p?.status === "active" || p?.status === "pending")
+            .map((p: any) => p?.doctorId)
+            .filter(Boolean)
+        );
+        setBlockedDoctorIds(ids);
+      } catch (err) {
+        console.error("Error loading my packages for validation:", err);
+      }
+    })();
+  }, []);
+
   // Load doctors and their packages on mount
   useEffect(() => {
     loadDoctorsWithPackages("");
@@ -704,10 +425,14 @@ function PatientPackageContent() {
 
       const doctorPromises = doctors.map(async (doctor) => {
         const packages = await patientExamPackageService.getDoctorExamPackages(doctor.id);
-        return { ...doctor, packages: packages || [] };
+        // Only keep packages that are currently active/applicable
+        const activePackages = (packages || []).filter((p) => p.applicable);
+        return { ...doctor, packages: activePackages };
       });
 
-      const doctorsData = await Promise.all(doctorPromises);
+      const allDoctors = await Promise.all(doctorPromises);
+      // Only keep doctors who have at least 1 active package
+      const doctorsData = allDoctors.filter((d) => d.packages.length > 0);
       setDoctorsWithPackages(doctorsData);
 
       const uniqueSpecialties = Array.from(
@@ -736,6 +461,7 @@ function PatientPackageContent() {
 
   // When user clicks "Select" → show detail/review screen
   const handlePackageSelect = (doctor: DoctorWithPackages, pkg: any) => {
+    if (blockedDoctorIds.has(doctor.id)) return;
     setSelectedDoctor(doctor);
     setSelectedPkg(pkg);
   };
@@ -892,72 +618,33 @@ function PatientPackageContent() {
 
             {/* Main Content */}
             <ScrollArea className="flex-1 w-full">
-              <div className="p-6 max-w-7xl mx-auto">
-                {/* Survey Banner */}
-                {showSurveyBanner && (
-                  <Card className="mb-6 border-0 bg-gradient-to-r from-blue-50 to-teal-50 shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            Chưa Biết Chọn Gói Phù Hợp?
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Which package is best suited for you? Take the quick survey then system will
-                            recommend you the packages that are right for you.
-                          </p>
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowSurveyBanner(false)}
-                          >
-                            Skip
-                          </Button>
-                          <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                            Explore now
-                          </Button>
-                        </div>
-                        <button
-                          onClick={() => setShowSurveyBanner(false)}
-                          className="p-1 hover:bg-white/50 rounded transition"
-                        >
-                          <X className="w-5 h-5 text-gray-500" />
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
+              <div className="p-4 max-w-7xl mx-auto">
                 {/* Search and Filter */}
-                <Card className="mb-8 overflow-hidden border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] bg-white rounded-2xl">
-                  <CardContent className="p-6">
-                    {/* Thanh Tìm Kiếm Hiện Đại */}
-                    <div className="relative flex items-center mb-5">
-                      <Search className="absolute left-4 w-4 h-4 text-gray-400 pointer-events-none transition-colors group-focus-within:text-teal-600" />
+                <Card className="mb-4 overflow-hidden border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] bg-white rounded-2xl">
+                  <CardContent className="p-4">
+                    {/* Search bar */}
+                    <div className="relative flex items-center mb-3">
+                      <Search className="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                       <Input
                         placeholder="Search doctors by name, specialty, or hospital..."
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="w-full pl-11 pr-4 h-12 bg-gray-50/70 border-gray-200 focus-visible:border-teal-500 focus-visible:ring-teal-500/20 rounded-xl transition-all placeholder:text-gray-400 text-sm"
+                        className="w-full pl-9 pr-3 h-9 bg-gray-50/70 border-gray-200 focus-visible:border-teal-500 focus-visible:ring-teal-500/20 rounded-lg placeholder:text-gray-400 text-sm"
                       />
                     </div>
 
-                    {/* Danh Sách Bộ Lọc Chuyên Khoa */}
+                    {/* Specialty filters */}
                     {specialties.length > 0 && (
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-400 px-0.5">
-                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 px-0.5">
+                          <SlidersHorizontal className="w-3 h-3" />
                           <span>Filter by Specialty Group</span>
                         </div>
 
-                        {/* Vùng chứa các Badge chính */}
-                        <div className="flex flex-wrap gap-3 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
-                          {/* Nút "All Catalogue" */}
+                        <div className="flex flex-wrap gap-2 max-h-[110px] overflow-y-auto pr-1 scrollbar-thin">
                           <Badge
                             variant="outline"
-                            className={`cursor-pointer px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 border select-none h-auto flex items-center
+                            className={`cursor-pointer px-3 py-1 rounded-lg text-[11px] font-medium transition-all border select-none h-auto flex items-center
                     ${selectedSpecialty === null
                                 ? "bg-teal-600 border-teal-600 text-white shadow-sm shadow-teal-600/20"
                                 : "bg-gray-50/50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -967,7 +654,6 @@ function PatientPackageContent() {
                             All Catalogue
                           </Badge>
 
-                          {/* Danh sách các nhóm chuyên khoa */}
                           {specialties.map((specialtyStr) => {
                             const isSelected = selectedSpecialty === specialtyStr;
                             const subSpecialties = parseSpecialtyTags(specialtyStr);
@@ -976,7 +662,7 @@ function PatientPackageContent() {
                               <div
                                 key={specialtyStr}
                                 onClick={() => setSelectedSpecialty(isSelected ? null : specialtyStr)}
-                                className={`cursor-pointer px-3 py-1.5 rounded-xl border transition-all duration-200 select-none flex items-center gap-1.5 text-xs font-medium
+                                className={`cursor-pointer px-2.5 py-1 rounded-lg border transition-all select-none flex items-center gap-1 text-[11px] font-medium
                         ${isSelected
                                     ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm shadow-teal-600/5 ring-1 ring-teal-500"
                                     : "bg-gray-50/50 border-gray-200 text-gray-600 hover:bg-teal-50/30 hover:border-teal-200 hover:text-teal-600"
@@ -1006,223 +692,156 @@ function PatientPackageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Specialists count & sort */}
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                {/* Specialists count */}
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-gray-700">
                     Our Specialists ({filteredDoctors.length})
                   </h2>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Sort:</span>
-                    <select className="text-sm border border-gray-200 rounded px-3 py-1 bg-white">
-                      <option>Relative</option>
-                      <option>Most Popular</option>
-                      <option>Lowest Price</option>
-                      <option>Highest Rating</option>
-                    </select>
-                  </div>
                 </div>
 
                 {/* Doctors with Packages */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {loading ? (
                     <div className="text-center py-12 text-gray-500">
                       Loading doctors and packages...
                     </div>
                   ) : filteredDoctors && filteredDoctors.length > 0 ? (
-                    filteredDoctors.map((doctor) => (
-                      <Card key={doctor.id} className="border-0 shadow-sm overflow-hidden">
-                        <CardContent className="p-6">
+                    filteredDoctors.map((doctor) => {
+                      const isBlocked = blockedDoctorIds.has(doctor.id);
+                      return (
+                      <Card key={doctor.id} className="border-0 shadow-sm overflow-hidden rounded-2xl">
+                        <CardContent className="p-4">
                           {/* Doctor Info Header */}
-                          <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-200">
-                            <Avatar className="w-20 h-20 flex-shrink-0">
+                          <div className="flex items-start gap-3 mb-4 pb-4 border-b border-gray-100">
+                            <Avatar className="w-14 h-14 flex-shrink-0">
                               <AvatarImage
-                                src={
-                                  // doctor.avatarUrl ||
-                                  `https://api.dicebear.com/7.x/initials/svg?seed=${doctor.name}&backgroundColor=0CC8C8&textColor=ffffff`
-                                }
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${doctor.name}&backgroundColor=0CC8C8&textColor=ffffff`}
                                 alt={doctor.name}
                                 className="object-cover"
                               />
-                              <AvatarFallback className="bg-teal-600 text-white text-lg">
+                              <AvatarFallback className="bg-teal-600 text-white text-sm">
                                 {doctor.name?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-lg text-gray-900">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-semibold text-base text-gray-900">
                                   {doctor.name}
                                 </h3>
-                                {doctor.rating && (
-                                  <Badge className="relative overflow-visible bg-gradient-to-r from-amber-50 to-orange-50 text-orange-700 border border-orange-200/60 py-1 pl-6 pr-2.5 rounded-xl shadow-[0_2px_10px_rgba(249,115,22,0.08)] text-[11px] font-bold select-none">
-                                    <span className="absolute -left-1.5 -top-1 text-sm filter drop-shadow-[0_2px_4px_rgba(249,115,22,0.4)] animate-bounce [animation-duration:2s]">
-                                      🔥
-                                    </span>
-                                    <span>Most Popular</span>
-                                  </Badge>
+                                {isBlocked && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <AlertCircle className="w-2.5 h-2.5" />
+                                    Đang sử dụng gói của bác sĩ này
+                                  </span>
                                 )}
                               </div>
                               {doctor.specialty && (
-                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                <div className="flex flex-wrap gap-1 mb-1.5">
                                   {parseSpecialtyTags(doctor.specialty).map((spec: string, idx: number) => (
                                     <span
                                       key={idx}
-                                      className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-teal-50 text-teal-700 border border-teal-100/80 select-none tracking-wide"
+                                      className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100/80 select-none"
                                     >
                                       {spec}
                                     </span>
                                   ))}
                                 </div>
                               )}
-                              <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                                {doctor.clinic && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="w-4 h-4 text-teal-600" />
-                                    {doctor.clinic}
-                                  </span>
-                                )}
-                                {doctor.experience && (
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4 text-teal-600" />
-                                    {doctor.experience}
-                                  </span>
-                                )}
-                                {doctor.rating && (
-                                  <span className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                                    {doctor.rating} ({doctor.reviews} reviews)
-                                  </span>
-                                )}
-                              </div>
+                              {doctor.clinic && (
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                                  {doctor.clinic}
+                                </div>
+                              )}
                             </div>
-                            <Button variant="ghost" className="text-teal-600">
-                              View All <ChevronRight className="w-4 h-4 ml-1" />
-                            </Button>
                           </div>
 
                           {/* Packages Grid */}
                           {doctor.packages && doctor.packages.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {doctor.packages.map((pkg: any) => (
                                 <div
                                   key={pkg.packageId}
-                                  className="group relative flex flex-col justify-between overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_16px_32px_-4px_rgba(0,0,0,0.06)] hover:border-teal-500/30 transition-all duration-300"
+                                  className="group relative flex flex-col justify-between overflow-hidden bg-white border border-gray-100 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.06)] hover:border-teal-500/30 transition-all duration-300"
                                 >
-                                  {/* Thanh accent line gradient xuất hiện mượt mà khi hover */}
-                                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-teal-500 via-teal-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-teal-500 via-teal-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                                  {/* 1. Phần Nội dung chính (Body) */}
-                                  <div className="p-6 pb-4">
-                                    {/* Header của gói */}
-                                    <div className="flex items-center gap-3 mb-5">
-                                      <div className="p-2 bg-teal-50 rounded-xl text-teal-600 transition-colors group-hover:bg-teal-600 group-hover:text-white duration-300">
-                                        <Calendar className="w-4 h-4" />
+                                  <div className="p-3.5 pb-2">
+                                    {/* Package name */}
+                                    <div className="mb-3">
+                                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                                        Gói tư vấn
+                                      </span>
+                                      <p className="text-sm font-bold text-gray-900 truncate">
+                                        {pkg.packageName || `Gói ${pkg.durationDays} ngày`}
+                                      </p>
+                                    </div>
+
+                                    {/* Duration */}
+                                    <div className="flex items-center gap-2 mb-3 py-2 border-t border-gray-50">
+                                      <div className="p-1.5 bg-teal-50 rounded-lg text-teal-600">
+                                        <Calendar className="w-3.5 h-3.5" />
                                       </div>
                                       <div>
-                                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
-                                          Gói tư vấn
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                                          Thời hạn
                                         </span>
-                                        <p className="text-sm font-bold text-gray-800">
+                                        <p className="text-xs font-bold text-gray-800">
                                           {pkg.durationDays} ngày
                                         </p>
                                       </div>
                                     </div>
 
-                                    {/* Phần hiển thị Giá cả */}
-                                    <div className="mb-5 pt-3 border-t border-gray-50">
-                                      <p className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">
+                                    {/* Price */}
+                                    <div className="pt-2 border-t border-gray-50">
+                                      <p className="text-[10px] text-gray-400 font-bold mb-0.5 uppercase tracking-wider">
                                         Giá dịch vụ
                                       </p>
                                       <div className="flex items-baseline gap-1">
-                                        <span className="text-lg font-bold text-gray-900 tracking-tight transition-colors group-hover:text-teal-600 duration-200">
+                                        <span className="text-base font-bold text-gray-900 tracking-tight transition-colors group-hover:text-teal-600 duration-200">
                                           {Number(pkg.priceVnd).toLocaleString("vi-VN")}
                                         </span>
-                                        <span className="text-[10px] font-medium text-gray-400 align-baseline">
-                                          đ
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* Khu vực Các tính năng đi kèm (Features) */}
-                                    <div className="space-y-3.5 bg-gray-50/60 rounded-2xl p-4 border border-gray-100/50">
-                                      <div className="flex items-start gap-3">
-                                        <div className="p-1.5 bg-teal-50 border border-teal-100/40 rounded-lg text-teal-600 flex-shrink-0 mt-0.5">
-                                          <MessageSquare className="w-3.5 h-3.5" />
-                                        </div>
-                                        <div>
-                                          <span className="text-[11px] text-gray-400 block font-medium">
-                                            Trao đổi tin nhắn
-                                          </span>
-                                          <p className="text-xs font-semibold text-gray-700">
-                                            3 cuộc trao đổi
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-start gap-3">
-                                        <div className="p-1.5 bg-teal-50 border border-teal-100/40 rounded-lg text-teal-600 flex-shrink-0 mt-0.5">
-                                          <Clock className="w-3.5 h-3.5" />
-                                        </div>
-                                        <div>
-                                          <span className="text-[11px] text-gray-400 block font-medium">
-                                            Thời gian phản hồi
-                                          </span>
-                                          <p className="text-xs font-semibold text-gray-700">
-                                            Trong 12 giờ
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {/* Trạng thái Kênh tương tác Online/Offline */}
-                                      <div className="grid grid-cols-2 gap-2 mt-2 pt-3 border-t border-gray-200/50">
-                                        <div className="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-gray-100 rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                          <Video className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-                                          <span className="text-[11px] font-semibold text-gray-700">
-                                            1 Online
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-gray-100 rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                          <UserCheck className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                                          <span className="text-[11px] font-medium text-gray-400">
-                                            0 Offline
-                                          </span>
-                                        </div>
+                                        <span className="text-[10px] font-medium text-gray-400">đ</span>
                                       </div>
                                     </div>
                                   </div>
 
-                                  {/* 2. Phần Chân thẻ (Footer với CTA & Highlights) */}
-                                  <div className="p-6 pt-2 mt-auto border-t border-gray-50 bg-gradient-to-b from-transparent to-gray-50/30">
-                                    {pkg.deviceName && (
-                                      <div className="mb-4">
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-teal-50/50 text-teal-700 border-teal-100/80 hover:bg-teal-100/60 font-medium text-[11px] px-2.5 py-0.5 rounded-md"
-                                        >
-                                          ⚡️ {pkg.deviceName}
-                                        </Badge>
-                                      </div>
-                                    )}
-
-                                    {/* Nút hành động chính */}
+                                  <div className="p-3.5 pt-1.5 mt-auto border-t border-gray-50 bg-gradient-to-b from-transparent to-gray-50/30">
                                     <Button
                                       onClick={() => handlePackageSelect(doctor, pkg)}
-                                      className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-xl shadow-sm shadow-teal-700/10 hover:shadow-md hover:shadow-teal-700/20 transition-all duration-200 flex items-center justify-center gap-2 group/btn"
+                                      disabled={isBlocked}
+                                      title={
+                                        isBlocked
+                                          ? "Bạn đang sử dụng gói của bác sĩ này, không thể mua thêm"
+                                          : undefined
+                                      }
+                                      className="w-full h-9 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg shadow-sm shadow-teal-700/10 hover:shadow-md hover:shadow-teal-700/20 transition-all duration-200 flex items-center justify-center gap-1.5 group/btn disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200"
                                     >
-                                      <span>Chọn gói dịch vụ</span>
-                                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                                      {isBlocked ? (
+                                        <>
+                                          <LockIcon className="w-3.5 h-3.5 opacity-70" />
+                                          <span>Đang dùng gói</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>Chọn gói dịch vụ</span>
+                                          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                                        </>
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <div className="text-center py-6 text-gray-500">
+                            <div className="text-center py-4 text-sm text-gray-500">
                               No packages available for this doctor
                             </div>
                           )}
                         </CardContent>
                       </Card>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-12 text-gray-500">No doctors found</div>
                   )}
