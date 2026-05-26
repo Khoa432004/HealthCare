@@ -23,6 +23,7 @@ import {
   LogOut,
   ClipboardList,
   AlertCircle,
+  Flame,
   Lock as LockIcon
 } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
@@ -164,7 +165,6 @@ function PackageDetailView({
                 <div className="text-right">
                   <p className="text-xs text-gray-400">Buy date</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    <span className="font-normal text-gray-500">Buy date </span>
                     <strong>{formatDate()}</strong>
                   </p>
                 </div>
@@ -374,10 +374,9 @@ function PackageDetailView({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setExtraMins(prev => Math.max(0, prev - 1))}
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none
-            ${extraMins > 0
-                            ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                            : "border-gray-100 text-gray-300 cursor-not-allowed"
+                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none${extraMins > 0
+                          ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                          : "border-gray-100 text-gray-300 cursor-not-allowed"
                           }`}
                         disabled={extraMins === 0}
                       >
@@ -407,10 +406,9 @@ function PackageDetailView({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setExtraSessions(prev => Math.max(0, prev - 1))}
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none
-            ${extraSessions > 0
-                            ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                            : "border-gray-100 text-gray-300 cursor-not-allowed"
+                        className={`w-7 h-7 rounded-lg border flex items-center justify-center transition text-base leading-none select-none${extraSessions > 0
+                          ? "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                          : "border-gray-100 text-gray-300 cursor-not-allowed"
                           }`}
                         disabled={extraSessions === 0}
                       >
@@ -1038,7 +1036,12 @@ function PatientPackageContent() {
                           <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-200">
                             <Avatar className="w-20 h-20 flex-shrink-0">
                               <AvatarImage
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`}
+                                src={
+                                  // doctor.avatarUrl ||
+                                  `https://api.dicebear.com/7.x/initials/svg?seed=${doctor.name}&backgroundColor=0CC8C8&textColor=ffffff`
+                                }
+                                alt={doctor.name}
+                                className="object-cover"
                               />
                               <AvatarFallback className="bg-teal-600 text-white text-lg">
                                 {doctor.name?.charAt(0)}
@@ -1047,11 +1050,14 @@ function PatientPackageContent() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold text-lg text-gray-900">
-                                  {doctor.title} {doctor.name}
+                                  {doctor.name}
                                 </h3>
                                 {doctor.rating && (
-                                  <Badge className="bg-amber-100 text-amber-800 border-0">
-                                    Most Popular
+                                  <Badge className="relative overflow-visible bg-gradient-to-r from-amber-50 to-orange-50 text-orange-700 border border-orange-200/60 py-1 pl-6 pr-2.5 rounded-xl shadow-[0_2px_10px_rgba(249,115,22,0.08)] text-[11px] font-bold select-none">
+                                    <span className="absolute -left-1.5 -top-1 text-sm filter drop-shadow-[0_2px_4px_rgba(249,115,22,0.4)] animate-bounce [animation-duration:2s]">
+                                      🔥
+                                    </span>
+                                    <span>Most Popular</span>
                                   </Badge>
                                 )}
                               </div>
@@ -1205,22 +1211,6 @@ function PatientPackageContent() {
                                       <span>Chọn gói dịch vụ</span>
                                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
                                     </Button>
-
-                                    {/* Quyền lợi cốt lõi dưới cùng */}
-                                    <div className="mt-4 space-y-2.5 pt-3 border-t border-gray-100">
-                                      <div className="flex items-center gap-2">
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-                                        <span className="text-[11px] font-medium text-gray-500">
-                                          Tư vấn chuyên sâu cùng bác sĩ
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-                                        <span className="text-[11px] font-medium text-gray-500">
-                                          Hỗ trợ theo dõi sức khỏe liên tục
-                                        </span>
-                                      </div>
-                                    </div>
                                   </div>
                                 </div>
                               ))}
