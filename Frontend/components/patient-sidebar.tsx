@@ -8,6 +8,7 @@ import {
   FileText,
   MessageSquare,
   ShoppingBag,
+  Activity,
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
@@ -17,6 +18,7 @@ const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/patient-dashboard" },
   { icon: Calendar, label: "My Calendar", href: "/patient-calendar" },
   { icon: FileText, label: "EMR", href: "/patient-emr" },
+  { icon: Activity, label: "Metrics", href: "/health-tracking" },
   { icon: ShoppingBag, label: "Package", href: "/patient-purchased-packages" },
   { icon: MessageSquare, label: "Chat", href: "/patient-chat" },
 ]
