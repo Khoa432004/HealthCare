@@ -194,22 +194,34 @@ export default function PrescriptionDetail() {
 
     // === 2. GỌI GOOGLE IMAGE SEARCH API ===
     try {
-      const imageRes = await fetch(
-        `https://www.googleapis.com/customsearch/v1?key=AIzaSyC20kSptZrjxPuDfP0lQJNvlksFxaW3wJ4&cx=55f84a4d793454627&searchType=image&q=${encodeURIComponent(drugName)}&num=1`
-      )
-      const imageData = await imageRes.json()
+      setLoadingImage(true); // Bắt đầu xoay vòng
+
+      const imageRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=AIzaSyCC4C_jICObaT-khPiTouuPVV6hVvmuwcQ&cx=55f84a4d793454627&searchType=image&q=${encodeURIComponent(drugName)}&num=1`);
+      const imageData = await imageRes.json();
+
+      // Bắt lỗi trực tiếp từ cấu trúc JSON của Google
+      if (imageData.error) {
+        console.error("Google API Error Details:", imageData.error.message);
+        setDrugImage(null);
+        setLoadingImage(false); // 🌟 PHẢI TẮT LOADING Ở ĐÂY TRƯỚC KHI RETURN
+        return;
+      }
+
+      // Nếu chạy đến đây tức là API thành công, tắt loading được luôn rồi
+      setLoadingImage(false);
 
       if (imageData.items && imageData.items.length > 0) {
-        const imageUrl = imageData.items[0].link
-        setDrugImage(imageUrl)
+        // Ưu tiên lấy thumbnailLink của Google để tránh lỗi CORS khi hiển thị thẻ <img>
+        const imageUrl = imageData.items[0].image?.thumbnailLink || imageData.items[0].link;
+        setDrugImage(imageUrl);
       } else {
-        setDrugImage(null)
+        setDrugImage(null);
       }
+
     } catch (err) {
-      console.error("Google Image API Error:", err)
-      setDrugImage(null)
-    } finally {
-      setLoadingImage(false)
+      console.error("Network Error:", err);
+      setDrugImage(null);
+      setLoadingImage(false); // Tắt loading khi dính lỗi mạng
     }
   }
 
