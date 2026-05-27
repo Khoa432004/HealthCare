@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { apiClient } from "@/lib/api-client"
-import { API_ENDPOINTS } from "@/lib/api-config"
+import { API_BASE_URL, API_ENDPOINTS } from "@/lib/api-config"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -192,22 +192,24 @@ export default function PrescriptionDetail() {
       setLoadingDrug(false)
     }
 
-    // === 2. GỌI GOOGLE IMAGE SEARCH API ===
+    // === 2. GỌI GOOGLE IMAGE SEARCH QUA BACKEND PROXY ===
     try {
-      setLoadingImage(true); // Bắt đầu xoay vòng
+      setLoadingImage(true);
 
-      const imageRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&cx=${process.env.NEXT_PUBLIC_GOOGLE_SEARCH_ENGINE_ID}&searchType=image&q=${encodeURIComponent(drugName)}&num=1`);
+      // Gọi backend — key & CX được giữ an toàn trong .env của server
+      const imageRes = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.DRUG.IMAGE_SEARCH(drugName)}`
+      );
       const imageData = await imageRes.json();
 
-      // Bắt lỗi trực tiếp từ cấu trúc JSON của Google
+      // Bắt lỗi trực tiếp từ cấu trúc JSON của Google (được backend forward về)
       if (imageData.error) {
         console.error("Google API Error Details:", imageData.error.message);
         setDrugImage(null);
-        setLoadingImage(false); // 🌟 PHẢI TẮT LOADING Ở ĐÂY TRƯỚC KHI RETURN
+        setLoadingImage(false);
         return;
       }
 
-      // Nếu chạy đến đây tức là API thành công, tắt loading được luôn rồi
       setLoadingImage(false);
 
       if (imageData.items && imageData.items.length > 0) {
@@ -221,7 +223,7 @@ export default function PrescriptionDetail() {
     } catch (err) {
       console.error("Network Error:", err);
       setDrugImage(null);
-      setLoadingImage(false); // Tắt loading khi dính lỗi mạng
+      setLoadingImage(false);
     }
   }
 
