@@ -196,7 +196,7 @@ export default function PrescriptionDetail() {
     try {
       setLoadingImage(true); // Bắt đầu xoay vòng
 
-      const imageRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=AIzaSyCC4C_jICObaT-khPiTouuPVV6hVvmuwcQ&cx=55f84a4d793454627&searchType=image&q=${encodeURIComponent(drugName)}&num=1`);
+      const imageRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&cx=${process.env.NEXT_PUBLIC_GOOGLE_SEARCH_ENGINE_ID}&searchType=image&q=${encodeURIComponent(drugName)}&num=1`);
       const imageData = await imageRes.json();
 
       // Bắt lỗi trực tiếp từ cấu trúc JSON của Google
