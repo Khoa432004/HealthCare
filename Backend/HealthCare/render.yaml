@@ -109,7 +109,7 @@ services:
       - key: GOOGLE_API_KEY
         sync: false
       - key: GOOGLE_MODEL_ID
-        value: gemini-flash-latest
+        value: gemini-1.5-flash
 
       # ---- Server / Profile ----
       - key: SERVER_PORT
