@@ -46,7 +46,9 @@ const roleBasedRoutes = {
     '/health-tracking',
     '/prescription',
     '/submitOrder',
-    '/patient-payment-history'
+    '/patient-payment-history',
+    '/patient-package',
+    '/patient-purchased-packages',
   ],
 }
 

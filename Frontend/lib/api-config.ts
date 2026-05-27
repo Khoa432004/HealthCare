@@ -80,6 +80,9 @@ export const API_ENDPOINTS = {
   AI: {
     CHAT: '/api/ai/chat',
   },
+  DRUG: {
+    IMAGE_SEARCH: (drugName: string) => `/api/drug-image?q=${encodeURIComponent(drugName)}`,
+  },
   ICD: {
     SEARCH: (q: string) => `/api/icd/search?q=${encodeURIComponent(q)}`,
     MEDICATIONS: (icdCode: string) => `/api/icd/${encodeURIComponent(icdCode)}/medications`,

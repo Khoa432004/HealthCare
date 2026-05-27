@@ -27,10 +27,11 @@ import com.example.HealthCare.enums.ChatMessageType;
 import com.example.HealthCare.enums.UserRole;
 import com.example.HealthCare.model.ChatMessage;
 import com.example.HealthCare.model.ChatThread;
+import com.example.HealthCare.model.PatientExamPackagePurchase;
 import com.example.HealthCare.model.UserAccount;
-import com.example.HealthCare.repository.AppointmentRepository;
 import com.example.HealthCare.repository.ChatMessageRepository;
 import com.example.HealthCare.repository.ChatThreadRepository;
+import com.example.HealthCare.repository.PatientExamPackagePurchaseRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -44,8 +45,10 @@ public class ChatMessagingService {
 	private final ChatThreadRepository chatThreadRepository;
 	private final ChatMessageRepository chatMessageRepository;
 	private final UserAccountRepository userAccountRepository;
-	private final AppointmentRepository appointmentRepository;
+	private final PatientExamPackagePurchaseRepository packagePurchaseRepository;
 	private final ChatRealtimeService chatRealtimeService;
+
+	private static final String ACTIVE_STATUS = "active";
 
 	@Transactional
 	public UUID sendMessage(UUID currentUserId, SendChatMessageRequest request) {
@@ -53,11 +56,20 @@ public class ChatMessagingService {
 		if (receiverId.equals(currentUserId)) {
 			throw new IllegalArgumentException("Cannot message yourself");
 		}
+		UserAccount sender = userAccountRepository.findByIdAndIsDeletedFalse(currentUserId)
+				.orElseThrow(() -> new IllegalArgumentException("Sender not found"));
 		UserAccount receiver = userAccountRepository.findByIdAndIsDeletedFalse(receiverId)
 				.orElseThrow(() -> new IllegalArgumentException("Receiver not found"));
 
 		if (receiver.getStatus() != AccountStatus.ACTIVE) {
 			throw new IllegalArgumentException("Receiver account is not active");
+		}
+
+		// Chat between patient and doctor requires an active package between them.
+		// Admin support chats (sender or receiver = ADMIN) are always allowed.
+		if (!hasAllowedChatRelation(sender, receiver)) {
+			throw new IllegalArgumentException(
+					"Bạn chỉ có thể nhắn tin với bác sĩ/bệnh nhân đang có gói dịch vụ active.");
 		}
 
 		ChatThread thread = chatThreadRepository.findBetweenUsers(currentUserId, receiverId)
@@ -141,27 +153,51 @@ public class ChatMessagingService {
 			return peersForDoctor(currentUserId);
 		}
 		if (role == UserRole.PATIENT) {
-			return peersForPatient();
+			return peersForPatient(currentUserId);
 		}
-		return peersDoctorsForPatientOrAdmin();
+		// ADMIN (or unknown) → keep current behaviour of seeing all doctors for support
+		return peersDoctorsForAdmin();
 	}
 
-	/** Bệnh nhân: admin (hỗ trợ) trước, sau đó danh sách bác sĩ. */
-	private List<ChatPeerDto> peersForPatient() {
+	/** Bệnh nhân: admin (hỗ trợ) + các bác sĩ đang có gói active với bệnh nhân này. */
+	private List<ChatPeerDto> peersForPatient(UUID patientId) {
 		List<ChatPeerDto> admins = userAccountRepository.findAllByRoleAndStatusAndIsDeletedFalse(UserRole.ADMIN, AccountStatus.ACTIVE)
 				.stream()
 				.map(this::toPeerDto)
 				.filter(Objects::nonNull)
 				.sorted(Comparator.comparing(ChatPeerDto::getFullName, String.CASE_INSENSITIVE_ORDER))
 				.toList();
-		List<ChatPeerDto> doctors = peersDoctorsForPatientOrAdmin();
+
+		List<UUID> doctorIds = packagePurchaseRepository.findByPatientIdAndStatus(patientId, ACTIVE_STATUS)
+				.stream()
+				.map(PatientExamPackagePurchase::getDoctorId)
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+
+		List<ChatPeerDto> doctors = List.of();
+		if (!doctorIds.isEmpty()) {
+			Map<UUID, UserAccount> map = userAccountRepository.findAllById(doctorIds).stream()
+					.filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()))
+					.filter(u -> u.getStatus() == AccountStatus.ACTIVE)
+					.collect(Collectors.toMap(UserAccount::getId, u -> u));
+			doctors = doctorIds.stream()
+					.map(map::get)
+					.filter(Objects::nonNull)
+					.map(this::toPeerDto)
+					.filter(Objects::nonNull)
+					.sorted(Comparator.comparing(ChatPeerDto::getFullName, String.CASE_INSENSITIVE_ORDER))
+					.toList();
+		}
+
 		List<ChatPeerDto> out = new ArrayList<>(admins.size() + doctors.size());
 		out.addAll(admins);
 		out.addAll(doctors);
 		return out;
 	}
 
-	private List<ChatPeerDto> peersDoctorsForPatientOrAdmin() {
+	/** Admin fallback: full doctor list (giữ hành vi cũ cho admin support). */
+	private List<ChatPeerDto> peersDoctorsForAdmin() {
 		return userAccountRepository.findAllByRoleAndStatusAndIsDeletedFalse(UserRole.DOCTOR, AccountStatus.ACTIVE)
 				.stream()
 				.map(this::toPeerDto)
@@ -170,6 +206,7 @@ public class ChatMessagingService {
 				.toList();
 	}
 
+	/** Bác sĩ: admin + các bệnh nhân đang có gói active với bác sĩ này. */
 	private List<ChatPeerDto> peersForDoctor(UUID doctorId) {
 		List<ChatPeerDto> admins = userAccountRepository.findAllByRoleAndStatusAndIsDeletedFalse(UserRole.ADMIN, AccountStatus.ACTIVE)
 				.stream()
@@ -178,11 +215,19 @@ public class ChatMessagingService {
 				.sorted(Comparator.comparing(ChatPeerDto::getFullName, String.CASE_INSENSITIVE_ORDER))
 				.toList();
 
-		List<UUID> patientIds = appointmentRepository.findDistinctPatientIdsByDoctorId(doctorId);
+		List<UUID> patientIds = packagePurchaseRepository
+				.findByDoctorIdAndStatusOrderByPurchaseDateDesc(doctorId, ACTIVE_STATUS)
+				.stream()
+				.map(PatientExamPackagePurchase::getPatientId)
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+
 		List<ChatPeerDto> patients = List.of();
 		if (!patientIds.isEmpty()) {
 			Map<UUID, UserAccount> map = userAccountRepository.findAllById(patientIds).stream()
 					.filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()))
+					.filter(u -> u.getStatus() == AccountStatus.ACTIVE)
 					.collect(Collectors.toMap(UserAccount::getId, u -> u));
 			patients = patientIds.stream()
 					.map(map::get)
@@ -196,6 +241,35 @@ public class ChatMessagingService {
 		out.addAll(admins);
 		out.addAll(patients);
 		return out;
+	}
+
+	/**
+	 * Patient ↔ Doctor: chỉ cho chat khi có ít nhất 1 gói status="active" giữa hai bên.
+	 * Admin được phép chat với mọi role (support).
+	 */
+	private boolean hasAllowedChatRelation(UserAccount sender, UserAccount receiver) {
+		UserRole sRole = sender.getRole();
+		UserRole rRole = receiver.getRole();
+		if (sRole == null || rRole == null) {
+			return false;
+		}
+		if (sRole == UserRole.ADMIN || rRole == UserRole.ADMIN) {
+			return true;
+		}
+		final UUID patientId;
+		final UUID doctorId;
+		if (sRole == UserRole.PATIENT && rRole == UserRole.DOCTOR) {
+			patientId = sender.getId();
+			doctorId = receiver.getId();
+		} else if (sRole == UserRole.DOCTOR && rRole == UserRole.PATIENT) {
+			patientId = receiver.getId();
+			doctorId = sender.getId();
+		} else {
+			return false;
+		}
+		return packagePurchaseRepository.findByPatientIdAndStatus(patientId, ACTIVE_STATUS)
+				.stream()
+				.anyMatch(p -> doctorId.equals(p.getDoctorId()));
 	}
 
 	private ChatPeerDto toPeerDto(UserAccount u) {

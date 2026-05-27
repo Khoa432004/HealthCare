@@ -6,9 +6,8 @@ import {
   LayoutDashboard,
   Calendar,
   FileText,
-  Activity,
   MessageSquare,
-  HelpCircle,
+  ShoppingBag,
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
@@ -17,11 +16,12 @@ import { useSidebarExpanded } from "@/hooks/use-sidebar-expanded"
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/patient-dashboard" },
   { icon: Calendar, label: "My Calendar", href: "/patient-calendar" },
-  { icon: Activity, label: "Metrics", href: "/health-tracking" },
-  { icon: MessageSquare, label: "Chats", href: "/patient-chat" },
-  { icon: HelpCircle, label: "Help Centre", href: "/help" },
   { icon: FileText, label: "EMR", href: "/patient-emr" },
+  { icon: ShoppingBag, label: "Package", href: "/patient-purchased-packages" },
+  { icon: MessageSquare, label: "Chat", href: "/patient-chat" },
 ]
+
+const PACKAGE_RELATED_PATHS = ["/patient-purchased-packages", "/patient-package"]
 
 export function PatientSidebar() {
   const pathname = usePathname()
@@ -68,6 +68,8 @@ export function PatientSidebar() {
             pathname === item.href ||
             (item.href === "/patient-dashboard" &&
               (pathname === "/patient-profile" || pathname === "/settings")) ||
+            (item.href === "/patient-purchased-packages" &&
+              PACKAGE_RELATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) ||
             (item.href !== "/patient-dashboard" && pathname.startsWith(item.href + "/"))
 
           return (

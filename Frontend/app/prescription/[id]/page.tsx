@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { apiClient } from "@/lib/api-client"
-import { API_ENDPOINTS } from "@/lib/api-config"
+import { API_BASE_URL, API_ENDPOINTS } from "@/lib/api-config"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -192,24 +192,38 @@ export default function PrescriptionDetail() {
       setLoadingDrug(false)
     }
 
-    // === 2. GỌI GOOGLE IMAGE SEARCH API ===
+    // === 2. GỌI GOOGLE IMAGE SEARCH QUA BACKEND PROXY ===
     try {
+      setLoadingImage(true);
+
+      // Gọi backend — key & CX được giữ an toàn trong .env của server
       const imageRes = await fetch(
-        `https://www.googleapis.com/customsearch/v1?key=AIzaSyC20kSptZrjxPuDfP0lQJNvlksFxaW3wJ4&cx=55f84a4d793454627&searchType=image&q=${encodeURIComponent(drugName)}&num=1`
-      )
-      const imageData = await imageRes.json()
+        `${API_BASE_URL}${API_ENDPOINTS.DRUG.IMAGE_SEARCH(drugName)}`
+      );
+      const imageData = await imageRes.json();
+
+      // Bắt lỗi trực tiếp từ cấu trúc JSON của Google (được backend forward về)
+      if (imageData.error) {
+        console.error("Google API Error Details:", imageData.error.message);
+        setDrugImage(null);
+        setLoadingImage(false);
+        return;
+      }
+
+      setLoadingImage(false);
 
       if (imageData.items && imageData.items.length > 0) {
-        const imageUrl = imageData.items[0].link
-        setDrugImage(imageUrl)
+        // Ưu tiên lấy thumbnailLink của Google để tránh lỗi CORS khi hiển thị thẻ <img>
+        const imageUrl = imageData.items[0].image?.thumbnailLink || imageData.items[0].link;
+        setDrugImage(imageUrl);
       } else {
-        setDrugImage(null)
+        setDrugImage(null);
       }
+
     } catch (err) {
-      console.error("Google Image API Error:", err)
-      setDrugImage(null)
-    } finally {
-      setLoadingImage(false)
+      console.error("Network Error:", err);
+      setDrugImage(null);
+      setLoadingImage(false);
     }
   }
 

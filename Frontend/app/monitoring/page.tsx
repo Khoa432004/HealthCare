@@ -2,19 +2,36 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, MoreVertical, Search, User as UserIcon } from "lucide-react"
+import { ChevronLeft, ChevronRight, MoreVertical, Search } from "lucide-react"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { DoctorUserMenu } from "@/components/doctor-user-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
-import { userService, type User } from "@/services/user.service"
+import { patientExamPackageService } from "@/services/patient-exam-package.service"
 
 type MonitoringStatus = "active" | "upcoming" | "pending" | "inactive"
+
+type ActivePackagePatient = {
+  purchaseId: string
+  patientId: string
+  patientName: string
+  patientEmail: string
+  patientPhone: string
+  packageId: string
+  packageName: string
+  durationDays: number
+  priceVnd: number
+  purchaseDate: string
+  expirationDate: string
+  status: string
+  remainingMessages: number
+  remainingSessions: number
+}
 
 type MonitoringPatientRow = {
   patientId: string
@@ -24,21 +41,33 @@ type MonitoringPatientRow = {
   remainingDays: string
   startDate: string
   endDate: string
+  progressPercent: number
 }
 
 const STATUS_TABS = [{ key: "all", label: "All Patients" }] as const
-
 const PAGE_SIZE = 10
-const PACKAGE_PRESETS = ["7 Days Trial", "6 Months", "1 Month", "1 Month", "6 Months", "1 Month", "6 Months", "3 Months", "14 Days", "6 Months"]
-const STATUS_PRESETS: MonitoringStatus[] = ["upcoming", "active", "active", "active", "active", "active", "active", "active", "active", "inactive"]
-const REMAINING_DAY_PRESETS = ["23", "5", "31", "8", "3", "12", "43", "28", "2", "0"]
-const START_DATE_PRESETS = ["16-04-2026", "27-08-2026", "13-02-2026", "24-02-2026", "26-08-2026", "16-02-2026", "15-02-2026", "14-02-2026", "15-02-2026", "03-08-2025"]
-const END_DATE_PRESETS = ["23-05-2026", "26-02-2026", "12-03-2026", "23-03-2026", "25-02-2026", "15-03-2026", "14-08-2026", "13-05-2026", "05-03-2026", "02-02-2026"]
+
+function formatDateShort(date: string): string {
+  if (!date) return "N/A"
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return "N/A"
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const year = d.getFullYear()
+  return `${day}-${month}-${year}`
+}
+
+function calcRemainingDays(expirationDate: string): number {
+  if (!expirationDate) return 0
+  const diff = new Date(expirationDate).getTime() - Date.now()
+  if (Number.isNaN(diff)) return 0
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
 
 function DoctorMonitoringContent() {
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
-  const [patients, setPatients] = useState<User[]>([])
+  const [patientPackages, setPatientPackages] = useState<ActivePackagePatient[]>([])
   const [search, setSearch] = useState("")
   const [activeTab, setActiveTab] = useState<"all">("all")
   const [page, setPage] = useState(1)
@@ -55,34 +84,19 @@ function DoctorMonitoringContent() {
   }, [])
 
   useEffect(() => {
-    const loadPatients = async () => {
+    const loadActivePatients = async () => {
       setLoading(true)
       try {
-        const size = 100
-        let currentPage = 1
-        let totalPages = 1
-        const collected: User[] = []
-
-        do {
-          const response = await userService.getAllUsers({
-            page: currentPage,
-            size,
-            roleName: "PATIENT",
-          })
-          const patientOnly = (response.content ?? []).filter(
-            (user) => String(user.role || "").toUpperCase() === "PATIENT",
-          )
-          collected.push(...patientOnly)
-          totalPages = response.totalPages || 1
-          currentPage += 1
-        } while (currentPage <= totalPages)
-
-        setPatients(collected)
+        const data = await patientExamPackageService.getMyActivePatients()
+        setPatientPackages(data || [])
+      } catch (err) {
+        console.error("Error loading active patient packages:", err)
+        setPatientPackages([])
       } finally {
         setLoading(false)
       }
     }
-    loadPatients()
+    loadActivePatients()
   }, [])
 
   useEffect(() => {
@@ -118,28 +132,35 @@ function DoctorMonitoringContent() {
   }
 
   const rows = useMemo<MonitoringPatientRow[]>(() => {
-    return patients
-      .map((patient, index) => {
-        const normalizedStatus = String(patient.status || "").toUpperCase()
-        const statusFromAccount: MonitoringStatus =
-          normalizedStatus === "ACTIVE"
+    return patientPackages
+      .map((pkg) => {
+        const remaining = calcRemainingDays(pkg.expirationDate)
+        const elapsed = Math.max(0, (pkg.durationDays || 0) - remaining)
+        const progressPercent = pkg.durationDays > 0
+          ? Math.min(100, Math.round((elapsed / pkg.durationDays) * 100))
+          : 0
+        const normalized = String(pkg.status || "").toLowerCase()
+        const status: MonitoringStatus =
+          normalized === "active"
             ? "active"
-            : normalizedStatus === "PENDING"
+            : normalized === "pending"
               ? "pending"
-              : "inactive"
-
+              : normalized === "upcoming"
+                ? "upcoming"
+                : "inactive"
         return {
-          patientId: patient.id || "N/A",
-          patientName: patient.fullName || "N/A",
-          packageType: PACKAGE_PRESETS[index % PACKAGE_PRESETS.length],
-          status: STATUS_PRESETS[index % STATUS_PRESETS.length] ?? statusFromAccount,
-          remainingDays: REMAINING_DAY_PRESETS[index % REMAINING_DAY_PRESETS.length],
-          startDate: START_DATE_PRESETS[index % START_DATE_PRESETS.length],
-          endDate: END_DATE_PRESETS[index % END_DATE_PRESETS.length],
+          patientId: pkg.patientId || "N/A",
+          patientName: pkg.patientName || "N/A",
+          packageType: pkg.packageName || `Gói ${pkg.durationDays} ngày`,
+          status,
+          remainingDays: String(remaining),
+          startDate: formatDateShort(pkg.purchaseDate),
+          endDate: formatDateShort(pkg.expirationDate),
+          progressPercent,
         }
       })
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
-  }, [patients])
+  }, [patientPackages])
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -169,10 +190,11 @@ function DoctorMonitoringContent() {
   const formatDate = (date: string) => date || "N/A"
 
   const getPackageProgress = (row: MonitoringPatientRow) => {
-    if (row.status === "active") return { width: "72%", color: "bg-[#24b36b]" }
-    if (row.status === "upcoming") return { width: "42%", color: "bg-[#36b9a2]" }
-    if (row.status === "pending") return { width: "56%", color: "bg-[#ef476f]" }
-    return { width: "0%", color: "bg-[#cfd6dc]" }
+    const width = `${row.progressPercent}%`
+    if (row.status === "active") return { width, color: "bg-[#24b36b]" }
+    if (row.status === "upcoming") return { width, color: "bg-[#36b9a2]" }
+    if (row.status === "pending") return { width, color: "bg-[#ef476f]" }
+    return { width, color: "bg-[#cfd6dc]" }
   }
 
   return (
@@ -249,7 +271,7 @@ function DoctorMonitoringContent() {
                 ) : paginatedRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-sm text-gray-500">
-                      No patient data available
+                      Chưa có bệnh nhân nào đang sử dụng gói của bạn
                     </td>
                   </tr>
                 ) : (
@@ -268,7 +290,6 @@ function DoctorMonitoringContent() {
                           </Avatar>
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{row.patientName}</p>
-                            <p className="text-xs text-gray-500">ID1234 • Chronic Condition</p>
                           </div>
                         </div>
                       </td>
