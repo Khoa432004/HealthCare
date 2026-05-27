@@ -54,6 +54,9 @@ public class HealthCareApplication {
 	static Path resolveDotEnvDirectory() {
 		Path cwd = Paths.get("").toAbsolutePath().normalize();
 		Path[] candidates = new Path[] {
+				// Render Secret Files: file .env được đặt tại /etc/secrets/.env
+				Paths.get("/etc/secrets"),
+				// Local dev: tìm từ thư mục chạy
 				cwd.resolve("HealthCare").resolve("Backend").resolve("HealthCare"),
 				cwd.resolve("Backend").resolve("HealthCare"),
 				cwd
