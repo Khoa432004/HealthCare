@@ -68,10 +68,21 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
                     .doctorCode(doctorCode)
                     .doctorSpecialty(doctorProfile.getSpecialties())
                     .scheduledEnd(apt.getScheduledEnd())
-                    .formatType("Online")
+                    .formatType(resolveFormatType(apt))
                     .build();
             })
             .collect(Collectors.toList());
+    }
+
+    private String resolveFormatType(Appointment appointment) {
+        if (appointment.getTitle() == null || appointment.getTitle().isBlank()) {
+            return "Online";
+        }
+        String title = appointment.getTitle().toLowerCase();
+        if (title.startsWith("at clinic") || title.contains("offline") || title.contains("in-person")) {
+            return "At Clinic";
+        }
+        return "Online";
     }
 
 

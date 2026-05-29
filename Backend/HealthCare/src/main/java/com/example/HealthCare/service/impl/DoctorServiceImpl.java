@@ -81,7 +81,7 @@ public class DoctorServiceImpl implements DoctorService {
                         return DoctorSummaryDto.builder()
                                 .id(doc.getUserId().toString())
                                 .name(doc.getTitle() + " " + fullName)
-                                .specialty(doc.getSpecialties())
+                                .specialty(formatArrayFieldDisplay(doc.getSpecialties()))
                                 .rating(4.5)
                                 .reviews(100)
                                 .title(doc.getTitle())
@@ -113,11 +113,7 @@ public class DoctorServiceImpl implements DoctorService {
                 .map(doc -> {
                 String fullName = doc.getUserAccount() != null ? doc.getUserAccount().getFullName() : "Unknown";
 
-                List<String> conditions = doc.getDiseasesTreated() != null
-                        ? Arrays.stream(doc.getDiseasesTreated().split(","))
-                        .map(String::trim)
-                        .collect(Collectors.toList())
-                        : List.of();
+                List<String> conditions = parseArrayField(doc.getDiseasesTreated());
 
                 // LẤY KINH NGHIỆM TỪ BẢNG DoctorExperience
                 List<DoctorDetailDto.CertificateDTO> experienceCerts = doctorExperienceRepository
@@ -170,7 +166,7 @@ public class DoctorServiceImpl implements DoctorService {
                 return DoctorDetailDto.builder()
                         .id(doc.getUserId().toString())
                         .name(doc.getTitle() + " " + fullName)
-                        .specialty(doc.getSpecialties())
+                        .specialty(formatArrayFieldDisplay(doc.getSpecialties()))
                         .rating(4.5)
                         .reviews(100)
                         .clinic(doc.getFacilityName())
@@ -272,6 +268,14 @@ public class DoctorServiceImpl implements DoctorService {
                     .build();
         }
         
+        /**
+         * Format PostgreSQL array / comma-separated field for display.
+         */
+        private String formatArrayFieldDisplay(String field) {
+            List<String> items = parseArrayField(field);
+            return items.isEmpty() ? "General" : String.join(", ", items);
+        }
+
         /**
          * Parse array field from database (can be JSON array format or comma-separated)
          */

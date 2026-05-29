@@ -36,7 +36,6 @@ export default function PatientCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date()) // Current month
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
-  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [filterError, setFilterError] = useState<string | null>(null)
   const [filterDropdownError, setFilterDropdownError] = useState(false)
@@ -69,20 +68,6 @@ export default function PatientCalendar() {
       console.error('Logout error:', error)
       authService.clearAuthData()
       router.push('/login')
-    }
-  }
-
-  const handleCreateAppointment = async () => {
-    setIsCreatingAppointment(true)
-    try {
-      // Simulate creating appointment
-      await new Promise(resolve => setTimeout(resolve, 800))
-      // Show success message
-      alert('Appointment booked successfully!')
-    } catch (error) {
-      console.error('Error creating appointment:', error)
-    } finally {
-      setIsCreatingAppointment(false)
     }
   }
 

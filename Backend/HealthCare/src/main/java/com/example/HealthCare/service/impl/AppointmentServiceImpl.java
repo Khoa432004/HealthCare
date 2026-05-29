@@ -216,13 +216,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         
         // Auto-generate title if not provided
-        // Format: "Tên Bệnh nhân - Ngày khám"
+        // Format: "{Online|At Clinic} - Tên Bệnh nhân - Ngày khám"
         String title = request.getTitle();
         if (title == null || title.trim().isEmpty()) {
             String patientName = patient.getFullName();
-            // Convert OffsetDateTime to LocalDateTime to get correct local time
             String appointmentDate = request.getScheduledStart().toLocalDateTime().format(DATE_FORMATTER);
-            title = String.format("%s - %s", patientName, appointmentDate);
+            String formatLabel = resolveFormatLabel(request.getFormatType());
+            title = String.format("%s - %s - %s", formatLabel, patientName, appointmentDate);
             log.info("Auto-generated title: {}", title);
         }
         
@@ -638,6 +638,17 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         
         return mapToResponse(updatedAppointment);
+    }
+
+    private String resolveFormatLabel(String formatType) {
+        if (formatType == null || formatType.isBlank()) {
+            return "Online";
+        }
+        String normalized = formatType.trim().toLowerCase();
+        if (normalized.contains("clinic") || normalized.contains("offline") || normalized.contains("in-person")) {
+            return "At Clinic";
+        }
+        return "Online";
     }
 }
 

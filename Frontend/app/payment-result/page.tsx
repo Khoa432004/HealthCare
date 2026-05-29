@@ -105,6 +105,7 @@ function PaymentResultContent() {
           symptomsOns: data.symptomsOns,
           symptomsSever: data.symptomsSever,
           currentMedication: data.currentMedication,
+          formatType: data.formatType,
           // payment fields
           totalAmount,
           method: vnpTransactionNo ? "vnpay" : undefined,

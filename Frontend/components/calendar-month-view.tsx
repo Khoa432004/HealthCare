@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { getAppointmentLocationLabel } from "@/lib/appointment-format"
 import { Appointment, AppointmentStatus } from "@/services/appointment.service"
 
 interface Event {
@@ -94,7 +95,7 @@ export function CalendarMonthView({ currentDate, appointments = [], userRole }: 
       patient: appointment.patientFullName || appointment.patientName,
       patientGender: appointment.patientGender,
       status: mapStatus(appointment.status),
-      location: "At Clinic",
+      location: getAppointmentLocationLabel(appointment.title),
       reason: appointment.reason || undefined,
       symptomsOnset: appointment.symptomsOns || undefined,
       symptomsSeverity: appointment.symptomsSever || undefined,

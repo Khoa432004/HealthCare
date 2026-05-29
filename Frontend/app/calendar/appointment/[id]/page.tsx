@@ -23,6 +23,7 @@ import { appointmentService, type Appointment } from "@/services/appointment.ser
 import { authService } from "@/services/auth.service"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
+import { getAppointmentLocationLabel, resolveAppointmentFormatFromTitle } from "@/lib/appointment-format"
 
 interface AppointmentDetailPageProps {
   params: Promise<{
@@ -127,7 +128,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
       'SCHEDULED': { label: 'Upcoming', className: 'bg-cyan-100 text-cyan-700' },
-      'IN_PROCESS': { label: 'At Clinic', className: 'bg-green-100 text-green-700' },
+      'IN_PROCESS': { label: 'In Progress', className: 'bg-green-100 text-green-700' },
       'COMPLETED': { label: 'Completed', className: 'bg-blue-100 text-blue-700' },
       'CANCELED': { label: 'Canceled', className: 'bg-red-100 text-red-700' },
     }
@@ -141,6 +142,7 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
   
   const canJoinVideoCall = (): boolean => {
     if (!appointment || !currentUser) return false
+    if (resolveAppointmentFormatFromTitle(appointment.title) !== "online") return false
     const status = appointment.status?.toUpperCase()
     if (status !== "IN_PROCESS") return false
     if (!isDoctor) return false
@@ -253,6 +255,8 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
     minute: '2-digit'
   })
   const statusBadge = getStatusBadge(appointment.status)
+  const appointmentFormatLabel = getAppointmentLocationLabel(appointment.title)
+  const isOnlineAppointment = resolveAppointmentFormatFromTitle(appointment.title) === "online"
 
   const notifications = [
     {
@@ -423,9 +427,26 @@ export default function AppointmentDetailPage({ params }: AppointmentDetailPageP
             <div className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm">
               {/* Appointment Title */}
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{appointment.title || 'No title'}</h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-2">
                 {appointmentDate} • {appointmentTime} - {endTime}
               </p>
+              <div className="flex items-center gap-2 mb-6">
+                <Badge
+                  variant="outline"
+                  className={
+                    isOnlineAppointment
+                      ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                      : "border-teal-200 bg-teal-50 text-teal-700"
+                  }
+                >
+                  {isOnlineAppointment ? (
+                    <Video className="mr-1.5 h-3.5 w-3.5" />
+                  ) : (
+                    <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {appointmentFormatLabel}
+                </Badge>
+              </div>
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronLeft, User, Settings, Calendar, MapPin, Activity, Droplets, Clock, X, Video } from "lucide-react"
+import { Search, ChevronLeft, User, Calendar, MapPin, Activity, Droplets, Clock, X, Video, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { NotificationBell } from "@/components/notification-bell"
 import MedicalReportTab from "@/components/medical-report-tab"
 import { RescheduleAppointmentModal } from "@/components/reschedule-appointment-modal"
 import { CancelAppointmentModal } from "@/components/cancel-appointment-modal"
@@ -24,6 +25,7 @@ import { appointmentService, type Appointment } from "@/services/appointment.ser
 import { authService } from "@/services/auth.service"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
+import { getAppointmentLocationLabel, resolveAppointmentFormatFromTitle } from "@/lib/appointment-format"
 
 interface AppointmentDetailPageProps {
   params: Promise<{
@@ -34,7 +36,6 @@ interface AppointmentDetailPageProps {
 export default function PatientAppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [showNotifications, setShowNotifications] = useState(false)
   const [activeTab, setActiveTab] = useState("appointment-details")
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -109,7 +110,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
       'SCHEDULED': { label: 'Upcoming', className: 'bg-cyan-100 text-cyan-700' },
-      'IN_PROCESS': { label: 'At Clinic', className: 'bg-green-100 text-green-700' },
+      'IN_PROCESS': { label: 'In Progress', className: 'bg-green-100 text-green-700' },
       'COMPLETED': { label: 'Completed', className: 'bg-blue-100 text-blue-700' },
       'CANCELED': { label: 'Canceled', className: 'bg-red-100 text-red-700' },
     }
@@ -128,6 +129,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
 
   const canJoinVideoCall = (): boolean => {
     if (!appointment || !currentUser) return false
+    if (resolveAppointmentFormatFromTitle(appointment.title) !== "online") return false
     const status = appointment.status?.toUpperCase()
     if (status !== "IN_PROCESS") return false
     const role = currentUser.role?.toUpperCase()
@@ -227,19 +229,18 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
     minute: '2-digit'
   })
   const statusBadge = getStatusBadge(appointment.status)
+  const appointmentFormatLabel = getAppointmentLocationLabel(appointment.title)
+  const isOnlineAppointment = resolveAppointmentFormatFromTitle(appointment.title) === "online"
 
-  const notifications = [
-    {
-      title: "tracto-curia-sunt",
-      message: "Terebro taedium alius debitis concedo velit acervus.",
-      time: "15 min ago",
-    },
-    {
-      title: "decet-at-tubineus",
-      message: "Basium cilicium at odit tenetur coma thalassinus quia derelinquo voluptatem.",
-      time: "15 min ago",
-    },
-  ]
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+      router.push("/login")
+    } catch {
+      authService.clearAuthData()
+      router.push("/login")
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
@@ -315,32 +316,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                 />
               </div>
 
-              <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative gradient-primary text-white hover:opacity-90 shadow-soft hover:shadow-soft-md transition-smooth"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full pulse-soft shadow-soft"></div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-4">Notifications</h3>
-                    <div className="space-y-4">
-                      {notifications.map((notif, index) => (
-                        <div key={index} className="pb-4 border-b last:border-0">
-                          <h4 className="font-medium text-sm mb-1">{notif.title}</h4>
-                          <p className="text-sm text-gray-600 mb-1">{notif.message}</p>
-                          <span className="text-xs text-gray-400">• {notif.time}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationBell />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -349,36 +325,36 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                     className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl hover:bg-white/50 transition-smooth"
                   >
                     <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
-                      <AvatarImage src="/clean-female-doctor.png" />
+                      <AvatarImage src="/placeholder-user.jpg" />
                       <AvatarFallback className="gradient-primary text-white font-semibold">
-                        {currentUser ? getInitials(currentUser.fullName) : 'PT'}
+                        {currentUser ? getInitials(currentUser.fullName) : "PT"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">{currentUser?.fullName || 'Patient'}</p>
-                      <p className="text-xs text-gray-500">Patient</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {currentUser?.fullName || "Patient"}
+                      </p>
+                      <p className="text-xs text-gray-500">Bệnh nhân</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
                   <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">{currentUser?.fullName || 'Patient'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Patient</p>
+                    <p className="font-semibold text-gray-900">{currentUser?.fullName || "Patient"}</p>
+                    <p className="text-xs text-gray-500 font-medium">Bệnh nhân</p>
                   </div>
-                  <Link href="/my-profile">
+                  <Link href="/patient-profile">
                     <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
                       <User className="w-4 h-4 text-[#007A94]" />
                       <span className="font-medium">My Profile</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/settings">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <Settings className="w-4 h-4 text-[#007A94]" />
-                      <span className="font-medium">Settings</span>
-                    </DropdownMenuItem>
-                  </Link>
                   <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth"
+                  >
+                    <LogOut className="w-4 h-4" />
                     <span className="font-medium">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -394,9 +370,26 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
             <div className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm">
               {/* Appointment Title */}
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{appointment.title || 'No title'}</h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-2">
                 {appointmentDate} • {appointmentTime} - {endTime}
               </p>
+              <div className="flex items-center gap-2 mb-6">
+                <Badge
+                  variant="outline"
+                  className={
+                    isOnlineAppointment
+                      ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                      : "border-teal-200 bg-teal-50 text-teal-700"
+                  }
+                >
+                  {isOnlineAppointment ? (
+                    <Video className="mr-1.5 h-3.5 w-3.5" />
+                  ) : (
+                    <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {appointmentFormatLabel}
+                </Badge>
+              </div>
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

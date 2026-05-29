@@ -211,6 +211,7 @@ public class AppointmentController {
                     .symptomsOns(request.getSymptomsOns())
                     .symptomsSever(request.getSymptomsSever())
                     .currentMedication(request.getCurrentMedication())
+                    .formatType(request.getFormatType())
                     .build();
             
             // Create appointment with doctor ID as the appointment doctor

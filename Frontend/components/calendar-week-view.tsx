@@ -5,6 +5,7 @@ import { Edit2, MoreVertical, X, Stethoscope, Heart, Pill, Frown } from "lucide-
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { getAppointmentLocationLabel } from "@/lib/appointment-format"
 import { Appointment, AppointmentStatus } from "@/services/appointment.service"
 
 interface Event {
@@ -93,7 +94,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
       patient: appointment.patientFullName || appointment.patientName,
       patientGender: appointment.patientGender,
       status: mapStatus(appointment.status),
-      location: "At Clinic",
+      location: getAppointmentLocationLabel(appointment.title),
       reason: appointment.reason || undefined,
       symptomsOnset: appointment.symptomsOns || undefined,
       symptomsSeverity: appointment.symptomsSever || undefined,
