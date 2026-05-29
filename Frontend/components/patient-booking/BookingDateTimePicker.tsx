@@ -1,12 +1,11 @@
 "use client"
 
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Button } from "@/components/ui/button"
 import type { TimeSlot, WorkSchedule } from "./types"
 import { formatSelectedDate, getCalendarGrid, getMonthLabel } from "./utils"
-
-const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
 type Props = {
   workSchedule: WorkSchedule | null
@@ -31,6 +30,8 @@ export function BookingDateTimePicker({
   selectedSlot,
   onSelectSlot,
 }: Props) {
+  const { t } = useTranslation()
+  const WEEKDAY_LABELS = [t("mon"), t("tue"), t("wed"), t("thu"), t("fri"), t("sat"), t("sun")]
   const calendarCells = getCalendarGrid(monthOffset, workSchedule)
 
   return (
@@ -39,7 +40,7 @@ export function BookingDateTimePicker({
       <div className="rounded-xl border border-[#d6edf2] bg-[#f8fcfd] p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs font-medium text-[#007A94] uppercase tracking-wide">Date</p>
+            <p className="text-xs font-medium text-[#007A94] uppercase tracking-wide">{t("summaryDate")}</p>
             <p className="text-base font-semibold text-gray-900 capitalize">
               {getMonthLabel(monthOffset)}
             </p>
@@ -111,10 +112,10 @@ export function BookingDateTimePicker({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <p className="text-xs font-medium text-[#007A94] uppercase tracking-wide">
-              Available time
+              {t("availableTime")}
             </p>
             <p className="text-sm font-semibold text-gray-900 mt-0.5">
-              {selectedDate ? formatSelectedDate(selectedDate) : "Select a date first"}
+              {selectedDate ? formatSelectedDate(selectedDate) : t("selectDateFirst")}
             </p>
           </div>
           {selectedSlot ? (
@@ -128,7 +129,7 @@ export function BookingDateTimePicker({
         <div className="flex-1 overflow-y-auto pr-1">
           {!selectedDate ? (
             <div className="h-full min-h-[180px] flex items-center justify-center text-sm text-gray-400 text-center px-4">
-              Choose an available date on the calendar to see time slots.
+              {t("chooseDateForSlots")}
             </div>
           ) : isLoadingSlots ? (
             <div className="h-full min-h-[180px] flex items-center justify-center">
@@ -136,7 +137,7 @@ export function BookingDateTimePicker({
             </div>
           ) : availableSlots.length === 0 ? (
             <div className="h-full min-h-[180px] flex items-center justify-center text-sm text-gray-400 text-center px-4">
-              No available slots on this date. Please pick another day.
+              {t("noSlotsOnDate")}
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">

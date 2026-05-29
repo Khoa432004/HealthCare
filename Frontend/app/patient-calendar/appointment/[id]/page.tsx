@@ -3,21 +3,15 @@
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, ChevronLeft, User, Calendar, MapPin, Activity, Droplets, Clock, X, Video, LogOut } from "lucide-react"
+import { Search, ChevronLeft, User, Calendar, MapPin, Activity, Droplets, Clock, X, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { NotificationBell } from "@/components/notification-bell"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import MedicalReportTab from "@/components/medical-report-tab"
 import { RescheduleAppointmentModal } from "@/components/reschedule-appointment-modal"
 import { CancelAppointmentModal } from "@/components/cancel-appointment-modal"
@@ -26,6 +20,7 @@ import { authService } from "@/services/auth.service"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
 import { getAppointmentLocationLabel, resolveAppointmentFormatFromTitle } from "@/lib/appointment-format"
+import { useTranslation } from "react-i18next"
 
 interface AppointmentDetailPageProps {
   params: Promise<{
@@ -41,6 +36,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string; fullName: string } | null>(null)
   const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+  const { t } = useTranslation()
   const [showCancelModal, setShowCancelModal] = useState(false)
   
   // Unwrap params using React.use()
@@ -76,8 +72,8 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
       } catch (error: any) {
         console.error("Error loading appointment:", error)
         toast({
-          title: "Lỗi",
-          description: error.message || "Không thể tải thông tin lịch hẹn",
+          title: t("error"),
+          description: error.message || t("appointmentLoadFailed"),
           variant: "destructive",
         })
         router.push("/patient-calendar")
@@ -109,22 +105,12 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
   // Get status badge
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      'SCHEDULED': { label: 'Upcoming', className: 'bg-cyan-100 text-cyan-700' },
-      'IN_PROCESS': { label: 'In Progress', className: 'bg-green-100 text-green-700' },
-      'COMPLETED': { label: 'Completed', className: 'bg-blue-100 text-blue-700' },
-      'CANCELED': { label: 'Canceled', className: 'bg-red-100 text-red-700' },
+      'SCHEDULED': { label: t('upcoming'), className: 'bg-cyan-100 text-cyan-700' },
+      'IN_PROCESS': { label: t('inProgress'), className: 'bg-green-100 text-green-700' },
+      'COMPLETED': { label: t('completed'), className: 'bg-blue-100 text-blue-700' },
+      'CANCELED': { label: t('canceled'), className: 'bg-red-100 text-red-700' },
     }
     return statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-700' }
-  }
-
-  // Helper function to get initials from fullName
-  const getInitials = (name: string): string => {
-    if (!name) return 'PT'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
   }
 
   const canJoinVideoCall = (): boolean => {
@@ -213,9 +199,9 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
         <PatientSidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-500 mb-4">Không tìm thấy lịch hẹn</p>
+            <p className="text-gray-500 mb-4">{t("appointmentNotFound")}</p>
             <Link href="/patient-calendar">
-              <Button>Quay lại Calendar</Button>
+              <Button>{t("backToCalendar")}</Button>
             </Link>
           </div>
         </div>
@@ -231,16 +217,6 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
   const statusBadge = getStatusBadge(appointment.status)
   const appointmentFormatLabel = getAppointmentLocationLabel(appointment.title)
   const isOnlineAppointment = resolveAppointmentFormatFromTitle(appointment.title) === "online"
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push("/login")
-    } catch {
-      authService.clearAuthData()
-      router.push("/login")
-    }
-  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
@@ -277,7 +253,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                       className="ml-2 bg-[#007A94] text-white hover:bg-[#005566]"
                     >
                       <Video className="mr-2 h-4 w-4" />
-                      Video call
+                      {t("videoCall")}
                     </Button>
                   </Link>
                 )}
@@ -289,7 +265,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                     size="sm"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    Đổi lịch khám
+                    {t("rescheduleAppointment")}
                   </Button>
                 )}
                 {/* Cancel Button (only for patient, when conditions are met) */}
@@ -301,7 +277,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                     size="sm"
                   >
                     <X className="w-4 h-4 mr-2" />
-                    Hủy lịch khám
+                    {t("cancelAppointment")}
                   </Button>
                 )}
               </div>
@@ -318,47 +294,11 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
 
               <NotificationBell />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-3 glass px-4 py-2 rounded-2xl hover:bg-white/50 transition-smooth"
-                  >
-                    <Avatar className="w-9 h-9 ring-2 ring-white shadow-soft">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="gradient-primary text-white font-semibold">
-                        {currentUser ? getInitials(currentUser.fullName) : "PT"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden md:block">
-                      <p className="text-sm font-semibold text-gray-700">
-                        {currentUser?.fullName || "Patient"}
-                      </p>
-                      <p className="text-xs text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 glass border-white/50 shadow-soft-lg">
-                  <div className="px-3 py-3 border-b border-white/50">
-                    <p className="font-semibold text-gray-900">{currentUser?.fullName || "Patient"}</p>
-                    <p className="text-xs text-gray-500 font-medium">Bệnh nhân</p>
-                  </div>
-                  <Link href="/patient-profile">
-                    <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2 hover:bg-white/50 transition-smooth">
-                      <User className="w-4 h-4 text-[#007A94]" />
-                      <span className="font-medium">My Profile</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuSeparator className="border-white/50" />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 transition-smooth"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="font-medium">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu
+                userInfo={currentUser ? { fullName: currentUser.fullName } : null}
+                triggerClassName="flex items-center space-x-3 glass px-4 py-2 rounded-2xl hover:bg-white/50 transition-smooth"
+                contentClassName="w-56 glass border-white/50 shadow-soft-lg"
+              />
             </div>
           </div>
         </header>
@@ -369,7 +309,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
             {/* Left Panel - Appointment Details (2/3 width) */}
             <div className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm">
               {/* Appointment Title */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{appointment.title || 'No title'}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{appointment.title || t('noTitle')}</h2>
               <p className="text-gray-600 mb-2">
                 {appointmentDate} • {appointmentTime} - {endTime}
               </p>
@@ -398,7 +338,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                     value="appointment-details"
                     className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
                   >
-                    Appointment Details
+                    {t("appointmentDetails")}
                   </TabsTrigger>
                   {/* Show Medical Report tab if appointment is COMPLETED (case-insensitive) */}
                   {(appointment.status?.toUpperCase() === 'COMPLETED' || appointment.status === 'completed') && (
@@ -406,7 +346,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                       value="medical-report"
                       className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
                     >
-                      Medical Report
+                      {t("medicalReport")}
                     </TabsTrigger>
                   )}
                 </TabsList>
@@ -415,7 +355,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                   <div className="space-y-6">
                     {/* Patient Section */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("patient")}</h3>
                       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                         <Avatar className="w-12 h-12">
                           <AvatarFallback className="bg-gray-300 text-gray-600 font-bold">
@@ -436,7 +376,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
 
                     {/* Doctor Section */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Doctor</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("doctor")}</h3>
                       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                         <Avatar className="w-12 h-12">
                           <AvatarFallback className="bg-gray-300 text-gray-600 font-bold">
@@ -457,7 +397,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
 
                     {/* Details Section */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Details</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("details")}</h3>
                       <div className="space-y-4">
                         <div>
                           <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
@@ -476,96 +416,56 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                                 />
                               </svg>
                             </div>
-                            Reason
+                            {t("reason")}
                           </label>
-                          <p className="text-gray-900 font-medium">{appointment.reason || 'N/A'}</p>
+                          <p className="text-gray-900 font-medium">{appointment.reason || t("na")}</p>
                         </div>
 
                         <div>
                           <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                             <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                              <svg
-                                width="1em"
-                                height="1em"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="size-4 text-teal-600"
-                              >
-                                <path
-                                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
-                                  fill="currentColor"
-                                />
+                              <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 text-teal-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="currentColor" />
                               </svg>
                             </div>
-                            Symptoms onset
+                            {t("symptomsOnset")}
                           </label>
-                          <p className="text-gray-900 font-medium">{appointment.symptomsOns || 'N/A'}</p>
+                          <p className="text-gray-900 font-medium">{appointment.symptomsOns || t("na")}</p>
                         </div>
 
                         <div>
                           <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                             <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                              <svg
-                                width="1em"
-                                height="1em"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="size-4 text-teal-600"
-                              >
-                                <path
-                                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
-                                  fill="currentColor"
-                                />
+                              <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 text-teal-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="currentColor" />
                               </svg>
                             </div>
-                            Symptoms severity
+                            {t("symptomsSeverity")}
                           </label>
-                          <p className="text-gray-900 font-medium">{appointment.symptomsSever || 'N/A'}</p>
+                          <p className="text-gray-900 font-medium">{appointment.symptomsSever || t("na")}</p>
                         </div>
 
                         <div>
                           <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                             <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                              <svg
-                                width="1em"
-                                height="1em"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="size-4 text-teal-600"
-                              >
-                                <path
-                                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
-                                  fill="currentColor"
-                                />
+                              <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 text-teal-600">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="currentColor" />
                               </svg>
                             </div>
-                            Medications being used
+                            {t("medicationsBeingUsed")}
                           </label>
-                          <p className="text-gray-900 font-medium">{appointment.currentMedication || 'N/A'}</p>
+                          <p className="text-gray-900 font-medium">{appointment.currentMedication || t("na")}</p>
                         </div>
 
                         {appointment.notes && (
                           <div>
                             <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                               <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                                <svg
-                                  width="1em"
-                                  height="1em"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="size-4 text-teal-600"
-                                >
-                                  <path
-                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
-                                    fill="currentColor"
-                                  />
+                                <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-4 text-teal-600">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="currentColor" />
                                 </svg>
                               </div>
-                              Notes
+                              {t("notes")}
                             </label>
                             <p className="text-gray-900 font-medium">{appointment.notes}</p>
                           </div>
@@ -606,7 +506,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
 
                 {/* Doctor Info */}
                 <div className="py-6">
-                  <h3 className="text-base font-semibold text-gray-900 mb-4">Doctor Information</h3>
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">{t("doctorInformation")}</h3>
                   <div className="space-y-4">
                     {/* Name */}
                     <div className="flex items-start space-x-3">
@@ -614,9 +514,9 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                         <User className="w-5 h-5 text-teal-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500">Name</p>
+                        <p className="text-xs text-gray-500">{t("name")}</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {appointment.doctorFullName || appointment.doctorName || 'Unknown'}
+                          {appointment.doctorFullName || appointment.doctorName || t('unknownPerson')}
                         </p>
                       </div>
                     </div>
@@ -628,7 +528,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                           <User className="w-5 h-5 text-teal-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500">Title</p>
+                          <p className="text-xs text-gray-500">{t("titleLabel")}</p>
                           <p className="text-sm font-medium text-gray-900">{appointment.doctorTitle}</p>
                         </div>
                       </div>
@@ -641,7 +541,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                           <User className="w-5 h-5 text-teal-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500">Gender</p>
+                          <p className="text-xs text-gray-500">{t("gender")}</p>
                           <p className="text-sm font-medium text-gray-900">{appointment.doctorGender}</p>
                         </div>
                       </div>
@@ -666,7 +566,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500">Phone Number</p>
+                          <p className="text-xs text-gray-500">{t("phoneNumber")}</p>
                           <p className="text-sm font-medium text-gray-900">{appointment.doctorPhoneNumber}</p>
                         </div>
                       </div>
@@ -679,7 +579,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                           <MapPin className="w-5 h-5 text-teal-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500">Workplace</p>
+                          <p className="text-xs text-gray-500">{t("workplace")}</p>
                           <p className="text-sm font-medium text-gray-900">{appointment.doctorWorkplace}</p>
                         </div>
                       </div>
@@ -692,7 +592,7 @@ export default function PatientAppointmentDetailPage({ params }: AppointmentDeta
                           <Activity className="w-5 h-5 text-teal-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 mb-2">Specialties</p>
+                          <p className="text-xs text-gray-500 mb-2">{t("specialties")}</p>
                           <div className="flex flex-wrap gap-1">
                             {appointment.doctorSpecialties
                               .split(',')

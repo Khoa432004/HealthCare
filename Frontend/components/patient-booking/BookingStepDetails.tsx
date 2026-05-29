@@ -1,3 +1,6 @@
+"use client"
+
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { BookingDateTimePicker } from "./BookingDateTimePicker"
 import type { BookingFormData, TimeSlot, WorkSchedule } from "./types"
@@ -35,6 +38,8 @@ export function BookingStepDetails({
   onBack,
   onNext,
 }: Props) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-6">
       <BookingDateTimePicker
@@ -51,23 +56,25 @@ export function BookingStepDetails({
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Reason for appointment <span className="text-red-500">*</span>
+          {t("reasonForAppointment")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={formData.appointmentReason}
           onChange={(e) => onFormChange("appointmentReason", e.target.value)}
+          placeholder={t("reasonPlaceholder")}
           className="w-full px-4 py-3 border border-gray-200 rounded-lg"
         />
       </div>
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Describe details <span className="text-red-500">*</span>
+          {t("describeDetails")} <span className="text-red-500">*</span>
         </label>
         <textarea
           value={formData.appointmentDetails}
           onChange={(e) => onFormChange("appointmentDetails", e.target.value)}
+          placeholder={t("describeDetailsPlaceholder")}
           className="w-full px-4 py-3 border border-gray-200 rounded-lg resize-none"
           rows={4}
         />
@@ -76,23 +83,25 @@ export function BookingStepDetails({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2">
-            When did symptoms start? <span className="text-red-500">*</span>
+            {t("symptomStartDate")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.symptomStartDate}
             onChange={(e) => onFormChange("symptomStartDate", e.target.value)}
+            placeholder={t("symptomStartDatePlaceholder")}
             className="w-full px-4 py-3 border border-gray-200 rounded-lg"
           />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-2">
-            Symptom severity <span className="text-red-500">*</span>
+            {t("symptomSeverity")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.symptomSeverity}
             onChange={(e) => onFormChange("symptomSeverity", e.target.value)}
+            placeholder={t("symptomSeverityPlaceholder")}
             className="w-full px-4 py-3 border border-gray-200 rounded-lg"
           />
         </div>
@@ -100,14 +109,14 @@ export function BookingStepDetails({
 
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Current medication <span className="text-red-500">*</span>
+          {t("currentMedication")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={formData.medication}
           onChange={(e) => onFormChange("medication", e.target.value)}
           className="w-full px-4 py-3 border border-gray-200 rounded-lg"
-          placeholder="None if not taking any"
+          placeholder={t("medicationPlaceholder")}
         />
       </div>
 
@@ -120,13 +129,13 @@ export function BookingStepDetails({
           className="w-5 h-5 mt-0.5"
         />
         <label htmlFor="agree-share" className="text-sm text-gray-700">
-          I agree to share my medical data with the doctor / clinic
+          {t("agreeShareMedicalData")}
         </label>
       </div>
 
       <div className="flex gap-4 justify-end pt-4 border-t">
         <Button type="button" variant="outline" onClick={onBack}>
-          Back
+          {t("back")}
         </Button>
         <Button
           type="button"
@@ -134,7 +143,7 @@ export function BookingStepDetails({
           disabled={!canProceed}
           className="bg-[#007A94] hover:bg-[#005566] text-white"
         >
-          Next
+          {t("next")}
         </Button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,10 +14,10 @@ import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FirstLoginPasswordModal } from "@/components/first-login-password-modal"
 import { AuthPageHeader } from "@/components/auth-page-header"
-import { BRAND_COLORS } from "@/lib/brand"
 
 export function LoginForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -26,7 +26,6 @@ export function LoginForm() {
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false)
   const [loggedInUserEmail, setLoggedInUserEmail] = useState<string>("")
   
-  // Get redirect URL from query params
   const getRedirectUrl = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
@@ -35,30 +34,25 @@ export function LoginForm() {
     return null
   }
   
-  // Form validation errors
   const [emailError, setEmailError] = useState<string>("")
   const [passwordError, setPasswordError] = useState<string>("")
 
   const validateForm = (): boolean => {
     let isValid = true
-    
-    // Clear previous errors
     setEmailError("")
     setPasswordError("")
     setError(null)
     
-    // Validate email
     if (!email || email.trim() === "") {
-      setEmailError("Vui lòng nhập Email.")
+      setEmailError(t("emailRequired"))
       isValid = false
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError("Email không đúng định dạng.")
+      setEmailError(t("emailInvalid"))
       isValid = false
     }
     
-    // Validate password
     if (!password || password.trim() === "") {
-      setPasswordError("Vui lòng nhập Mật khẩu.")
+      setPasswordError(t("passwordRequired"))
       isValid = false
     }
     
@@ -68,7 +62,6 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate form
     if (!validateForm()) {
       return
     }
@@ -97,13 +90,13 @@ export function LoginForm() {
           }, 100)
         } catch (navError) {
           console.error("Navigation error:", navError)
-          setError("Lỗi điều hướng. Vui lòng thử lại.")
+          setError(t("navigationError"))
           setIsLoading(false)
         }
       }
     } catch (error: any) {
       console.error("Login error:", error)
-      setError(error.message || "Đăng nhập không thành công. Vui lòng kiểm tra lại email và mật khẩu.")
+      setError(error.message || t("loginFailed"))
       setIsLoading(false)
     }
   }
@@ -121,25 +114,22 @@ export function LoginForm() {
         }, 100)
       } catch (navError) {
         console.error("Navigation error:", navError)
-        setError("Lỗi điều hướng. Vui lòng thử lại.")
+        setError(t("navigationError"))
       }
     }
   }
 
-  const handleFirstLoginError = (errorMessage: string) => {
-  }
+  const handleFirstLoginError = (_errorMessage: string) => {}
 
   return (
   <div className="w-full max-w-full md:max-w-lg lg:max-w-xl h-full flex flex-col justify-center items-center px-5 py-8 sm:px-6 sm:py-10 md:px-8 lg:px-10 md:py-8 rounded-2xl bg-white/70 md:bg-transparent overflow-y-auto max-h-[90vh] md:max-h-full">
     <div className="space-y-5 sm:space-y-6 md:space-y-5 lg:space-y-6 mx-auto w-full max-w-md flex flex-col items-center">
       <AuthPageHeader
-        title="Chào mừng trở lại!"
-        description="Đăng nhập để tiếp tục hành trình chăm sóc sức khỏe"
+        title={t("welcomeBack")}
+        description={t("loginSubtitle")}
       />
 
-      {/* Login Form */}
       <form onSubmit={handleSubmit} className="w-full space-y-3.5 sm:space-y-4 md:space-y-3.5">
-        {/* Error Alert */}
         {error && (
           <Alert variant="destructive" className="bg-red-50 border-red-200">
             <AlertCircle className="h-4 w-4" />
@@ -147,10 +137,9 @@ export function LoginForm() {
           </Alert>
         )}
 
-        {/* Email Field */}
         <div className="space-y-1.5 md:space-y-1.5">
           <Label htmlFor="email" className="text-slate-700 font-semibold text-sm md:text-xs lg:text-[13px]">
-            Email
+            {t("email")}
           </Label>
           <Input
             id="email"
@@ -164,17 +153,16 @@ export function LoginForm() {
             className={`bg-white/70 backdrop-blur-sm text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:border-blue-500 h-11 md:h-9 lg:h-9 text-base md:text-sm lg:text-sm ${
               emailError ? "border-red-500 focus:ring-red-500" : "border-white/50 focus:ring-blue-500"
             }`}
-            placeholder="Nhập email của bạn"
+            placeholder={t("enterEmail")}
           />
           {emailError && (
             <p className="text-sm text-red-600">{emailError}</p>
           )}
         </div>
 
-        {/* Password Field */}
         <div className="space-y-1.5 md:space-y-1.5">
           <Label htmlFor="password" className="text-slate-700 font-semibold text-sm md:text-xs lg:text-[13px]">
-            Mật khẩu
+            {t("password")}
           </Label>
           <div className="relative">
             <Input
@@ -189,7 +177,7 @@ export function LoginForm() {
               className={`bg-white/70 backdrop-blur-sm pr-10 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:border-blue-500 h-11 md:h-9 lg:h-9 text-base md:text-sm lg:text-sm ${
                 passwordError ? "border-red-500 focus:ring-red-500" : "border-white/50 focus:ring-blue-500"
               }`}
-              placeholder="Nhập mật khẩu của bạn"
+              placeholder={t("enterPassword")}
             />
             <button
               type="button"
@@ -204,17 +192,15 @@ export function LoginForm() {
           )}
         </div>
 
-        {/* Forgot Password Link */}
         <div className="text-right pt-0.5">
           <Link
             href="/forgot-password"
             className="text-[#007A94] hover:text-[#005566] text-base md:text-xs lg:text-sm font-medium underline transition-all duration-300 hover:translate-x-1 inline-block"
           >
-            Quên mật khẩu?
+            {t("forgotPassword")}
           </Link>
         </div>
 
-        {/* Login Button */}
         <Button
           type="submit"
           size="lg"
@@ -224,23 +210,21 @@ export function LoginForm() {
           {isLoading ? (
             <div className="flex items-center space-x-2">
               <LoadingSpinner size="sm" className="text-white" />
-              <span>Đang đăng nhập...</span>
+              <span>{t("signingIn")}</span>
             </div>
           ) : (
-            "Đăng nhập"
+            t("login")
           )}
         </Button>
 
-        {/* Sign Up Link */}
         <div className="text-center text-slate-600 text-sm md:text-xs lg:text-[13px] pt-1">
-          Chưa có tài khoản?{" "}
+          {t("noAccount")}{" "}
           <Link href="/signup" className="text-[#007A94] hover:text-[#005566] font-semibold underline transition-all duration-300">
-            Đăng ký ngay
+            {t("signupNow")}
           </Link>
         </div>
       </form>
 
-      {/* First Login Password Change Modal */}
       <FirstLoginPasswordModal
         open={showFirstLoginModal}
         email={loggedInUserEmail}
@@ -249,6 +233,5 @@ export function LoginForm() {
       />
     </div>
   </div>
-);
-
+  )
 }

@@ -7,8 +7,6 @@ import {
   Search,
   LayoutDashboard,
   Calendar,
-  User,
-  LogOut,
   Plus,
   ClipboardList,
   LineChart,
@@ -24,15 +22,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { PatientUserMenu } from "@/components/patient-user-menu"
+import { useTranslation } from "react-i18next"
 import { PatientSidebar } from "@/components/patient-sidebar"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import PatientAppointmentsSidebar from "@/components/patient-appointments-sidebar"
@@ -207,6 +199,7 @@ function buildCurrentPlanFromPackages(
 function PatientDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(
     null
   )
@@ -234,11 +227,11 @@ function PatientDashboardContent() {
       if (payment) {
         if (payment === "success") {
           setPaymentMessage(
-            `Thanh toán thành công${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ""}`
+            `${t("paymentSuccess")}${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ""}`
           )
         } else if (payment === "fail") {
           setPaymentMessage(
-            `Thanh toán thất bại${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ""}`
+            `${t("paymentFailed")}${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ""}`
           )
         }
         router.replace("/patient-dashboard")
@@ -276,26 +269,6 @@ function PatientDashboardContent() {
     fetchDashboardData()
   }, [])
 
-  const getInitials = (name: string): string => {
-    if (!name) return "PT"
-    const parts = name.trim().split(" ")
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push("/login")
-    } catch (error) {
-      console.error("Logout error:", error)
-      authService.clearAuthData()
-      router.push("/login")
-    }
-  }
-
   const toggleMedicineStatus = (key: string, currentStatus: string) => {
     setMedicineStatus((prev) => ({
       ...prev,
@@ -304,11 +277,50 @@ function PatientDashboardContent() {
   }
 
   const quickActions = [
-    { title: "Book Appointment", icon: Calendar, href: "/patient-calendar/booking" },
-    { title: "Add Measurement", icon: Plus, href: "/health-tracking" },
-    { title: "View Metrics Log", icon: LineChart, href: "/health-tracking" },
-    { title: "Health Test", icon: FlaskConical, href: "/health-tracking" },
+    { title: t("bookAppointment"), icon: Calendar, href: "/patient-calendar/booking" },
+    { title: t("addMeasurement"), icon: Plus, href: "/health-tracking" },
+    { title: t("viewMetricsLog"), icon: LineChart, href: "/health-tracking" },
+    { title: t("healthTest"), icon: FlaskConical, href: "/health-tracking" },
   ]
+
+  const translateMealRelation = (instruction: string): string => {
+    switch (instruction.toLowerCase()) {
+      case "before meal":
+        return t("beforeMeal")
+      case "after meal":
+        return t("afterMeal")
+      case "with meal":
+        return t("withMeal")
+      case "anytime":
+        return t("anytime")
+      default:
+        return instruction
+    }
+  }
+
+  const translateMedicineStatus = (status: string): string => {
+    if (status === "Take") return t("take")
+    if (status === "Taking") return t("taking")
+    if (status === "Un-take") return t("untake")
+    return status
+  }
+
+  const translateMetricStatus = (status: string): string => {
+    switch (status) {
+      case "High":
+        return t("high")
+      case "Low":
+        return t("low")
+      case "Upper":
+        return t("upper")
+      case "Normal":
+        return t("normal")
+      case "N/A":
+        return t("na")
+      default:
+        return status
+    }
+  }
 
   const metricIconMap: Record<string, typeof Activity> = {
     "Blood Glucose": Droplets,
@@ -351,7 +363,7 @@ function PatientDashboardContent() {
             <PageHeaderTitleRow
               role="patient"
               icon={LayoutDashboard}
-              title="Dashboard"
+              title={t("dashboard")}
               titleClassName="text-lg"
             />
 
@@ -362,40 +374,18 @@ function PatientDashboardContent() {
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search medicines..."
+                  placeholder={t("searchMedicines")}
                   className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm"
                 />
               </div>
 
               <NotificationBell />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="text-xs">
-                        {userInfo ? getInitials(userInfo.fullName) : "PT"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">{userInfo?.fullName || "Patient"}</p>
-                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+                contentClassName="w-48"
+              />
             </div>
           </div>
         </header>
@@ -408,7 +398,7 @@ function PatientDashboardContent() {
               onClick={() => setPaymentMessage(null)}
               className="text-sm text-green-700 font-semibold ml-4"
             >
-              Dismiss
+              {t("dismiss")}
             </button>
           </div>
         ) : null}
@@ -432,12 +422,12 @@ function PatientDashboardContent() {
             <div className="space-y-4">
               <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Latest Measurements</h3>
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">{t("latestMeasurements")}</h3>
                   <Link
                     href="/health-tracking"
                     className="text-[11px] text-[#0f172a] inline-flex items-center gap-1"
                   >
-                    See Details <ChevronRight className="w-3 h-3" />
+                    {t("seeDetails")} <ChevronRight className="w-3 h-3" />
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
@@ -450,7 +440,7 @@ function PatientDashboardContent() {
                           <div className="flex items-start justify-between">
                             <Icon className="w-3.5 h-3.5" />
                             <Badge className="bg-white/90 text-[9px] text-gray-700 border-0 h-4">
-                              {item.status}
+                              {translateMetricStatus(item.status)}
                             </Badge>
                           </div>
                           <p className="mt-1.5 text-[10px] font-medium opacity-90">{item.name}</p>
@@ -466,7 +456,7 @@ function PatientDashboardContent() {
                     })
                   ) : (
                     <div className="col-span-full rounded-xl border border-dashed border-[#b6ccd4] bg-white p-4 text-center text-xs text-gray-500">
-                      No data available
+                      {t("noDataAvailable")}
                     </div>
                   )}
                 </div>
@@ -474,12 +464,12 @@ function PatientDashboardContent() {
 
               <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Current Plan</h3>
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">{t("currentPlan")}</h3>
                   <Link
                     href="/patient-purchased-packages"
                     className="text-[11px] text-[#0f172a] inline-flex items-center gap-1"
                   >
-                    See Details <ChevronRight className="w-3 h-3" />
+                    {t("seeDetails")} <ChevronRight className="w-3 h-3" />
                   </Link>
                 </div>
                 <div className="bg-white rounded-xl border border-[#d6edf2] p-3">
@@ -492,16 +482,16 @@ function PatientDashboardContent() {
                         <div>
                           <p className="text-sm font-semibold text-[#0f172a]">{currentPlan?.title}</p>
                           <p className="text-xs text-gray-500">
-                            {currentPlan?.status ?? "Unknown"}
+                            {currentPlan?.status ?? t("unknownPerson")}
                             {currentPlan?.daysLeft != null
-                              ? ` - ${currentPlan.daysLeft} days left`
+                              ? ` - ${t("daysLeft", { count: currentPlan.daysLeft })}`
                               : ""}
                           </p>
                         </div>
                       </div>
                       <div className="mt-4">
                         <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1.5">
-                          <span>Completed</span>
+                          <span>{t("completed")}</span>
                           <span>{currentPlan?.progressPercent ?? 0}%</span>
                         </div>
                         <div className="w-full h-2.5 rounded-full bg-[#dff2f7]">
@@ -513,30 +503,30 @@ function PatientDashboardContent() {
                       </div>
                     </>
                   ) : (
-                    <div className="py-5 text-center text-xs text-gray-500">No data available</div>
+                    <div className="py-5 text-center text-xs text-gray-500">{t("noDataAvailable")}</div>
                   )}
                 </div>
               </section>
 
               <section className="bg-[#d5e5eb] rounded-xl border border-[#c8dbe2] p-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[12px] font-semibold text-[#0f172a]">Today&apos;s Medicines</h3>
+                  <h3 className="text-[12px] font-semibold text-[#0f172a]">{t("todaysMedicines")}</h3>
                   <Link
                     href="/patient-emr"
                     className="text-[11px] text-[#0f172a] inline-flex items-center gap-1"
                   >
-                    See Details <ChevronRight className="w-3 h-3" />
+                    {t("seeDetails")} <ChevronRight className="w-3 h-3" />
                   </Link>
                 </div>
                 <div className="overflow-x-auto bg-white rounded-xl border border-[#d6edf2]">
                   <table className="w-full min-w-[740px]">
                     <thead className="border-b border-[#e5eff3]">
                       <tr className="text-center text-[10px] text-gray-500">
-                        <th className="px-4 py-3 font-medium">Time</th>
-                        <th className="px-4 py-3 font-medium">Drug Name</th>
-                        <th className="px-4 py-3 font-medium">Dosage</th>
-                        <th className="px-4 py-3 font-medium">Instructions</th>
-                        <th className="px-4 py-3 font-medium text-center">Action</th>
+                        <th className="px-4 py-3 font-medium">{t("time")}</th>
+                        <th className="px-4 py-3 font-medium">{t("drugName")}</th>
+                        <th className="px-4 py-3 font-medium">{t("dosage")}</th>
+                        <th className="px-4 py-3 font-medium">{t("instructions")}</th>
+                        <th className="px-4 py-3 font-medium text-center">{t("action")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -564,7 +554,7 @@ function PatientDashboardContent() {
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <Badge className="bg-[#dff5fa] text-[#0e8cac] border-0 text-[9px] h-5">
-                                  {plan.instruction.toUpperCase()}
+                                  {translateMealRelation(plan.instruction).toUpperCase()}
                                 </Badge>
                               </td>
                               <td className="px-4 py-3 text-center">
@@ -578,7 +568,7 @@ function PatientDashboardContent() {
                                   }`}
                                 >
                                   <Pill className="w-3.5 h-3.5 mr-1.5" />
-                                  {status}
+                                  {translateMedicineStatus(status)}
                                 </Button>
                               </td>
                             </tr>
@@ -587,7 +577,7 @@ function PatientDashboardContent() {
                       ) : (
                         <tr>
                           <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-500">
-                            No data available
+                            {t("noDataAvailable")}
                           </td>
                         </tr>
                       )}

@@ -1,6 +1,7 @@
 "use client"
 
 import { Building2, Video } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { BookingFormat } from "./types"
 import { getBookingFormatDescription, getBookingFormatLabel } from "./utils"
 
@@ -18,6 +19,14 @@ const OPTIONS: Array<{
 ]
 
 export function BookingFormatToggle({ value, onChange }: Props) {
+  const { t } = useTranslation()
+
+  const formatLabel = (fmt: BookingFormat) =>
+    fmt === "offline" ? t("atClinic") : t("online")
+
+  const formatDescription = (fmt: BookingFormat) =>
+    fmt === "offline" ? t("visitClinicInPerson") : t("consultViaVideo")
+
   return (
     <div className="mb-6 flex flex-col items-center text-center">
       <div className="flex w-full max-w-md rounded-full border border-[#007A94] p-1 bg-[#f8fcfd]">
@@ -36,12 +45,12 @@ export function BookingFormatToggle({ value, onChange }: Props) {
               ].join(" ")}
             >
               <Icon className="w-4 h-4" />
-              {getBookingFormatLabel(optionValue)}
+              {formatLabel(optionValue)}
             </button>
           )
         })}
       </div>
-      <p className="mt-2 text-xs text-gray-500">{getBookingFormatDescription(value)}</p>
+      <p className="mt-2 text-xs text-gray-500">{formatDescription(value)}</p>
     </div>
   )
 }

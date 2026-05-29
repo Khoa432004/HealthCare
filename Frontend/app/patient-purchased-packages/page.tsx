@@ -2,17 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Package, LogOut, User, ShoppingCart } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Package, ShoppingCart } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
+import { PatientUserMenu } from "@/components/patient-user-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { PurchasedPackagesList } from "@/components/purchased-packages-list";
 import { patientExamPackageService } from "@/services/patient-exam-package.service";
 import { NotificationBell } from "@/components/notification-bell";
@@ -22,6 +16,7 @@ import { authService } from "@/services/auth.service";
 
 function PurchasedPackagesContent() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,14 +29,6 @@ function PurchasedPackagesContent() {
     }
   }, []);
 
-  const getInitials = (name: string) => {
-    if (!name) return "PT";
-    const parts = name.trim().split(" ");
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : name.substring(0, 2).toUpperCase();
-  };
-
   const loadPackages = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -50,7 +37,7 @@ function PurchasedPackagesContent() {
       setPackages(data || []);
     } catch (err: any) {
       console.error("Error loading packages:", err);
-      setError(err?.message || "Không thể tải danh sách gói. Vui lòng thử lại.");
+      setError(err?.message || t("packagesLoadFailed"));
       setPackages([]);
     } finally {
       setLoading(false);
@@ -60,16 +47,6 @@ function PurchasedPackagesContent() {
   useEffect(() => {
     loadPackages();
   }, [loadPackages]);
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      router.push("/login");
-    } catch {
-      authService.clearAuthData();
-      router.push("/login");
-    }
-  };
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
@@ -86,7 +63,7 @@ function PurchasedPackagesContent() {
             <PageHeaderTitleRow
               role="patient"
               icon={Package}
-              title="My Packages"
+              title={t("myPackages")}
               titleClassName="text-lg"
             />
 
@@ -97,40 +74,18 @@ function PurchasedPackagesContent() {
                 className="h-9 px-4 bg-gradient-to-r from-[#007A94] to-[#0CC8C8] hover:from-[#006080] hover:to-[#00AAAA] text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
-                Buy Package
+                {t("buyPackage")}
               </Button>
 
               {/* Notifications */}
               <NotificationBell />
 
               {/* User menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="text-xs">
-                        {userInfo ? getInitials(userInfo.fullName) : "PT"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">{userInfo?.fullName || "Patient"}</p>
-                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+                contentClassName="w-48"
+              />
             </div>
           </div>
         </header>
@@ -146,7 +101,7 @@ function PurchasedPackagesContent() {
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white rounded-lg ml-4"
               >
-                Thử lại
+                {t("tryAgain")}
               </Button>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Upload, PlusCircle } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { PatientDashboardAppointmentItem } from "@/services/dashboard.service"
@@ -14,6 +15,7 @@ export default function PatientAppointmentsSidebar({
   pendingAppointment,
   weeklyAppointments,
 }: PatientAppointmentsSidebarProps) {
+  const { t } = useTranslation()
   const router = useRouter()
 
   const openAppointment = (id?: string) => {
@@ -28,7 +30,7 @@ export default function PatientAppointmentsSidebar({
     >
       <div className="h-full overflow-y-auto">
         <div className="mb-3">
-          <h3 className="text-[16px] font-semibold text-[#1b1f23]">In-Process Appointment</h3>
+          <h3 className="text-[16px] font-semibold text-[#1b1f23]">{t("inProcessAppointment")}</h3>
           <div className="mt-2 h-px bg-[#ccd7de]" />
         </div>
 
@@ -72,12 +74,12 @@ export default function PatientAppointmentsSidebar({
           </div>
         ) : (
           <div className="rounded-[14px] border border-dashed border-[#c3d2d9] bg-white p-4 mb-4 text-center text-[12px] text-[#6b7280]">
-            No data available
+            {t("noDataAvailable")}
           </div>
         )}
 
         <div>
-          <h3 className="text-[16px] font-semibold text-[#1b1f23]">Upcoming Appointment</h3>
+          <h3 className="text-[16px] font-semibold text-[#1b1f23]">{t("upcomingAppointment")}</h3>
           <div className="mt-2 h-px bg-[#ccd7de]" />
           <div className="mt-3 space-y-3">
             {weeklyAppointments.length > 0 ? weeklyAppointments.map((item, index) => (
@@ -119,7 +121,7 @@ export default function PatientAppointmentsSidebar({
               </div>
             )) : (
               <div className="rounded-[14px] border border-dashed border-[#c3d2d9] bg-white p-4 text-center text-[12px] text-[#6b7280]">
-                No data available
+                {t("noDataAvailable")}
               </div>
             )}
           </div>

@@ -1,10 +1,12 @@
 'use client'
 
 import { LoginForm } from "@/components/login-form"
+import { AuthLanguageBar } from "@/components/auth-language-bar"
 
 export default function LoginPage() {
   return (
     <div className="min-h-screen h-screen bg-[url('/login-background.png')] bg-cover bg-center relative overflow-hidden">
+      <AuthLanguageBar />
       {/* White overlay for desktop - covers left half */}
       <div className="hidden md:block absolute top-4 bottom-4 left-4 right-[52%] bg-white/70 rounded-3xl"></div>
 

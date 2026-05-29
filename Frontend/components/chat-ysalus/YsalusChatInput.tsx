@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { CirclePlus, Send, X, FileText } from "lucide-react"
 import { YsalusChatButton } from "./YsalusChatButton"
 
@@ -18,8 +19,9 @@ export function YsalusChatInput({
   className,
   onSend,
   disabled = false,
-  placeholder = "Message...",
+  placeholder,
 }: YsalusChatInputProps) {
+  const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -74,9 +76,9 @@ export function YsalusChatInput({
 
   const submitText = () => {
     if (disabled) return
-    const t = content.trim()
-    if (!t) return
-    onSend(t)
+    const trimmed = content.trim()
+    if (!trimmed) return
+    onSend(trimmed)
     setContent("")
   }
 
@@ -92,7 +94,7 @@ export function YsalusChatInput({
           dragActive ? "opacity-100" : "opacity-0"
         }`}
       >
-        <span className="w-full text-sm text-brand-6 text-center font-medium">Drop files here to upload</span>
+        <span className="w-full text-sm text-brand-6 text-center font-medium">{t("dropFilesToUpload")}</span>
       </div>
       <div className={`flex flex-wrap gap-3 ${selectedFiles.length > 0 ? "mb-4" : ""}`}>
         {selectedFiles.map((file: File, index: number) => (
@@ -133,7 +135,7 @@ export function YsalusChatInput({
         <input
           type="text"
           value={content}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("messageInputPlaceholder")}
           disabled={disabled}
           className="flex-1 placeholder:text-gray-400 focus:outline-none py-2 px-4 text-sm disabled:cursor-not-allowed"
           onChange={(e) => setContent(e.target.value)}
@@ -152,7 +154,7 @@ export function YsalusChatInput({
             submitText()
           }}
         >
-          Send
+          {t("send")}
         </YsalusChatButton>
       </div>
     </div>

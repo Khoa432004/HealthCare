@@ -11,16 +11,18 @@ import { BookingStepDetails } from "@/components/patient-booking/BookingStepDeta
 import { BookingStepDoctor } from "@/components/patient-booking/BookingStepDoctor"
 import { BookingStepProgress } from "@/components/patient-booking/BookingStepProgress"
 import { usePatientBooking } from "@/components/patient-booking/use-patient-booking"
+import { useTranslation } from "react-i18next"
 
 function PatientBookingContent() {
   const booking = usePatientBooking()
+  const { t } = useTranslation()
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
       <PatientSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <BookingHeader userName={booking.userInfo?.fullName} onLogout={booking.handleLogout} />
+        <BookingHeader userName={booking.userInfo?.fullName} />
 
         <div className="flex-1 flex gap-4 px-4 pb-4 min-h-0 overflow-hidden">
           <div className="flex-1 bg-white rounded-2xl shadow-sm overflow-y-auto p-5 min-w-0">
@@ -30,10 +32,10 @@ function PatientBookingContent() {
               className="flex items-center gap-2 text-gray-500 hover:text-[#007A94] mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Back</span>
+              <span className="text-sm font-medium">{t("back")}</span>
             </button>
 
-            <h1 className="text-xl font-bold text-[#005566] mb-6">Set a new appointment</h1>
+            <h1 className="text-xl font-bold text-[#005566] mb-6">{t("setNewAppointment")}</h1>
 
             <BookingStepProgress currentStep={booking.currentStep} />
 

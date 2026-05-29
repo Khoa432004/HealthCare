@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Settings as SettingsIcon, Search } from "lucide-react"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
@@ -17,6 +18,7 @@ import { authService } from "@/services/auth.service"
 type SettingsTab = "work-plan" | "package-program"
 
 function SettingsPageContent() {
+  const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{ fullName?: string } | null>(null)
@@ -44,14 +46,14 @@ function SettingsPageContent() {
           style={{ borderRadius: "16px", paddingLeft: "32px", paddingRight: "24px" }}
         >
           <div className="flex items-center justify-between">
-            <PageHeaderTitleRow role="doctor" icon={SettingsIcon} title="Settings" />
+            <PageHeaderTitleRow role="doctor" icon={SettingsIcon} title={t("settings")} />
 
             <div className="flex items-center space-x-4">
               <div className="relative flex-1 max-w-md hidden lg:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="search"
-                  placeholder="Search..."
+                  placeholder={t("searchPlaceholder")}
                   className="pl-10 bg-gray-50 border-gray-200"
                 />
               </div>
@@ -68,13 +70,13 @@ function SettingsPageContent() {
                 value="work-plan"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#007A94] data-[state=active]:bg-transparent data-[state=active]:text-[#007A94] px-4 py-3 transition-all duration-300"
               >
-                Work Plan
+                {t("workPlanTab")}
               </TabsTrigger>
               <TabsTrigger
                 value="package-program"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#007A94] data-[state=active]:bg-transparent data-[state=active]:text-[#007A94] px-4 py-3 transition-all duration-300"
               >
-                Package Program
+                {t("packageProgramTab")}
               </TabsTrigger>
             </TabsList>
 

@@ -1,11 +1,15 @@
 'use client'
 
 import { ArrowRight, Stethoscope, Grid3X3, Rocket } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BrandLogo } from "@/components/brand-logo"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function HomePage() {
+  const { t } = useTranslation()
+
   return (
     <div 
       className="min-h-screen relative overflow-hidden"
@@ -18,6 +22,9 @@ export default function HomePage() {
     >
       {/* Main Container */}
       <div className="w-full px-4 sm:px-5 md:px-5 lg:px-6 py-4 sm:py-5 md:py-4 relative z-10">
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher className="bg-white/80 backdrop-blur rounded-full px-4 py-2 shadow-sm" />
+        </div>
         <div className="flex flex-col md:flex-row gap-0 md:gap-5 lg:gap-6 items-stretch min-h-[calc(100vh-2rem)] md:h-[calc(100vh-2rem)]">
           
           {/* Left Panel - Content Section */}
@@ -28,11 +35,8 @@ export default function HomePage() {
             {/* Header Section */}
             <div className="flex flex-col items-center space-y-3">
               <BrandLogo variant="full" priority />
-              <p
-                className="text-center text-[#475467] text-sm sm:text-base"
-                style={{ fontFamily: "Montserrat, sans-serif" }}
-              >
-                Hệ thống quản lý khám bệnh
+              <p className="text-center text-[#475467] text-sm sm:text-base">
+                {t("healthcareManagementSystem")}
               </p>
             </div>
 

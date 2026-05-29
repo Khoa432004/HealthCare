@@ -2,20 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, User, LogOut, Activity, FileText, Heart, MessageSquare, Settings, Filter, CalendarIcon, Download, Eye, ClipboardPenLine, Loader2 } from "lucide-react"
+import { Search, Bell, ChevronRight, LayoutDashboard, Calendar, Activity, FileText, Heart, MessageSquare, Settings, Filter, CalendarIcon, Download, Eye, ClipboardPenLine, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import { authService } from "@/services/auth.service"
 import { Card, CardContent } from "@/components/ui/card"
 import { format } from "date-fns"
@@ -56,27 +49,6 @@ export default function MedicalHistory() {
       })
     }
   }, [])
-
-  // Helper function to get initials from fullName
-  const getInitials = (name: string): string => {
-    if (!name) return 'PT'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-      authService.clearAuthData()
-      router.push('/login')
-    }
-  }
 
   const handleSearch = () => {
     let filtered = [...originalAppointments]
@@ -237,31 +209,7 @@ export default function MedicalHistory() {
               <NotificationBell />
 
               {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
-                      <p className="text-xs text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu userInfo={userInfo} />
             </div>
           </div>
         </header>

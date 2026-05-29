@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { patientExamPackageService } from '@/services/patient-exam-package.service'
 import {
   Clock,
@@ -147,13 +148,20 @@ function ServiceInUseBanner({
   pkg: PurchasedPackage
   doctorInfo?: DoctorInfo | null
 }) {
+  const { t } = useTranslation()
   const remaining = pkg.remainingDays || calcRemainingDays(pkg.expirationDate)
   const progress = progressPercent(pkg)
   const sk = getStatusKey(pkg)
   const cfg = STATUS_CONFIG[sk]
   const expiring = isExpiringSoon(pkg)
+  const statusLabelMap: Record<string, string> = {
+    active: t("active"),
+    expired: t("expired"),
+    pending: t("pending"),
+    expiring: t("active"),
+  }
 
-  const displayName = doctorInfo?.doctorName || pkg.doctorName || 'Bác sĩ'
+  const displayName = doctorInfo?.doctorName || pkg.doctorName || t("doctor")
   const initials = displayName
     .split(' ')
     .slice(-2)
@@ -164,18 +172,18 @@ function ServiceInUseBanner({
   const stats = [
     {
       icon: CalendarCheck,
-      label: 'Start date',
+      label: t("startDate"),
       value: formatDateShort(pkg.purchaseDate),
     },
     {
       icon: CalendarX,
-      label: 'End date',
+      label: t("endDate"),
       value: formatDateShort(pkg.expirationDate),
     },
     {
       icon: Clock,
-      label: 'Duration',
-      value: `${pkg.durationDays} days`,
+      label: t("duration"),
+      value: `${pkg.durationDays} ${t("days")}`,
     },
   ]
 
@@ -183,7 +191,7 @@ function ServiceInUseBanner({
     <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Top bar */}
       <div className="px-6 pt-4 pb-3 border-b border-gray-100">
-        <h2 className="text-sm font-semibold text-gray-600">Service in use</h2>
+        <h2 className="text-sm font-semibold text-gray-600">{t("serviceInUse")}</h2>
       </div>
 
       {/* Inner card */}
@@ -198,7 +206,7 @@ function ServiceInUseBanner({
           {/* Name + progress */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <p className="font-bold text-gray-900 text-sm">{pkg.packageName || 'Service Package'}</p>
+              <p className="font-bold text-gray-900 text-sm">{pkg.packageName || t("servicePackage")}</p>
             </div>
             {/* Progress bar */}
             <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -210,9 +218,9 @@ function ServiceInUseBanner({
             <div className="flex items-center justify-between mt-1">
               <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                {cfg.label}
+                {statusLabelMap[sk]}
               </span>
-              <span className="text-[11px] text-gray-400">{remaining} days left</span>
+              <span className="text-[11px] text-gray-400">{t("daysLeft", { count: remaining })}</span>
             </div>
           </div>
 
@@ -250,7 +258,7 @@ function ServiceInUseBanner({
                 <Stethoscope className="w-4 h-4 text-[#0CC8C8]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium leading-tight">Doctor</p>
+                <p className="text-[10px] text-gray-400 font-medium leading-tight">{t("doctor")}</p>
                 <p className="text-xs font-semibold text-gray-800 leading-tight">{displayName}</p>
               </div>
             </div>
@@ -262,7 +270,7 @@ function ServiceInUseBanner({
                 <Building2 className="w-4 h-4 text-[#0CC8C8]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium leading-tight">Clinic</p>
+                <p className="text-[10px] text-gray-400 font-medium leading-tight">{t("clinic")}</p>
                 <p className="text-xs font-semibold text-gray-800 leading-tight">{doctorInfo.clinic}</p>
               </div>
             </div>
@@ -274,7 +282,7 @@ function ServiceInUseBanner({
           <div className="mt-3 flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
             <AlertTriangle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
             <p className="text-xs text-orange-700 font-medium">
-              Package expires in <strong>{remaining} days</strong> — renew soon!
+              {t("packageExpiresIn", "Package expires in")} <strong>{remaining} {t("days")}</strong> — {t("renewSoon", "renew soon!")}
             </p>
           </div>
         )}
@@ -297,11 +305,18 @@ function PackageCard({
   isSelected: boolean
   onSelect: (pkg: PurchasedPackage) => void
 }) {
+  const { t } = useTranslation()
   const sk = getStatusKey(pkg)
   const cfg = STATUS_CONFIG[sk]
   const remaining = pkg.remainingDays || calcRemainingDays(pkg.expirationDate)
+  const statusLabelMap: Record<string, string> = {
+    active: t("active"),
+    expired: t("expired"),
+    pending: t("pending"),
+    expiring: t("active"),
+  }
 
-  const displayName = doctorInfo?.doctorName || pkg.doctorName || 'Bác sĩ'
+  const displayName = doctorInfo?.doctorName || pkg.doctorName || t("doctor")
   const clinicName = doctorInfo?.clinic || ''
   const provinceName = doctorInfo?.province || ''
   const specialtyName = doctorInfo?.specialty || pkg.doctorSpecialty || ''
@@ -343,14 +358,14 @@ function PackageCard({
             <Package className="w-[18px] h-[18px] text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm truncate">{pkg.packageName || 'Service Package'}</h3>
+            <h3 className="font-semibold text-gray-900 text-sm truncate">{pkg.packageName || t("servicePackage")}</h3>
             <div className="flex items-center gap-2 mt-0.5">
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cfg.badge}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                {cfg.label}
+                {statusLabelMap[sk]}
               </span>
               {pkg.status === 'active' && (
-                <span className="text-[10px] text-gray-400">{remaining} days left</span>
+                <span className="text-[10px] text-gray-400">{t("daysLeft", { count: remaining })}</span>
               )}
             </div>
           </div>
@@ -385,7 +400,7 @@ function PackageCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">
-                  Bác sĩ phụ trách
+                  {t("doctorInCharge", "Bác sĩ phụ trách")}
                 </span>
               </div>
 
@@ -395,7 +410,7 @@ function PackageCard({
 
               {cleanSpecialty && (
                 <p className="text-[11px] text-gray-400 truncate mt-0.5 font-medium">
-                  Chuyên khoa: <span className="text-gray-500 font-semibold">{cleanSpecialty}</span>
+                  {t("specialties")}: <span className="text-gray-500 font-semibold">{cleanSpecialty}</span>
                 </p>
               )}
             </div>
@@ -408,7 +423,7 @@ function PackageCard({
                 <Building2 className="w-3.5 h-3.5 text-[#007A94]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Clinic</p>
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">{t("clinic")}</p>
                 <p className="text-xs font-semibold text-gray-700">{clinicName}</p>
               </div>
             </div>
@@ -421,7 +436,7 @@ function PackageCard({
                 <MapPin className="w-3.5 h-3.5 text-[#007A94]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">Province</p>
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">{t("province")}</p>
                 <p className="text-xs font-semibold text-gray-700">{provinceName}</p>
               </div>
             </div>
@@ -434,7 +449,7 @@ function PackageCard({
                 <CalendarCheck className="w-3.5 h-3.5 text-[#007A94]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium">Start date</p>
+                <p className="text-[10px] text-gray-400 font-medium">{t("startDate")}</p>
                 <p className="text-xs font-semibold text-gray-800">{formatDateShort(pkg.purchaseDate)}</p>
               </div>
             </div>
@@ -443,7 +458,7 @@ function PackageCard({
                 <CalendarX className="w-3.5 h-3.5 text-[#007A94]" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium">End date</p>
+                <p className="text-[10px] text-gray-400 font-medium">{t("endDate")}</p>
                 <p className="text-xs font-semibold text-gray-800">{formatDateShort(pkg.expirationDate)}</p>
               </div>
             </div>
@@ -552,6 +567,14 @@ export function PurchasedPackagesList({
   packages,
   loading,
 }: PurchasedPackagesListProps) {
+  const { t } = useTranslation()
+  const tabLabelMap: Record<FilterTab, string> = {
+    all: t("all"),
+    active: t("active"),
+    pending: t("pending"),
+    expiring: t("upcoming"),
+    expired: t("expired"),
+  }
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
   // doctorInfoMap: doctorId → DoctorInfo fetched from API
   const [doctorInfoMap, setDoctorInfoMap] = useState<Record<string, DoctorInfo>>({})
@@ -636,14 +659,14 @@ export function PurchasedPackagesList({
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0CC8C8]/10 to-[#007A94]/10 flex items-center justify-center mb-5">
           <Package className="w-10 h-10 text-[#007A94]/40" />
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">No service packages yet</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-2">{t("noServicePackages")}</h3>
         <p className="text-sm text-gray-500 text-center max-w-xs mb-6">
-          You haven't purchased any packages. Choose a doctor and a suitable plan to get started.
+          {t("browsePackagesStart")}
         </p>
         <Link href="/patient-package">
           <Button className="bg-gradient-to-r from-[#007A94] to-[#0CC8C8] hover:from-[#006080] hover:to-[#00AAAA] text-white rounded-xl h-11 px-6 font-semibold shadow-sm">
             <ShoppingCart className="w-4 h-4 mr-2" />
-            Buy a Package
+            {t("buyPackage")}
           </Button>
         </Link>
       </div>
@@ -662,7 +685,7 @@ export function PurchasedPackagesList({
 
       {/* ── Section header + filter tabs ── */}
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-sm font-semibold text-gray-600">All service packages</h2>
+        <h2 className="text-sm font-semibold text-gray-600">{t("allServicePackages")}</h2>
         <div className="flex items-center gap-1 bg-white rounded-full border border-gray-200 shadow-sm px-1.5 py-1 overflow-x-auto">
           {FILTER_TABS.map((tab) => {
             const count = tabCounts[tab.key]
@@ -679,7 +702,7 @@ export function PurchasedPackagesList({
                   }
                 `}
               >
-                {tab.label}
+                {tabLabelMap[tab.key]}
                 {count > 0 && !isActive && (
                   <span className="ml-1 text-[10px] text-gray-400">({count})</span>
                 )}
@@ -693,7 +716,7 @@ export function PurchasedPackagesList({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Package className="w-12 h-12 text-gray-200 mb-3" />
-          <p className="text-gray-400 font-medium text-sm">No packages in this category</p>
+          <p className="text-gray-400 font-medium text-sm">{t("noPackagesInCategory")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">

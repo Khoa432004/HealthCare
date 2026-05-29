@@ -19,11 +19,13 @@ import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
 import { doctorStatisticsService, type DoctorStatistics } from "@/services/doctor-statistics.service"
 import { appointmentService, type Appointment } from "@/services/appointment.service"
+import { useTranslation } from "react-i18next"
 
 type DashboardPeriod = "today" | "last7days" | "thisMonth"
 
 function DoctorDashboardContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [statistics, setStatistics] = useState<DoctorStatistics | null>(null)
   const [yesterdayStatistics, setYesterdayStatistics] = useState<DoctorStatistics | null>(null)
@@ -194,33 +196,33 @@ function DoctorDashboardContent() {
       ? percentageChange(totalPatientsToday, totalPatientsYesterday)
       : percentageChange(uniquePatientsCurrentPeriod, uniquePatientsPreviousPeriod)
   const comparisonText =
-    selectedPeriod === "today" ? "vs yesterday" : selectedPeriod === "last7days" ? "vs previous 7 days" : "vs last month"
+    selectedPeriod === "today" ? t("vsYesterday") : selectedPeriod === "last7days" ? t("vsPrevious7Days") : t("vsLastMonth")
 
   const dashboardMetrics = [
     {
-      title: "Total Appointments",
+      title: t("totalAppointments"),
       value: String(totalMonthAppointments),
-      unit: "visits",
+      unit: t("visits"),
       change: `${Math.abs(appointmentsChange).toFixed(1)}%`,
       changeText: comparisonText,
       trend: appointmentsChange >= 0 ? ("up" as const) : ("down" as const),
       chartData: [totalPreviousMonthAppointments, 0, 0, totalMonthAppointments],
     },
     {
-      title: "Consultation Time",
+      title: t("consultationTime"),
       value: String(averageConsultationMinutes),
-      unit: "min",
+      unit: t("min", "min"),
       change: `${Math.abs(consultationChange).toFixed(1)}%`,
       changeText: comparisonText,
       trend: consultationChange >= 0 ? ("up" as const) : ("down" as const),
       chartData: [previousAverageConsultationMinutes, 0, 0, averageConsultationMinutes],
     },
     {
-      title: selectedPeriod === "today" ? "Total Patients Today" : "Total Patients",
+      title: selectedPeriod === "today" ? t("totalPatientsToday") : t("totalPatients"),
       value: String(selectedPeriod === "today" ? totalPatientsToday : uniquePatientsCurrentPeriod),
-      unit: "patients",
+      unit: t("patients"),
       change: `${Math.abs(patientsTodayChange).toFixed(1)}%`,
-      changeText: selectedPeriod === "today" ? "vs yesterday" : comparisonText,
+      changeText: selectedPeriod === "today" ? t("vsYesterday") : comparisonText,
       trend: patientsTodayChange >= 0 ? ("up" as const) : ("down" as const),
       chartData:
         selectedPeriod === "today"
@@ -308,9 +310,9 @@ function DoctorDashboardContent() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="last7days">Last 7 days</SelectItem>
-                  <SelectItem value="thisMonth">This month</SelectItem>
+                  <SelectItem value="today">{t("todayPeriod", "Today")}</SelectItem>
+                  <SelectItem value="last7days">{t("last7Days")}</SelectItem>
+                  <SelectItem value="thisMonth">{t("thisMonth")}</SelectItem>
                 </SelectContent>
               </Select>
             </PageHeaderTitleRow>

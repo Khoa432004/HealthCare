@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Edit2, MoreVertical, X, Stethoscope, Heart, Pill, Frown } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -33,6 +34,7 @@ interface CalendarWeekViewProps {
 }
 
 export function CalendarWeekView({ currentDate, appointments = [], userRole }: CalendarWeekViewProps) {
+  const { t } = useTranslation()
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -153,32 +155,32 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
     switch (status) {
       case "upcoming":
         return {
-          text: "Up Coming",
+          text: t("upcoming"),
           className: "bg-[#16A1BD] hover:bg-teal-600 text-white"
         }
       case "in_process":
         return {
-          text: "In Process",
+          text: t("inProcess"),
           className: "bg-yellow-600 hover:bg-yellow-700 text-white"
         }
       case "pending":
         return {
-          text: "Pending",
+          text: t("pending"),
           className: "bg-yellow-500 hover:bg-yellow-600 text-white"
         }
       case "cancelled":
         return {
-          text: "Cancelled",
+          text: t("cancelled"),
           className: "bg-red-500 hover:bg-red-600 text-white"
         }
       case "completed":
         return {
-          text: "Completed",
+          text: t("completed"),
           className: "bg-green-500 hover:bg-green-600 text-white"
         }
       default:
         return {
-          text: "Unknown",
+          text: t("unknownPerson"),
           className: "bg-gray-500 hover:bg-gray-600 text-white"
         }
     }
@@ -199,7 +201,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
     setIsDialogOpen(true)
   }
 
-  const weekDayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+  const weekDayNames = [t("mon"), t("tue"), t("wed"), t("thu"), t("fri"), t("sat"), t("sun")]
 
   return (
     <>
@@ -252,7 +254,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
       {/* Event Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden" showCloseButton={false}>
-          <DialogTitle className="sr-only">{selectedEvent?.title} - Appointment Details</DialogTitle>
+          <DialogTitle className="sr-only">{selectedEvent?.title} - {t("appointmentDetails")}</DialogTitle>
           {selectedEvent && (
             <div className="flex flex-col h-full max-h-[90vh]">
               {/* Header with badges and actions */}
@@ -307,7 +309,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                 {/* Doctor info */}
                 {selectedEvent.doctor && (
                   <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Doctor</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("doctor")}</h3>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-700">
                         {getInitials(selectedEvent.doctor)}
@@ -323,7 +325,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                 {/* Patient section */}
                 {selectedEvent.patient && (
                   <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Patient</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("patient")}</h3>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-700">
                         {getInitials(selectedEvent.patient)}
@@ -339,7 +341,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                 {/* Details section */}
                 {(selectedEvent.reason || selectedEvent.symptomsOnset || selectedEvent.symptomsSeverity || selectedEvent.medicationsUsed) && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Details</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("details")}</h3>
                     <div className="space-y-3">
                       {selectedEvent.reason && (
                         <div className="flex items-start gap-3">
@@ -347,7 +349,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                             <Stethoscope className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">Reason</p>
+                            <p className="text-sm font-semibold text-gray-900">{t("reason")}</p>
                             <p className="text-sm text-gray-600">{selectedEvent.reason}</p>
                           </div>
                         </div>
@@ -359,7 +361,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                             <Heart className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">Symptoms onset</p>
+                            <p className="text-sm font-semibold text-gray-900">{t("symptomsOnset")}</p>
                             <p className="text-sm text-gray-600">{selectedEvent.symptomsOnset}</p>
                           </div>
                         </div>
@@ -371,7 +373,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                             <Frown className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">Symptoms severity</p>
+                            <p className="text-sm font-semibold text-gray-900">{t("symptomsSeverity")}</p>
                             <p className="text-sm text-gray-600">{selectedEvent.symptomsSeverity}</p>
                           </div>
                         </div>
@@ -383,7 +385,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
                             <Pill className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">Medications being used</p>
+                            <p className="text-sm font-semibold text-gray-900">{t("medicationsBeingUsed")}</p>
                             <p className="text-sm text-gray-600">{selectedEvent.medicationsUsed}</p>
                           </div>
                         </div>
@@ -397,7 +399,7 @@ export function CalendarWeekView({ currentDate, appointments = [], userRole }: C
               <div className="px-6 py-4 border-t border-gray-200">
                 <Link href={userRole === 'PATIENT' ? `/patient-calendar/appointment/${selectedEvent.id}` : `/calendar/appointment/${selectedEvent.id}`} className="w-full">
                   <button className="inline-flex items-center justify-center gap-2 rounded-full truncate transition font-semibold select-none w-full px-3.5 py-2.5 text-sm bg-[#E8F5F1] border border-[#005566] text-[#005566]" type="button">
-                    View details
+                    {t("viewDetails")}
                   </button>
                 </Link>
               </div>

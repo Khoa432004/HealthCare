@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Calendar, ChevronLeft, ChevronRight, Filter, Plus, User, LogOut } from "lucide-react"
+import { Search, Calendar, ChevronLeft, ChevronRight, Filter, Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authService } from "@/services/auth.service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { CalendarMonthView } from "@/components/calendar-month-view"
 import { CalendarWeekView } from "@/components/calendar-week-view"
@@ -33,6 +34,7 @@ type ViewMode = "month" | "week" | "day"
 export default function PatientCalendar() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date()) // Current month
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
@@ -49,27 +51,6 @@ export default function PatientCalendar() {
       })
     }
   }, [])
-
-  // Helper function to get initials from fullName
-  const getInitials = (name: string): string => {
-    if (!name) return 'PT'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-      authService.clearAuthData()
-      router.push('/login')
-    }
-  }
 
   // Initialize filters with fallback: all statuses selected (show all)
   const [filters, setFilters] = useState({
@@ -195,8 +176,8 @@ export default function PatientCalendar() {
     } catch (error) {
       console.error('Error changing filter:', error)
       toast({
-        title: "Lỗi",
-        description: "Không thể cập nhật bộ lọc. Vui lòng thử lại.",
+        title: t("error"),
+        description: t("filterUpdateFailed", "Không thể cập nhật bộ lọc. Vui lòng thử lại."),
         variant: "destructive",
       })
     }
@@ -214,8 +195,8 @@ export default function PatientCalendar() {
       console.error('Error opening filter dropdown:', error)
       setFilterDropdownError(true)
       toast({
-        title: "Lỗi",
-        description: "Không thể mở bộ lọc. Vui lòng thử lại.",
+        title: t("error"),
+        description: t("filterOpenFailed", "Không thể mở bộ lọc. Vui lòng thử lại."),
         variant: "destructive",
       })
     }
@@ -236,7 +217,7 @@ export default function PatientCalendar() {
           setHasPermission(false)
           setError({
             type: 'permission',
-            message: 'Bạn không có quyền truy cập Lịch khám.'
+            message: t("noCalendarPermission")
           })
           return
         }
@@ -246,7 +227,7 @@ export default function PatientCalendar() {
           setHasPermission(false)
           setError({
             type: 'permission',
-            message: 'Bạn không có quyền truy cập Lịch khám.'
+            message: t("noCalendarPermission")
           })
           return
         }
@@ -257,7 +238,7 @@ export default function PatientCalendar() {
         setHasPermission(false)
         setError({
           type: 'permission',
-          message: 'Bạn không có quyền truy cập Lịch khám.'
+          message: t("noCalendarPermission")
         })
       }
     }
@@ -280,7 +261,7 @@ export default function PatientCalendar() {
       setCalendarInitialized(false)
       setError({
         type: 'initialization',
-        message: 'Không thể khởi tạo lịch.'
+        message: t("calendarInitFailed", "Không thể khởi tạo lịch.")
       })
     }
   }, [hasPermission])
@@ -328,8 +309,8 @@ export default function PatientCalendar() {
         // Check if it's a network error (3.B)
         if (!navigator.onLine || error.message?.includes('network') || error.message?.includes('fetch')) {
           toast({
-            title: "Mất kết nối mạng",
-            description: "Mất kết nối mạng. Vui lòng thử lại.",
+            title: t("networkLost", "Mất kết nối mạng"),
+            description: t("networkLostRetry", "Mất kết nối mạng. Vui lòng thử lại."),
             variant: "destructive",
           })
         } else {
@@ -338,12 +319,12 @@ export default function PatientCalendar() {
           if (hasActiveFilter) {
             setError({
               type: 'data',
-              message: 'Không thể tải dữ liệu lịch theo bộ lọc.'
+              message: t("calendarFilterLoadFailed", "Không thể tải dữ liệu lịch theo bộ lọc.")
             })
           } else {
             setError({
               type: 'data',
-              message: 'Không thể tải dữ liệu lịch.'
+              message: t("calendarLoadFailed")
             })
           }
         }
@@ -432,7 +413,7 @@ export default function PatientCalendar() {
       <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-            <PageHeaderTitleRow role="patient" icon={Calendar} title="My Calendar" />
+            <PageHeaderTitleRow role="patient" icon={Calendar} title={t("myCalendar")} />
 
             <div className="flex items-center space-x-4">
               {/* Search */}
@@ -440,7 +421,7 @@ export default function PatientCalendar() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input 
                   type="search"
-                  placeholder="Search..." 
+                  placeholder={t("searchPlaceholder")} 
                   className="pl-10 bg-gray-50 border-gray-200" 
                 />
               </div>
@@ -449,31 +430,7 @@ export default function PatientCalendar() {
               <NotificationBell />
 
               {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
-                      <p className="text-xs text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu userInfo={userInfo} />
             </div>
           </div>
         </header>
@@ -490,7 +447,7 @@ export default function PatientCalendar() {
                   className="glass border-[#007A94] text-[#007A94] hover:gradient-primary hover:text-white rounded-xl transition-smooth"
                   onClick={goToToday}
                 >
-                  Today
+                  {t("today")}
                 </Button>
 
                 <div className="flex items-center space-x-2">
@@ -522,7 +479,7 @@ export default function PatientCalendar() {
                   <DropdownMenuContent align="end" className="w-48">
                     <div className="p-2 space-y-2">
                       <div className="flex items-center justify-between px-2 pb-2 border-b">
-                        <span className="text-sm font-semibold text-gray-700">Filter by Status</span>
+                        <span className="text-sm font-semibold text-gray-700">{t("filterByStatus")}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -531,7 +488,7 @@ export default function PatientCalendar() {
                           onCheckedChange={(checked) => handleFilterChange('upcoming', checked as boolean)}
                         />
                         <label htmlFor="upcoming" className="text-sm cursor-pointer">
-                          Up coming
+                          {t("upcoming")}
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -541,7 +498,7 @@ export default function PatientCalendar() {
                           onCheckedChange={(checked) => handleFilterChange('pending', checked as boolean)}
                         />
                         <label htmlFor="pending" className="text-sm cursor-pointer">
-                          Pending
+                          {t("pending")}
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -551,7 +508,7 @@ export default function PatientCalendar() {
                           onCheckedChange={(checked) => handleFilterChange('cancelled', checked as boolean)}
                         />
                         <label htmlFor="cancelled" className="text-sm cursor-pointer">
-                          Cancelled
+                          {t("cancelled")}
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -561,7 +518,7 @@ export default function PatientCalendar() {
                           onCheckedChange={(checked) => handleFilterChange('completed', checked as boolean)}
                         />
                         <label htmlFor="completed" className="text-sm cursor-pointer">
-                          Completed
+                          {t("completed")}
                         </label>
                       </div>
                     </div>
@@ -573,16 +530,16 @@ export default function PatientCalendar() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day">Day</SelectItem>
-                    <SelectItem value="week">Week</SelectItem>
-                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="day">{t("day")}</SelectItem>
+                    <SelectItem value="week">{t("week")}</SelectItem>
+                    <SelectItem value="month">{t("month")}</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Link href="/patient-calendar/booking">
                   <Button className="gradient-primary hover:opacity-90 text-white rounded-xl shadow-soft-lg hover:shadow-soft-xl transition-smooth">
                     <Plus className="w-4 h-4 mr-2" />
-                    Book appointment
+                    {t("bookAppointment")}
                   </Button>
                 </Link>
               </div>
@@ -605,13 +562,13 @@ export default function PatientCalendar() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <p className="text-lg font-semibold text-gray-700 mb-2">
-                      Bạn không có quyền truy cập Lịch khám.
+                      {t("noCalendarPermission")}
                     </p>
                     <Button
                       onClick={() => router.push('/patient-dashboard')}
                       className="gradient-primary text-white"
                     >
-                      Quay về Dashboard
+                      {t("backToDashboard")}
                     </Button>
                   </div>
                 </div>
@@ -619,13 +576,13 @@ export default function PatientCalendar() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <p className="text-lg font-semibold text-gray-700 mb-2">
-                      Không thể khởi tạo lịch.
+                      {t("calendarInitFailed", "Không thể khởi tạo lịch.")}
                     </p>
                     <Button
                       onClick={() => window.location.reload()}
                       className="gradient-primary text-white"
                     >
-                      Tải lại trang
+                      {t("reloadPage")}
                     </Button>
                   </div>
                 </div>

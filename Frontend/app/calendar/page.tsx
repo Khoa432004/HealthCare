@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Search, Filter, ChevronLeft, ChevronRight, Plus, Calendar, User, Settings, LogOut } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Input } from "@/components/ui/input"
@@ -33,6 +34,7 @@ type ViewMode = "month" | "week" | "day"
 export default function CalendarPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [currentDate, setCurrentDate] = useState(new Date()) // Current month
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
@@ -200,8 +202,8 @@ export default function CalendarPage() {
     } catch (error) {
       console.error('Error changing filter:', error)
       toast({
-        title: "Lỗi",
-        description: "Không thể cập nhật bộ lọc. Vui lòng thử lại.",
+        title: t("error"),
+        description: t("filterUpdateFailed", "Không thể cập nhật bộ lọc. Vui lòng thử lại."),
         variant: "destructive",
       })
     }
@@ -219,8 +221,8 @@ export default function CalendarPage() {
       console.error('Error opening filter dropdown:', error)
       setFilterDropdownError(true)
       toast({
-        title: "Lỗi",
-        description: "Không thể mở bộ lọc. Vui lòng thử lại.",
+        title: t("error"),
+        description: t("filterOpenFailed", "Không thể mở bộ lọc. Vui lòng thử lại."),
         variant: "destructive",
       })
     }
@@ -241,7 +243,7 @@ export default function CalendarPage() {
           setHasPermission(false)
           setError({
             type: 'permission',
-            message: 'Bạn không có quyền truy cập Lịch khám.'
+            message: t("noCalendarPermission")
           })
           return
         }
@@ -251,7 +253,7 @@ export default function CalendarPage() {
           setHasPermission(false)
           setError({
             type: 'permission',
-            message: 'Bạn không có quyền truy cập Lịch khám.'
+            message: t("noCalendarPermission")
           })
           return
         }
@@ -262,7 +264,7 @@ export default function CalendarPage() {
         setHasPermission(false)
         setError({
           type: 'permission',
-          message: 'Bạn không có quyền truy cập Lịch khám.'
+          message: t("noCalendarPermission")
         })
       }
     }
@@ -285,7 +287,7 @@ export default function CalendarPage() {
       setCalendarInitialized(false)
       setError({
         type: 'initialization',
-        message: 'Không thể khởi tạo lịch.'
+        message: t("calendarInitFailed", "Không thể khởi tạo lịch.")
       })
     }
   }, [hasPermission])
@@ -333,8 +335,8 @@ export default function CalendarPage() {
         // Check if it's a network error (3.B)
         if (!navigator.onLine || error.message?.includes('network') || error.message?.includes('fetch')) {
           toast({
-            title: "Mất kết nối mạng",
-            description: "Mất kết nối mạng. Vui lòng thử lại.",
+            title: t("networkLost", "Mất kết nối mạng"),
+            description: t("networkLostRetry", "Mất kết nối mạng. Vui lòng thử lại."),
             variant: "destructive",
           })
         } else {
@@ -343,12 +345,12 @@ export default function CalendarPage() {
           if (hasActiveFilter) {
             setError({
               type: 'data',
-              message: 'Không thể tải dữ liệu lịch theo bộ lọc.'
+              message: t("calendarFilterLoadFailed", "Không thể tải dữ liệu lịch theo bộ lọc.")
             })
           } else {
             setError({
               type: 'data',
-              message: 'Không thể tải dữ liệu lịch.'
+              message: t("calendarLoadFailed")
             })
           }
         }
@@ -437,7 +439,7 @@ export default function CalendarPage() {
       <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: '16px' }}>
         <header className="bg-white py-4 mx-4 mb-4" style={{ borderRadius: '16px', paddingLeft: '32px', paddingRight: '24px' }}>
           <div className="flex items-center justify-between">
-            <PageHeaderTitleRow role="doctor" icon={Calendar} title="Calendar" />
+            <PageHeaderTitleRow role="doctor" icon={Calendar} title={t("calendar")} />
 
             <div className="flex items-center space-x-4">
               {/* Search */}
@@ -445,7 +447,7 @@ export default function CalendarPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="search"
-                  placeholder="Search..."
+                  placeholder={t("searchPlaceholder")}
                   className="pl-10 bg-gray-50 border-gray-200" 
                 />
               </div>
@@ -467,7 +469,7 @@ export default function CalendarPage() {
                 className="glass border-[#007A94] text-[#007A94] hover:gradient-primary hover:text-white rounded-xl transition-smooth bg-transparent"
                 onClick={goToToday}
               >
-                Today
+                {t("today")}
               </Button>
 
               <div className="flex items-center space-x-2">
@@ -504,7 +506,7 @@ export default function CalendarPage() {
                 <DropdownMenuContent align="end" className="w-48">
                   <div className="p-2 space-y-2">
                     <div className="flex items-center justify-between px-2 pb-2 border-b">
-                      <span className="text-sm font-semibold text-gray-700">Filter by Status</span>
+                      <span className="text-sm font-semibold text-gray-700">{t("filterByStatus")}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -513,7 +515,7 @@ export default function CalendarPage() {
                         onCheckedChange={(checked) => handleFilterChange('upcoming', checked as boolean)}
                       />
                       <label htmlFor="upcoming" className="text-sm cursor-pointer">
-                        Up coming
+                        {t("upcoming")}
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -523,7 +525,7 @@ export default function CalendarPage() {
                         onCheckedChange={(checked) => handleFilterChange('pending', checked as boolean)}
                       />
                       <label htmlFor="pending" className="text-sm cursor-pointer">
-                        Pending
+                        {t("pending")}
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -533,7 +535,7 @@ export default function CalendarPage() {
                         onCheckedChange={(checked) => handleFilterChange('cancelled', checked as boolean)}
                       />
                       <label htmlFor="cancelled" className="text-sm cursor-pointer">
-                        Cancelled
+                        {t("cancelled")}
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -543,7 +545,7 @@ export default function CalendarPage() {
                         onCheckedChange={(checked) => handleFilterChange('completed', checked as boolean)}
                       />
                       <label htmlFor="completed" className="text-sm cursor-pointer">
-                        Completed
+                        {t("completed")}
                       </label>
                     </div>
                   </div>
@@ -555,9 +557,9 @@ export default function CalendarPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="day">{t("day")}</SelectItem>
+                  <SelectItem value="week">{t("week")}</SelectItem>
+                  <SelectItem value="month">{t("month")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -566,7 +568,7 @@ export default function CalendarPage() {
                 onClick={handleCreateAppointment}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create
+                {t("create")}
               </Button>
             </div>
           </div>
@@ -589,13 +591,13 @@ export default function CalendarPage() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <p className="text-lg font-semibold text-gray-700 mb-2">
-                  Bạn không có quyền truy cập Lịch khám.
+                  {t("noCalendarPermission")}
                 </p>
                 <Button
                   onClick={() => router.push('/doctor-dashboard')}
                   className="gradient-primary text-white"
                 >
-                  Quay về Dashboard
+                  {t("backToDashboard")}
                 </Button>
               </div>
             </div>
@@ -603,13 +605,13 @@ export default function CalendarPage() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <p className="text-lg font-semibold text-gray-700 mb-2">
-                  Không thể khởi tạo lịch.
+                  {t("calendarInitFailed", "Không thể khởi tạo lịch.")}
                 </p>
                 <Button
                   onClick={() => window.location.reload()}
                   className="gradient-primary text-white"
                 >
-                  Tải lại trang
+                  {t("reloadPage")}
                 </Button>
               </div>
             </div>

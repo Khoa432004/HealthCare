@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Search,
@@ -18,6 +19,7 @@ import {
   Lock as LockIcon
 } from "lucide-react";
 import { PatientSidebar } from "@/components/patient-sidebar";
+import { PatientUserMenu } from "@/components/patient-user-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,6 +79,7 @@ function PackageDetailView({
   getInitials,
 }: PackageDetailProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmedPolicy, setIsConfirmedPolicy] = useState<boolean>(false);
@@ -89,7 +92,7 @@ function PackageDetailView({
 
       const accessToken = localStorage.getItem("access_token");
       if (!accessToken) {
-        throw new Error("Authentication token not found. Please login again.");
+        throw new Error(t("authTokenNotFound", "Authentication token not found. Please login again."));
       }
 
       const orderTotal = pkg.priceVnd;
@@ -112,7 +115,7 @@ function PackageDetailView({
       window.location.href = paymentUrl;
     } catch (err: any) {
       console.error("Payment error:", err);
-      setError(err?.message || "Payment failed. Please try again.");
+      setError(err?.message || t("paymentGatewayFailed"));
       setIsProcessing(false);
     }
   };
@@ -145,12 +148,12 @@ function PackageDetailView({
                     <CalendarDays className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-0.5">You are buying</p>
+                    <p className="text-xs text-gray-400 mb-0.5">{t("youAreBuying")}</p>
                     <h2 className="text-xl font-bold text-gray-900">{pkg.packageName}</h2>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400">Buy date</p>
+                  <p className="text-xs text-gray-400">{t("buyDate")}</p>
                   <p className="text-sm font-semibold text-gray-800">
                     <strong>{formatDate()}</strong>
                   </p>
@@ -161,7 +164,7 @@ function PackageDetailView({
               <div className="grid grid-cols-2 gap-4">
                 {/* Patient */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Patient</h3>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t("patient")}</h3>
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
                       <AvatarFallback className="bg-gray-200 text-gray-600 text-sm font-semibold">
@@ -170,16 +173,16 @@ function PackageDetailView({
                     </Avatar>
                     <div>
                       <p className="font-semibold text-gray-900 text-sm leading-tight">
-                        {userInfo?.fullName || "Patient"}
+                        {userInfo?.fullName || t("patient")}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">Bệnh nhân</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t("patientLabel")}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Doctor */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Doctor</h3>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t("doctor")}</h3>
                   <div className="flex items-start gap-3">
                     <Avatar className="w-10 h-10">
                       <AvatarImage
@@ -207,7 +210,7 @@ function PackageDetailView({
 
               {/* Package information */}
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Package information</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">{t("packageInformation")}</h3>
                 <div className="border border-gray-100 rounded-xl overflow-hidden">
                   <div className="grid grid-cols-1 sm:grid-cols-3">
                     <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
@@ -215,8 +218,8 @@ function PackageDetailView({
                         <Clock className="w-4 h-4 text-teal-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Duration</p>
-                        <p className="text-sm font-bold text-gray-900">{pkg.durationDays} days</p>
+                        <p className="text-xs text-gray-400">{t("duration")}</p>
+                        <p className="text-sm font-bold text-gray-900">{pkg.durationDays} {t("days")}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
@@ -224,7 +227,7 @@ function PackageDetailView({
                         <Calendar className="w-4 h-4 text-teal-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Start date</p>
+                        <p className="text-xs text-gray-400">{t("startDate")}</p>
                         <p className="text-sm font-bold text-gray-900">{formatDate()}</p>
                       </div>
                     </div>
@@ -233,7 +236,7 @@ function PackageDetailView({
                         <Calendar className="w-4 h-4 text-teal-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">End date</p>
+                        <p className="text-xs text-gray-400">{t("endDate")}</p>
                         <p className="text-sm font-bold text-gray-900">
                           {formatDate(pkg.durationDays || 7)}
                         </p>
@@ -249,27 +252,27 @@ function PackageDetailView({
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 sticky top-4">
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-gray-100">
-                  <h3 className="text-base font-bold text-gray-900">Checkout</h3>
+                  <h3 className="text-base font-bold text-gray-900">{t("checkout")}</h3>
                 </div>
 
                 <div className="p-5 space-y-4">
                   {/* Fee Breakdown */}
                   <div className="space-y-2.5">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Service fee</span>
+                      <span className="text-gray-600">{t("serviceFee")}</span>
                       <span className="font-medium text-gray-900">{formatPrice(pkg.priceVnd)}</span>
                     </div>
                   </div>
 
                   {/* Total */}
                   <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                    <span className="text-sm font-semibold text-gray-900">Total cost</span>
+                    <span className="text-sm font-semibold text-gray-900">{t("totalCost")}</span>
                     <span className="text-lg font-bold text-red-500">{formatPrice(pkg.priceVnd)}</span>
                   </div>
 
                   {/* Payment Method */}
                   <div>
-                    <p className="text-sm font-bold text-gray-900 mb-3">Phương thức thanh toán</p>
+                    <p className="text-sm font-bold text-gray-900 mb-3">{t("paymentMethod")}</p>
                     <div className="flex items-center justify-between p-3.5 border border-teal-500 bg-teal-50/20 ring-1 ring-teal-500 rounded-xl select-none">
                       <div className="flex items-center gap-3.5">
                         <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center p-1.5 shadow-sm shrink-0">
@@ -280,8 +283,8 @@ function PackageDetailView({
                           />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-800">Cổng thanh toán VNPAY</span>
-                          <span className="text-[11px] text-gray-400">Hỗ trợ ứng dụng ngân hàng & Thẻ ATM</span>
+                          <span className="text-sm font-semibold text-gray-800">{t("paymentMethodVnpay")}</span>
+                          <span className="text-[11px] text-gray-400">{t("vnpaySupport")}</span>
                         </div>
                       </div>
                     </div>
@@ -300,7 +303,7 @@ function PackageDetailView({
                           className="mt-0.5 accent-teal-600 h-4 w-4 rounded border-gray-300 cursor-pointer"
                         />
                         <span className="text-xs text-gray-600 leading-normal group-hover:text-gray-800 transition-colors">
-                          Tôi xác nhận đã đọc và đồng ý với{" "}
+                          {t("consentReadAgree", "Tôi xác nhận đã đọc và đồng ý với")}{" "}
                           <span
                             onClick={(e) => {
                               e.preventDefault(); // Ngăn hành động tick checkbox khi click vào chữ link công ty
@@ -308,7 +311,7 @@ function PackageDetailView({
                             }}
                             className="text-teal-600 underline hover:text-teal-700 font-medium cursor-pointer mx-0.5"
                           >
-                            Chính sách bảo mật & Điều khoản sử dụng
+                            {t("consentPrivacyPolicyTerms", "Chính sách bảo mật & Điều khoản sử dụng")}
                           </span>
                         </span>
                       </label>
@@ -322,7 +325,7 @@ function PackageDetailView({
                           className="mt-0.5 accent-teal-600 h-4 w-4 rounded border-gray-300 cursor-pointer"
                         />
                         <span className="text-xs text-gray-600 leading-normal group-hover:text-gray-800 transition-colors">
-                          Tôi đồng ý chia sẻ dữ liệu y tế cá nhân của mình cho Bác sĩ / Phòng khám phụ trách gói dịch vụ này
+                          {t("consentShareMedicalData", "Tôi đồng ý chia sẻ dữ liệu y tế cá nhân của mình cho Bác sĩ / Phòng khám phụ trách gói dịch vụ này")}
                         </span>
                       </label>
                     </div>
@@ -345,14 +348,14 @@ function PackageDetailView({
       bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-700/10"
                     >
                       {isProcessing ? (
-                        "Processing..."
+                        t("processing")
                       ) : !isConfirmedPolicy || !isAgreedShareData ? (
                         <>
                           <LockIcon className="w-4 h-4 opacity-70" />
-                          <span>Vui lòng đồng ý điều khoản</span>
+                          <span>{t("pleaseAgreeTerms", "Vui lòng đồng ý điều khoản")}</span>
                         </>
                       ) : (
-                        "Xác nhận và Thanh toán"
+                        t("confirmAndPay")
                       )}
                     </Button>
                   </div>
@@ -371,6 +374,7 @@ function PackageDetailView({
 // ─────────────────────────────────────────────────────────────────────────────
 function PatientPackageContent() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [doctorsWithPackages, setDoctorsWithPackages] = useState<DoctorWithPackages[]>([]);
@@ -518,40 +522,18 @@ function PatientPackageContent() {
                   <PageHeaderTitleRow
                     role="patient"
                     icon={ClipboardList}
-                    title="Package Details"
+                    title={t("packageDetails")}
                     titleClassName="text-lg"
                   />
                 </div>
 
                 <div className="flex items-center space-x-3">
                   <NotificationBell />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                        <Avatar className="w-7 h-7">
-                          <AvatarImage src="/placeholder-user.jpg" />
-                          <AvatarFallback className="text-xs">
-                            {userInfo ? getInitials(userInfo.fullName) : "PT"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="text-left">
-                          <p className="text-xs font-medium">{userInfo?.fullName || "Patient"}</p>
-                          <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                        </div>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
-                        <User className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-sm">My Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-sm">Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <PatientUserMenu
+                    userInfo={userInfo}
+                    triggerClassName="flex items-center gap-2 h-9 px-2"
+                    contentClassName="w-48"
+                  />
                 </div>
               </div>
             </header>
@@ -576,7 +558,7 @@ function PatientPackageContent() {
                 <PageHeaderTitleRow
                   role="patient"
                   icon={ClipboardList}
-                  title="Buy Package"
+                  title={t("buyPackage")}
                   titleClassName="text-lg"
                 />
 
@@ -585,33 +567,11 @@ function PatientPackageContent() {
                   <NotificationBell />
 
                   {/* User Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                        <Avatar className="w-7 h-7">
-                          <AvatarImage src="/placeholder-user.jpg" />
-                          <AvatarFallback className="text-xs">
-                            {userInfo ? getInitials(userInfo.fullName) : "PT"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="text-left">
-                          <p className="text-xs font-medium">{userInfo?.fullName || "Patient"}</p>
-                          <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                        </div>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
-                        <User className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-sm">My Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-sm">Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <PatientUserMenu
+                    userInfo={userInfo}
+                    triggerClassName="flex items-center gap-2 h-9 px-2"
+                    contentClassName="w-48"
+                  />
                 </div>
               </div>
             </header>
@@ -626,7 +586,7 @@ function PatientPackageContent() {
                     <div className="relative flex items-center mb-3">
                       <Search className="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                       <Input
-                        placeholder="Search doctors by name, specialty, or hospital..."
+                        placeholder={t("searchDoctorPackage")}
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
                         className="w-full pl-9 pr-3 h-9 bg-gray-50/70 border-gray-200 focus-visible:border-teal-500 focus-visible:ring-teal-500/20 rounded-lg placeholder:text-gray-400 text-sm"
@@ -638,7 +598,7 @@ function PatientPackageContent() {
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 px-0.5">
                           <SlidersHorizontal className="w-3 h-3" />
-                          <span>Filter by Specialty Group</span>
+                          <span>{t("filterSpecialty")}</span>
                         </div>
 
                         <div className="flex flex-wrap gap-2 max-h-[110px] overflow-y-auto pr-1 scrollbar-thin">
@@ -651,7 +611,7 @@ function PatientPackageContent() {
                               }`}
                             onClick={() => setSelectedSpecialty(null)}
                           >
-                            All Catalogue
+                            {t("allCatalogue")}
                           </Badge>
 
                           {specialties.map((specialtyStr) => {
@@ -695,7 +655,7 @@ function PatientPackageContent() {
                 {/* Specialists count */}
                 <div className="mb-3">
                   <h2 className="text-sm font-semibold text-gray-700">
-                    Our Specialists ({filteredDoctors.length})
+                    {t("ourSpecialists")} ({filteredDoctors.length})
                   </h2>
                 </div>
 
@@ -703,7 +663,7 @@ function PatientPackageContent() {
                 <div className="space-y-4">
                   {loading ? (
                     <div className="text-center py-12 text-gray-500">
-                      Loading doctors and packages...
+                      {t("loadingDoctorsPackages", "Loading doctors and packages...")}
                     </div>
                   ) : filteredDoctors && filteredDoctors.length > 0 ? (
                     filteredDoctors.map((doctor) => {
@@ -731,7 +691,7 @@ function PatientPackageContent() {
                                 {isBlocked && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                     <AlertCircle className="w-2.5 h-2.5" />
-                                    Đang sử dụng gói của bác sĩ này
+                                    {t("alreadyPurchased")}
                                   </span>
                                 )}
                               </div>
@@ -770,7 +730,7 @@ function PatientPackageContent() {
                                     {/* Package name */}
                                     <div className="mb-3">
                                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
-                                        Gói tư vấn
+                                        {t("consultationPackage", "Gói tư vấn")}
                                       </span>
                                       <p className="text-sm font-bold text-gray-900 truncate">
                                         {pkg.packageName || `Gói ${pkg.durationDays} ngày`}
@@ -784,10 +744,10 @@ function PatientPackageContent() {
                                       </div>
                                       <div>
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                                          Thời hạn
+                                          {t("duration")}
                                         </span>
                                         <p className="text-xs font-bold text-gray-800">
-                                          {pkg.durationDays} ngày
+                                          {pkg.durationDays} {t("days")}
                                         </p>
                                       </div>
                                     </div>
@@ -795,7 +755,7 @@ function PatientPackageContent() {
                                     {/* Price */}
                                     <div className="pt-2 border-t border-gray-50">
                                       <p className="text-[10px] text-gray-400 font-bold mb-0.5 uppercase tracking-wider">
-                                        Giá dịch vụ
+                                        {t("serviceFee")}
                                       </p>
                                       <div className="flex items-baseline gap-1">
                                         <span className="text-base font-bold text-gray-900 tracking-tight transition-colors group-hover:text-teal-600 duration-200">
@@ -812,7 +772,7 @@ function PatientPackageContent() {
                                       disabled={isBlocked}
                                       title={
                                         isBlocked
-                                          ? "Bạn đang sử dụng gói của bác sĩ này, không thể mua thêm"
+                                          ? t("alreadyPurchasedDoctorTooltip", "Bạn đang sử dụng gói của bác sĩ này, không thể mua thêm")
                                           : undefined
                                       }
                                       className="w-full h-9 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg shadow-sm shadow-teal-700/10 hover:shadow-md hover:shadow-teal-700/20 transition-all duration-200 flex items-center justify-center gap-1.5 group/btn disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200"
@@ -820,11 +780,11 @@ function PatientPackageContent() {
                                       {isBlocked ? (
                                         <>
                                           <LockIcon className="w-3.5 h-3.5 opacity-70" />
-                                          <span>Đang dùng gói</span>
+                                          <span>{t("alreadyPurchased")}</span>
                                         </>
                                       ) : (
                                         <>
-                                          <span>Chọn gói dịch vụ</span>
+                                          <span>{t("selectPackage", "Chọn gói dịch vụ")}</span>
                                           <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-1" />
                                         </>
                                       )}
@@ -835,7 +795,7 @@ function PatientPackageContent() {
                             </div>
                           ) : (
                             <div className="text-center py-4 text-sm text-gray-500">
-                              No packages available for this doctor
+                              {t("noPackagesFound")}
                             </div>
                           )}
                         </CardContent>
@@ -843,7 +803,7 @@ function PatientPackageContent() {
                       );
                     })
                   ) : (
-                    <div className="text-center py-12 text-gray-500">No doctors found</div>
+                    <div className="text-center py-12 text-gray-500">{t("noPackagesFound")}</div>
                   )}
                 </div>
               </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { Search, CalendarIcon, Eye, FileText, Stethoscope, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ interface AppointmentHistoryTabProps {
 }
 
 export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryTabProps) {
+  const { t } = useTranslation()
   const router = useRouter()
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
@@ -88,8 +90,8 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
           stack: error.stack
         })
         toast({
-          title: "Lỗi",
-          description: error.message || "Không thể tải lịch sử khám. Vui lòng thử lại.",
+          title: t("error"),
+          description: error.message || t("loadHistoryFailed", "Không thể tải lịch sử khám. Vui lòng thử lại."),
           variant: "destructive",
         })
         setAppointments([])
@@ -168,7 +170,7 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm theo bác sĩ, chẩn đoán, cơ sở khám..."
+            placeholder={t("searchHistoryPlaceholder", "Tìm kiếm theo bác sĩ, chẩn đoán, cơ sở khám...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -177,27 +179,27 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
 
         {/* Filter Buttons */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-gray-700">Lọc theo:</span>
+          <span className="text-sm font-medium text-gray-700">{t("filterByLabel", "Lọc theo:")}</span>
           <Button
             variant={filterPeriod === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => handleFilterChange("all")}
           >
-            Tất cả
+            {t("all")}
           </Button>
           <Button
             variant={filterPeriod === "6months" ? "default" : "outline"}
             size="sm"
             onClick={() => handleFilterChange("6months")}
           >
-            6 tháng gần đây
+            {t("last6Months", "6 tháng gần đây")}
           </Button>
           <Button
             variant={filterPeriod === "1year" ? "default" : "outline"}
             size="sm"
             onClick={() => handleFilterChange("1year")}
           >
-            1 năm gần đây
+            {t("lastYear", "1 năm gần đây")}
           </Button>
         </div>
       </div>
@@ -205,7 +207,7 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          Tìm thấy <span className="font-semibold text-gray-900">{appointments.length}</span> lần khám
+          {t("foundLabel", "Tìm thấy")} <span className="font-semibold text-gray-900">{appointments.length}</span> {t("examsLabel", "lần khám")}
         </p>
       </div>
 
@@ -215,11 +217,11 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
           <Card>
             <CardContent className="p-12 text-center">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium mb-2">Không có lịch sử khám</p>
+              <p className="text-gray-600 font-medium mb-2">{t("noExaminationHistory")}</p>
               <p className="text-sm text-gray-500">
                 {searchTerm || filterPeriod !== "all"
-                  ? "Không tìm thấy lần khám nào phù hợp với bộ lọc."
-                  : "Bệnh nhân chưa có lần khám nào đã hoàn thành."}
+                  ? t("noMatchingExams", "Không tìm thấy lần khám nào phù hợp với bộ lọc.")
+                  : t("noCompletedExams", "Bệnh nhân chưa có lần khám nào đã hoàn thành.")}
               </p>
             </CardContent>
           </Card>
@@ -243,7 +245,7 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
                         </span>
                       </div>
                       <Badge variant="secondary" className="bg-green-100 text-green-700">
-                        Đã hoàn thành
+                        {t("completed")}
                       </Badge>
                     </div>
 
@@ -265,15 +267,15 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
                     {/* UC-17: Display diagnosis from medical report (preferred) or reason from appointment */}
                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                       <div className="flex items-start gap-2">
-                        <span className="text-sm font-medium text-gray-600 min-w-[80px]">Chẩn đoán:</span>
+                        <span className="text-sm font-medium text-gray-600 min-w-[80px]">{t("diagnosis")}:</span>
                         <span className="text-sm text-gray-900 flex-1">
-                          {appointment.diagnosis || appointment.reason || "Không có thông tin"}
+                          {appointment.diagnosis || appointment.reason || t("noInformation", "Không có thông tin")}
                         </span>
                       </div>
                       {/* UC-17: Show full notes for doctors if available */}
                       {appointment.notes && (
                         <div className="flex items-start gap-2 pt-2 border-t border-gray-200">
-                          <span className="text-sm font-medium text-gray-600 min-w-[80px]">Ghi chú:</span>
+                          <span className="text-sm font-medium text-gray-600 min-w-[80px]">{t("notes")}:</span>
                           <span className="text-sm text-gray-700 flex-1">{appointment.notes}</span>
                         </div>
                       )}
@@ -288,7 +290,7 @@ export default function AppointmentHistoryTab({ patientId }: AppointmentHistoryT
                       onClick={() => handleViewDetail(appointment.id)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Xem chi tiết
+                      {t("viewDetails")}
                     </Button>
                   </div>
                 </div>

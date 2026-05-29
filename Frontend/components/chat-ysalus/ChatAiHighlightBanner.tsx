@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { ChevronRight, Sparkles } from "lucide-react"
 
 interface ChatAiHighlightBannerProps {
@@ -9,6 +10,7 @@ interface ChatAiHighlightBannerProps {
 }
 
 export function ChatAiHighlightBanner({ onClick, isActive = false }: ChatAiHighlightBannerProps) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
@@ -26,9 +28,9 @@ export function ChatAiHighlightBanner({ onClick, isActive = false }: ChatAiHighl
           <Sparkles className="h-5 w-5 text-white" strokeWidth={2} aria-hidden />
         </div>
         <div className="relative min-w-0 flex-1 py-0.5">
-          <p className="text-sm font-semibold tracking-tight leading-snug">Chat với trợ lý AI</p>
+          <p className="text-sm font-semibold tracking-tight leading-snug">{t("chatWithAi")}</p>
           <p className="text-[11px] sm:text-xs text-white/85 mt-1 leading-relaxed">
-            Gợi ý nhanh, hỏi đáp chung — bấm để mở phòng chat giống chat bác sĩ–bệnh nhân.
+            {t("aiQuickSuggest")}
           </p>
         </div>
         <ChevronRight

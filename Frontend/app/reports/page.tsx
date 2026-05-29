@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Search, Bell, LayoutDashboard, User, Settings, LogOut, RefreshCw, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
@@ -18,6 +19,7 @@ import PendingReportsTable from "@/components/pending-reports-table"
 import StatisticsFilter from "@/components/statistics-filter"
 
 function ReportsContent() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [statistics, setStatistics] = useState<DoctorStatistics | null>(null)
@@ -91,7 +93,7 @@ function ReportsContent() {
             <PageHeaderTitleRow
               role="doctor"
               icon={LayoutDashboard}
-              title="Báo cáo"
+              title={t("reports")}
               titleClassName="text-lg"
             />
 
@@ -101,7 +103,7 @@ function ReportsContent() {
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                 <Input 
                   type="search"
-                  placeholder="Search..." 
+                  placeholder={t("searchPlaceholder")} 
                   className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm" 
                 />
               </div>
@@ -128,7 +130,7 @@ function ReportsContent() {
                   className="flex items-center gap-2"
                 >
                   <Filter className="w-4 h-4" />
-                  <span>Lọc</span>
+                  <span>{t("filter")}</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -138,14 +140,14 @@ function ReportsContent() {
                   disabled={loading}
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Làm mới</span>
+                  <span>{t("refresh")}</span>
                 </Button>
               </div>
               <div className="text-sm text-gray-600">
-                {filter.period === 'today' && 'Hôm nay'}
-                {filter.period === 'yesterday' && 'Hôm qua'}
-                {filter.period === 'last7days' && '7 ngày gần đây'}
-                {filter.period === 'thisMonth' && 'Tháng này'}
+                {filter.period === 'today' && t("todayPeriod", "Hôm nay")}
+                {filter.period === 'yesterday' && t("yesterday")}
+                {filter.period === 'last7days' && t("last7Days")}
+                {filter.period === 'thisMonth' && t("thisMonth")}
                 {filter.period === 'custom' && `${filter.fromDate} - ${filter.toDate}`}
               </div>
             </div>
@@ -164,7 +166,7 @@ function ReportsContent() {
           {/* KPI Cards */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500">Đang tải...</div>
+              <div className="text-gray-500">{t("loading")}</div>
             </div>
           ) : statistics ? (
             <>
@@ -173,7 +175,7 @@ function ReportsContent() {
               {/* Pending Reports Table */}
               <div className="mt-4 bg-white rounded-2xl shadow-soft-lg border-white/50 p-4">
                 <h2 className="text-base font-semibold mb-4" style={{ color: '#007A94' }}>
-                  Ca khám chờ hoàn thành báo cáo
+                  {t("pendingReportCases")}
                 </h2>
                 <PendingReportsTable 
                   appointments={statistics.pendingReports}
@@ -186,7 +188,7 @@ function ReportsContent() {
             </>
           ) : (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500">Không có dữ liệu</div>
+              <div className="text-gray-500">{t("noData")}</div>
             </div>
           )}
         </div>

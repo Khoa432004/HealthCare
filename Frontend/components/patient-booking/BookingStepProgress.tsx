@@ -1,4 +1,7 @@
+"use client"
+
 import { CheckCircle, Clock, Stethoscope } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { BookingStep } from "./types"
 
 type Props = {
@@ -6,10 +9,12 @@ type Props = {
 }
 
 export function BookingStepProgress({ currentStep }: Props) {
+  const { t } = useTranslation()
+
   const steps = [
-    { step: 1 as BookingStep, icon: Stethoscope, label: "Pick Doctor" },
-    { step: 2 as BookingStep, icon: Clock, label: "Details" },
-    { step: 3 as BookingStep, icon: CheckCircle, label: "Confirm" },
+    { step: 1 as BookingStep, icon: Stethoscope, label: t("stepPickDoctor") },
+    { step: 2 as BookingStep, icon: Clock, label: t("stepDetails") },
+    { step: 3 as BookingStep, icon: CheckCircle, label: t("stepConfirm") },
   ]
 
   return (
@@ -28,7 +33,7 @@ export function BookingStepProgress({ currentStep }: Props) {
                 <Icon className="w-5 h-5" />
               </div>
               <p className={`mt-2 text-sm ${active ? "text-[#007A94] font-semibold" : "text-gray-500"}`}>
-                Step {item.step}: {item.label}
+                {item.label}
               </p>
             </div>
             {index < steps.length - 1 ? (

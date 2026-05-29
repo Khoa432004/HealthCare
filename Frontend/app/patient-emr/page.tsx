@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeft, ChevronRight, FileText, LogOut, Search, User, ChevronRight as RowChevron } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { ChevronLeft, ChevronRight, FileText, Search, ChevronRight as RowChevron } from "lucide-react"
 import { format } from "date-fns"
 
 import { AuthGuard } from "@/components/auth-guard"
@@ -10,15 +11,9 @@ import { MedicalReportPopup } from "@/components/pdf/MedicalReportPopup"
 import { NotificationBell } from "@/components/notification-bell"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
 import {
@@ -55,23 +50,25 @@ function resolveFormatType(
 }
 
 function FormatTypeBadge({ type }: { type: "online" | "clinic" }) {
+  const { t } = useTranslation()
   if (type === "clinic") {
     return (
       <span className="inline-flex w-fit max-w-full items-center justify-center rounded-full border border-[#7fd4b8] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5fbf9f] whitespace-nowrap">
-        At clinic / hospital
+        {t("atClinicHospital")}
       </span>
     )
   }
 
   return (
     <span className="inline-flex w-fit items-center justify-center rounded-full border border-[#7ec8e3] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5eb8d9] whitespace-nowrap">
-      Online
+      {t("online")}
     </span>
   )
 }
 
 function EhrContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{
     id: string
@@ -157,17 +154,6 @@ function EhrContent() {
     page * PAGE_SIZE
   )
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-    } catch (err) {
-      console.error("Logout error", err)
-      authService.clearAuthData()
-    } finally {
-      router.push("/login")
-    }
-  }
-
   const handleViewDetail = (id: string) => {
     setSelectedAppointmentId(id)
     setReportPopupOpen(true)
@@ -183,42 +169,18 @@ function EhrContent() {
             <PageHeaderTitleRow
               role="patient"
               icon={FileText}
-              title="EHR"
+              title={t("ehr")}
               titleClassName="text-lg"
             />
 
             <div className="flex items-center gap-3">
               <NotificationBell />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(userInfo?.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left hidden sm:block">
-                      <p className="text-xs font-medium">
-                        {userInfo?.fullName || "Patient"}
-                      </p>
-                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push("/patient-profile")}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+                contentClassName="w-48"
+              />
             </div>
           </div>
         </header>
@@ -226,9 +188,9 @@ function EhrContent() {
         <div className="bg-white rounded-2xl flex-1 min-h-0 flex flex-col overflow-hidden border border-[#d6e7ec]">
           <div className="shrink-0 flex flex-col gap-3 border-b border-[#e6eef2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">Examination history</h2>
+              <h2 className="text-sm font-semibold text-gray-900">{t("examinationHistory")}</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Click a row to view the medical report
+                {t("clickRowToView")}
               </p>
             </div>
             <div className="relative w-full sm:w-[280px]">
@@ -237,7 +199,7 @@ function EhrContent() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search doctor, specialty..."
+                placeholder={t("searchDoctorSpecialty", "Search doctor, specialty...")}
                 className="h-9 pl-9 bg-gray-50 border-gray-200"
               />
             </div>
@@ -248,9 +210,9 @@ function EhrContent() {
               <table className="w-full table-fixed">
                 <thead className="sticky top-0 z-[1] bg-[#eef5f8]">
                   <tr className="text-[13px] font-semibold text-gray-900">
-                    <th className="text-left px-4 py-3 w-[42%]">Doctor Name</th>
-                    <th className="text-center px-4 py-3 w-[28%]">Format type</th>
-                    <th className="text-right px-4 py-3 w-[22%]">Date &amp; Time</th>
+                    <th className="text-left px-4 py-3 w-[42%]">{t("doctorName")}</th>
+                    <th className="text-center px-4 py-3 w-[28%]">{t("formatType")}</th>
+                    <th className="text-right px-4 py-3 w-[22%]">{t("dateTime")}</th>
                     <th className="w-[8%]" aria-hidden />
                   </tr>
                 </thead>
@@ -258,13 +220,13 @@ function EhrContent() {
                   {loading ? (
                     <tr>
                       <td colSpan={4} className="text-center py-16 text-sm text-gray-500">
-                        Đang tải dữ liệu EHR...
+                        {t("ehrLoading")}
                       </td>
                     </tr>
                   ) : paginatedRecords.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="text-center py-16 text-sm text-gray-500">
-                        Chưa có lịch sử khám bệnh
+                        {t("noExaminationHistory")}
                       </td>
                     </tr>
                   ) : (
@@ -332,8 +294,8 @@ function EhrContent() {
           <div className="shrink-0 px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
             <p>
               {filteredRecords.length > 0
-                ? `Showing ${(page - 1) * PAGE_SIZE + 1} - ${Math.min(page * PAGE_SIZE, filteredRecords.length)} of ${filteredRecords.length} items`
-                : "Showing 0 - 0 of 0 items"}
+                ? t("showingItems", { from: (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filteredRecords.length), total: filteredRecords.length })
+                : t("showingItems", { from: 0, to: 0, total: 0 })}
             </p>
             <div className="flex items-center gap-1">
               <Button

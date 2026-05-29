@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { PlusCircle, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,12 +16,13 @@ interface ChatInputBarProps {
 }
 
 export function ChatInputBar({
-  placeholder = "Type here",
+  placeholder,
   onSend,
   onAttach,
   disabled,
   className,
 }: ChatInputBarProps) {
+  const { t } = useTranslation()
   const [value, setValue] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,14 +48,14 @@ export function ChatInputBar({
         className="shrink-0 w-11 h-11 rounded-full hover:bg-[#E8F5F1]"
         onClick={onAttach}
         disabled={disabled}
-        aria-label="Attach file"
+        aria-label={t("attachFile")}
       >
         <PlusCircle className="w-6 h-6 text-[#007A94]" />
       </Button>
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("typeHere")}
         disabled={disabled}
         className="flex-1 h-12 rounded-full bg-[#fcfeff] border-[#E8F5F1] text-sm font-medium placeholder:text-[#404647]"
       />
@@ -63,7 +65,7 @@ export function ChatInputBar({
         size="icon"
         className="shrink-0 w-11 h-11 rounded-full bg-[#007A94] hover:bg-[#006884] text-white"
         disabled={disabled || !value.trim()}
-        aria-label="Send message"
+        aria-label={t("sendMessageLabel")}
       >
         <Send className="w-5 h-5" />
       </Button>

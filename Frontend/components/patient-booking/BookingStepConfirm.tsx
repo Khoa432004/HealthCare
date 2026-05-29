@@ -1,7 +1,10 @@
+"use client"
+
 import Link from "next/link"
-import { Building2, Calendar, MapPin, Video } from "lucide-react"
+import { Building2, MapPin, Video } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import type { BookingFormData, BookingFormat, DoctorDetail, TimeSlot, WorkSchedule } from "./types"
 import { formatArrayFieldDisplay, formatCurrency, getBookingFormatDescription, getBookingFormatLabel, getInitials } from "./utils"
 
@@ -36,6 +39,7 @@ export function BookingStepConfirm({
   onBack,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation()
   const sessionMinutes = workSchedule?.sessionDuration ?? 60
   const FormatIcon = appointmentFormat === "offline" ? Building2 : Video
 
@@ -47,7 +51,7 @@ export function BookingStepConfirm({
             <FormatIcon className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-sm text-gray-600">Appointment type</p>
+            <p className="text-sm text-gray-600">{t("appointmentType")}</p>
             <p className="font-semibold text-gray-900">{getBookingFormatLabel(appointmentFormat)}</p>
             <p className="text-xs text-gray-500 mt-0.5">
               {getBookingFormatDescription(appointmentFormat)}
@@ -55,7 +59,7 @@ export function BookingStepConfirm({
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-600">{sessionMinutes} min</p>
+          <p className="text-sm text-gray-600">{sessionMinutes} {t("yearsExp") === "năm" ? "phút" : "min"}</p>
           <p className="font-semibold text-[#007A94]">
             {selectedDate || "—"}, {selectedSlot?.displayTime || "—"}
           </p>
@@ -63,7 +67,7 @@ export function BookingStepConfirm({
       </div>
 
       <div className="bg-white rounded-xl p-4 border">
-        <p className="text-sm font-semibold mb-3">Patient</p>
+        <p className="text-sm font-semibold mb-3">{t("patient")}</p>
         <div className="flex items-center gap-3">
           <Avatar className="w-11 h-11">
             <AvatarImage src="/placeholder-user.jpg" />
@@ -72,14 +76,14 @@ export function BookingStepConfirm({
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold">{userName || "Patient"}</p>
+            <p className="font-semibold">{userName || t("patient")}</p>
           </div>
         </div>
       </div>
 
       {doctor ? (
         <div className="bg-white rounded-xl p-4 border">
-          <p className="text-sm font-semibold mb-3">Doctor</p>
+          <p className="text-sm font-semibold mb-3">{t("doctor")}</p>
           <div className="flex items-center gap-3 mb-4">
             <Avatar className="w-11 h-11">
               <AvatarImage src="/placeholder-user.jpg" />
@@ -106,23 +110,23 @@ export function BookingStepConfirm({
       ) : null}
 
       <div className="bg-white rounded-xl p-4 border space-y-3 text-sm">
-        <p className="font-semibold">Clinical details</p>
-        <DetailRow label="Reason" value={formData.appointmentReason} />
-        <DetailRow label="Details" value={formData.appointmentDetails} />
-        <DetailRow label="Symptoms started" value={formData.symptomStartDate} />
-        <DetailRow label="Severity" value={formData.symptomSeverity} />
-        <DetailRow label="Medication" value={formData.medication} />
+        <p className="font-semibold">{t("clinicalDetails")}</p>
+        <DetailRow label={t("reason")} value={formData.appointmentReason} />
+        <DetailRow label={t("describeDetails")} value={formData.appointmentDetails} />
+        <DetailRow label={t("symptomsOnset")} value={formData.symptomStartDate} />
+        <DetailRow label={t("symptomSeverity")} value={formData.symptomSeverity} />
+        <DetailRow label={t("currentMedication")} value={formData.medication} />
       </div>
 
       <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
         <div className="flex justify-between items-center">
-          <span className="font-medium text-gray-700">Appointment fee</span>
+          <span className="font-medium text-gray-700">{t("appointmentFee")}</span>
           <span className="font-bold text-gray-900">
             {appointmentCost > 0 ? `${formatCurrency(appointmentCost)} đ` : "—"}
           </span>
         </div>
         <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200">
-          <span className="font-bold text-gray-900">Total</span>
+          <span className="font-bold text-gray-900">{t("total")}</span>
           <span className="text-lg font-bold text-[#007A94]">
             {appointmentCost > 0 ? `${formatCurrency(appointmentCost)} đ` : "—"}
           </span>
@@ -138,16 +142,16 @@ export function BookingStepConfirm({
           className="w-5 h-5 mt-0.5"
         />
         <label htmlFor="confirm-terms" className="text-sm text-gray-700">
-          I confirm the{" "}
+          {t("confirmPrivacyTerms")}{" "}
           <Link href="/patient-profile" className="text-[#007A94] hover:underline font-medium">
-            Privacy Policy and Terms of Use
+            {t("privacyPolicyTerms")}
           </Link>
         </label>
       </div>
 
       <div className="flex gap-4 justify-end">
         <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
-          Back
+          {t("back")}
         </Button>
         <Button
           type="button"
@@ -155,7 +159,7 @@ export function BookingStepConfirm({
           disabled={!confirmTerms || isSubmitting || appointmentCost <= 0}
           className="bg-[#007A94] hover:bg-[#005566] text-white"
         >
-          {isSubmitting ? "Processing..." : "Confirm and Pay"}
+          {isSubmitting ? t("processing") : t("confirmAndPay")}
         </Button>
       </div>
     </div>

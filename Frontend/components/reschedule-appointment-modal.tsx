@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { X, Calendar, Clock, MapPin, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -14,6 +15,7 @@ interface RescheduleAppointmentModalProps {
 }
 
 export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: RescheduleAppointmentModalProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [selectedSlot, setSelectedSlot] = useState<{ startTime: string; endTime: string; displayTime: string } | null>(null)
@@ -49,8 +51,8 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
     } catch (error: any) {
       console.error("Error loading available slots:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải khung giờ trống",
+        title: t("error"),
+        description: error.message || t("loadSlotsFailed", "Không thể tải khung giờ trống"),
         variant: "destructive",
       })
       setAvailableSlots([])
@@ -62,8 +64,8 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
   const handleReschedule = async () => {
     if (!selectedDate || !selectedSlot) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng chọn ngày và giờ mới",
+        title: t("error"),
+        description: t("selectNewDateTime", "Vui lòng chọn ngày và giờ mới"),
         variant: "destructive",
       })
       return
@@ -78,8 +80,8 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
       )
 
       toast({
-        title: "Thành công",
-        description: "Đổi lịch khám thành công",
+        title: t("success"),
+        description: t("rescheduleSuccess"),
       })
 
       if (onSuccess) {
@@ -89,8 +91,8 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
     } catch (error: any) {
       console.error("Error rescheduling appointment:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể đổi lịch khám. Vui lòng thử lại.",
+        title: t("error"),
+        description: error.message || t("rescheduleFailed", "Không thể đổi lịch khám. Vui lòng thử lại."),
         variant: "destructive",
       })
     } finally {
@@ -120,7 +122,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
       <div className="relative z-50 w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-2xl font-bold text-gray-900">Đổi lịch khám</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("rescheduleAppointment")}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -135,7 +137,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
           <div className="bg-gray-50 rounded-lg p-4 space-y-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
               <User className="w-5 h-5 text-teal-600" />
-              Bác sĩ
+              {t("doctor")}
             </h3>
             <p className="text-gray-700">{appointment.doctorFullName || appointment.doctorName || 'Unknown'}</p>
             {appointment.doctorTitle && (
@@ -153,7 +155,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
           <div className="space-y-3">
             <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-teal-600" />
-              Chọn ngày mới
+              {t("selectNewDate")}
             </label>
             <input
               type="date"
@@ -169,7 +171,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-teal-600" />
-                Chọn giờ mới
+                {t("selectNewTime")}
               </label>
               
               {isLoadingSlots ? (
@@ -178,7 +180,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
                 </div>
               ) : availableSlots.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  {selectedDate ? "Không có khung giờ trống cho ngày này" : "Vui lòng chọn ngày trước"}
+                  {selectedDate ? t("noSlotsForDate") : t("selectDateFirst")}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
@@ -203,7 +205,7 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
           {/* Selected Time Display */}
           {selectedSlot && (
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Thời gian đã chọn:</p>
+              <p className="text-sm text-gray-600 mb-1">{t("selectedTime", "Thời gian đã chọn:")}</p>
               <p className="font-semibold text-teal-700">
                 {formatDate(selectedSlot.startTime)} • {selectedSlot.displayTime}
               </p>
@@ -218,14 +220,14 @@ export function RescheduleAppointmentModal({ appointment, onClose, onSuccess }: 
             onClick={onClose}
             disabled={isRescheduling}
           >
-            Hủy
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleReschedule}
             disabled={!selectedDate || !selectedSlot || isRescheduling}
             className="bg-teal-600 hover:bg-teal-700 text-white"
           >
-            {isRescheduling ? "Đang xử lý..." : "Xác nhận đổi"}
+            {isRescheduling ? t("processing") : t("confirmRescheduleBtn")}
           </Button>
         </div>
       </div>

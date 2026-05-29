@@ -1,9 +1,11 @@
+"use client"
+
 import { Clock, DollarSign, Star, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import type { DoctorDetail } from "./types"
+import { useTranslation } from "react-i18next"
+import type { DoctorDetail, WorkSchedule } from "./types"
 import { formatArrayFieldDisplay, formatCurrency, normalizeStringList, resolveAppointmentCost } from "./utils"
-import type { WorkSchedule } from "./types"
 
 type Props = {
   doctor?: DoctorDetail | null
@@ -11,10 +13,12 @@ type Props = {
 }
 
 export function BookingDoctorSidebar({ doctor, workSchedule }: Props) {
+  const { t } = useTranslation()
+
   if (!doctor) {
     return (
       <div className="text-sm text-gray-500 text-center py-8">
-        Select a doctor to view profile
+        {t("selectDoctor")}
       </div>
     )
   }
@@ -41,18 +45,18 @@ export function BookingDoctorSidebar({ doctor, workSchedule }: Props) {
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6 pb-6 border-b">
-        <Metric icon={Clock} label="Experience" value={doctor.experience} />
-        <Metric icon={Users} label="Consultations" value={doctor.consultations} />
+        <Metric icon={Clock} label={t("experience")} value={doctor.experience} />
+        <Metric icon={Users} label={t("consultations")} value={doctor.consultations} />
         <Metric
           icon={DollarSign}
-          label="Cost"
+          label={t("appointmentFee")}
           value={cost > 0 ? `${formatCurrency(cost)}đ` : "—"}
         />
       </div>
 
       {conditions.length > 0 ? (
         <div className="mb-6 pb-6 border-b">
-          <h4 className="font-semibold mb-3">Treatment conditions</h4>
+          <h4 className="font-semibold mb-3">{t("treatmentConditions")}</h4>
           <div className="flex flex-wrap gap-2">
             {conditions.map((condition) => (
               <Badge
@@ -69,7 +73,7 @@ export function BookingDoctorSidebar({ doctor, workSchedule }: Props) {
 
       {doctor.certificates?.length > 0 ? (
         <div>
-          <h4 className="font-semibold mb-3">Experience & certificates</h4>
+          <h4 className="font-semibold mb-3">{t("experienceCertificates")}</h4>
           <div className="space-y-3">
             {doctor.certificates.map((cert, index) => (
               <div key={`${cert.year}-${index}`} className="flex gap-3">
