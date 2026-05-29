@@ -1,7 +1,8 @@
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import { MedicalReport } from '../../types/medical-report';
+import { BRAND_ASSETS } from '@/lib/brand';
 
 // Register font for Vietnamese support
 Font.register({
@@ -34,6 +35,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#007A94',
         marginBottom: 5,
+    },
+    logo: {
+        width: 130,
+        height: 44,
+        objectFit: 'contain',
+        marginBottom: 6,
     },
     clinicName: {
         fontSize: 14,
@@ -118,19 +125,73 @@ interface Props {
     report: MedicalReport;
 }
 
+function getPdfLogoSrc() {
+    if (typeof window !== "undefined") {
+        return `${window.location.origin}${BRAND_ASSETS.logoFull}`
+    }
+    return BRAND_ASSETS.logoFull
+}
+
+function getMedicationUnit(medicationType: string) {
+    const type = (medicationType || "").toLowerCase().trim()
+    if (type === "tablet" || type === "viên") return "viên"
+    if (type === "capsule" || type.includes("nang")) return "viên nang"
+    if (type === "liquid" || type.includes("dung dịch") || type.includes("dich")) return "ml"
+    if (type === "powder" || type === "bột" || type === "bot") return "gói"
+    if (type === "injection" || type.includes("tiêm") || type.includes("tiem")) return "ống"
+    return "viên"
+}
+
+function formatDosageWithUnit(dosage: string, medicationType: string) {
+    const value = (dosage || "").trim()
+    if (!value) return "N/A"
+
+    if (/(mg|g|ml|mcg|iu|ui|%|viên|vien|viên nang|gói|goi|ống|ong|lần|lan)\b/i.test(value)) {
+        return value
+    }
+
+    const unit = getMedicationUnit(medicationType)
+    return `${value} ${unit}`
+}
+
+function formatMealRelation(mealRelation: string) {
+    const value = (mealRelation || "").toLowerCase()
+    if (value.includes("before")) return "Trước ăn"
+    if (value.includes("after")) return "Sau ăn"
+    if (value.includes("with") || value.includes("food")) return "Cùng bữa ăn"
+    if (value.includes("anytime")) return "Bất kỳ lúc nào"
+    return mealRelation || "Cùng bữa ăn"
+}
+
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
+    if (!value || !value.trim()) return null
+    return (
+        <View style={styles.row}>
+            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.value}>{value}</Text>
+        </View>
+    )
+}
+
 const MedicalReportPDF: React.FC<Props> = ({ report }) => (
     <Document>
         <Page size="A4" style={styles.page}>
             {/* Header */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.clinicName}>{report.clinic}</Text>
+                    <Text style={styles.clinicName}>{report.clinic || "Medical Clinic"}</Text>
                     <Text>{report.doctorMajor}</Text>
+                    {report.province ? <Text>{report.province}</Text> : null}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.title}>BÁO CÁO Y KHOA</Text>
+                    <Image src={getPdfLogoSrc()} style={styles.logo} />
                     <Text>Mã: {report.id}</Text>
                     <Text>{format(new Date(report.date || new Date()), 'dd/MM/yyyy')}</Text>
+                    {report.timeIn && report.timeOut ? (
+                        <Text>
+                            {format(new Date(report.timeIn), 'HH:mm')} - {format(new Date(report.timeOut), 'HH:mm')}
+                        </Text>
+                    ) : null}
                 </View>
             </View>
 
@@ -165,25 +226,36 @@ const MedicalReportPDF: React.FC<Props> = ({ report }) => (
                 </View>
             </View>
 
-            {/* Diagnosis */}
+            {/* Clinical Summary */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>KẾT QUẢ KHÁM & CHẨN ĐOÁN</Text>
-                <View style={styles.row}>
-                    <Text style={styles.label}>Chẩn đoán:</Text>
-                    <Text style={styles.value}>{report.diagnosis}</Text>
-                </View>
+                <Text style={styles.sectionTitle}>BÁO CÁO Y KHOA</Text>
+                <InfoRow label="Bệnh mãn tính:" value={report.chronicConditions} />
+                <InfoRow label="Bệnh lý:" value={report.illness} />
+                <InfoRow label="Khám lâm sàng:" value={report.medicalExam} />
+                <InfoRow
+                    label="ICD-10:"
+                    value={report.icdCode ? `${report.icdCode}${report.diagnosis ? ` - ${report.diagnosis}` : ""}` : undefined}
+                />
+                {!report.icdCode ? (
+                    <View style={styles.row}>
+                        <Text style={styles.label}>Chẩn đoán:</Text>
+                        <Text style={styles.value}>{report.diagnosis || "N/A"}</Text>
+                    </View>
+                ) : null}
                 {report.clinicalDiagnosis && report.clinicalDiagnosis.length > 0 && (
                     <View style={styles.row}>
-                        <Text style={styles.label}>Khám lâm sàng:</Text>
+                        <Text style={styles.label}>Chỉ số sinh hiệu:</Text>
                         <Text style={styles.value}>
                             {report.clinicalDiagnosis.map(cd => `${cd.signType}: ${cd.signValue} ${cd.unit}`).join(', ')}
                         </Text>
                     </View>
                 )}
+                <InfoRow label="Bảo hiểm:" value={report.coverage} />
                 <View style={styles.row}>
-                    <Text style={styles.label}>Hướng điều trị:</Text>
-                    <Text style={styles.value}>{report.treatment}</Text>
+                    <Text style={styles.label}>Khuyến nghị:</Text>
+                    <Text style={styles.value}>{report.treatment || "N/A"}</Text>
                 </View>
+                <InfoRow label="Tái khám:" value={report.followUpDate ? format(new Date(`${report.followUpDate}T00:00:00`), 'dd/MM/yyyy') : undefined} />
                 {report.notes && (
                     <View style={styles.row}>
                         <Text style={styles.label}>Ghi chú:</Text>
@@ -207,19 +279,17 @@ const MedicalReportPDF: React.FC<Props> = ({ report }) => (
                         {report.prescriptions.map((p, i) => (
                             <View key={i} style={styles.tableRow}>
                                 <Text style={styles.col1}>{p.name}</Text>
-                                <Text style={styles.col2}>{p.dosage}</Text>
-                                <Text style={styles.col3}>
-                                    {p.mealRelation === 'before' ? 'Trước' :
-                                        p.mealRelation === 'after' ? 'Sau' :
-                                            p.mealRelation === 'with' ? 'Cùng' : 'Cùng'} ăn
+                                <Text style={styles.col2}>
+                                    {formatDosageWithUnit(p.dosage, p.medicationType)}
                                 </Text>
+                                <Text style={styles.col3}>{formatMealRelation(p.mealRelation)}</Text>
                                 <Text style={styles.col4}>{p.duration} ngày</Text>
                                 <Text style={styles.col5}>{p.note || '-'}</Text>
                             </View>
                         ))}
                     </View>
                 ) : (
-                    <Text style={{ fontStyle: 'italic', color: '#666', padding: 5 }}>Không có đơn thuốc</Text>
+                    <Text style={{ color: '#666', padding: 5 }}>Không có đơn thuốc</Text>
                 )}
             </View>
 

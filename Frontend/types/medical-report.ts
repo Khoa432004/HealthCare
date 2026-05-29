@@ -33,4 +33,11 @@ export interface MedicalReport {
     treatment: string
     notes: string
     prescriptions: PrescriptionItem[]
+    icdCode?: string
+    province?: string
+    chronicConditions?: string
+    illness?: string
+    medicalExam?: string
+    coverage?: string
+    followUpDate?: string
 }

@@ -23,7 +23,7 @@ const EXACT_TITLES: Record<string, string> = {
   "/patient-calendar": "Lịch hẹn",
   "/patient-calendar/booking": "Đặt lịch khám",
   "/patient-chat": "Tin nhắn",
-  "/patient-emr": "Hồ sơ bệnh án",
+  "/patient-emr": "EHR",
   "/patient-profile": "Hồ sơ cá nhân",
   "/health-tracking": "Chỉ số sức khỏe",
   "/patient-medical-examination-history": "Lịch sử khám",
@@ -36,7 +36,7 @@ const EXACT_TITLES: Record<string, string> = {
 const PREFIX_TITLES: [string, string][] = [
   ["/calendar/appointment/", "Chi tiết lịch hẹn"],
   ["/patient-calendar/appointment/", "Chi tiết lịch hẹn"],
-  ["/patient-medical-examination-history/", "Chi tiết lần khám"],
+  ["/patient-emr/", "Medical Report"],
   ["/prescription/", "Đơn thuốc"],
   ["/video-call/", "Tư vấn trực tuyến"],
 ]

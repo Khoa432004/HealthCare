@@ -17,13 +17,18 @@ import { useSidebarExpanded } from "@/hooks/use-sidebar-expanded"
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/patient-dashboard" },
   { icon: Calendar, label: "My Calendar", href: "/patient-calendar" },
-  { icon: FileText, label: "EMR", href: "/patient-emr" },
+  { icon: FileText, label: "EHR", href: "/patient-emr" },
   { icon: Activity, label: "Metrics", href: "/health-tracking" },
   { icon: ShoppingBag, label: "Package", href: "/patient-purchased-packages" },
   { icon: MessageSquare, label: "Chat", href: "/patient-chat" },
 ]
 
 const PACKAGE_RELATED_PATHS = ["/patient-purchased-packages", "/patient-package"]
+const EHR_RELATED_PATHS = [
+  "/patient-emr",
+  "/patient-medical-examination-history",
+  "/patient-payment-history",
+]
 
 export function PatientSidebar() {
   const pathname = usePathname()
@@ -72,6 +77,8 @@ export function PatientSidebar() {
               (pathname === "/patient-profile" || pathname === "/settings")) ||
             (item.href === "/patient-purchased-packages" &&
               PACKAGE_RELATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) ||
+            (item.href === "/patient-emr" &&
+              EHR_RELATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) ||
             (item.href !== "/patient-dashboard" && pathname.startsWith(item.href + "/"))
 
           return (

@@ -18,5 +18,10 @@ public class MedicalExaminationHistorySummaryDto {
     private String diagnosis;  // From medical report - for doctor's diagnostic support
     private String notes;      // From medical report - full notes for doctors
     private OffsetDateTime completedAt;  // When the medical report was completed
+    private String doctorId;
+    private String doctorCode;
+    private String doctorSpecialty;
+    private OffsetDateTime scheduledEnd;
+    private String formatType;
 
 }
