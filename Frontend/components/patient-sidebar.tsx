@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -14,20 +15,26 @@ import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
 import { useSidebarExpanded } from "@/hooks/use-sidebar-expanded"
 
-const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/patient-dashboard" },
-  { icon: Calendar, label: "My Calendar", href: "/patient-calendar" },
-  { icon: FileText, label: "EMR", href: "/patient-emr" },
-  { icon: Activity, label: "Metrics", href: "/health-tracking" },
-  { icon: ShoppingBag, label: "Package", href: "/patient-purchased-packages" },
-  { icon: MessageSquare, label: "Chat", href: "/patient-chat" },
-]
+const sidebarItemKeys = [
+  { icon: LayoutDashboard, labelKey: "dashboard", href: "/patient-dashboard" },
+  { icon: Calendar, labelKey: "myCalendar", href: "/patient-calendar" },
+  { icon: FileText, labelKey: "ehr", href: "/patient-emr" },
+  { icon: Activity, labelKey: "metrics", href: "/health-tracking" },
+  { icon: ShoppingBag, labelKey: "package", href: "/patient-purchased-packages" },
+  { icon: MessageSquare, labelKey: "chat", href: "/patient-chat" },
+] as const
 
 const PACKAGE_RELATED_PATHS = ["/patient-purchased-packages", "/patient-package"]
+const EHR_RELATED_PATHS = [
+  "/patient-emr",
+  "/patient-medical-examination-history",
+  "/patient-payment-history",
+]
 
 export function PatientSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { t } = useTranslation()
   const { isExpanded } = useSidebarExpanded("patient")
 
   return (
@@ -64,7 +71,7 @@ export function PatientSidebar() {
       </div>
 
       <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
-        {sidebarItems.map((item) => {
+        {sidebarItemKeys.map((item) => {
           const Icon = item.icon
           const isActive =
             pathname === item.href ||
@@ -72,6 +79,8 @@ export function PatientSidebar() {
               (pathname === "/patient-profile" || pathname === "/settings")) ||
             (item.href === "/patient-purchased-packages" &&
               PACKAGE_RELATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) ||
+            (item.href === "/patient-emr" &&
+              EHR_RELATED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) ||
             (item.href !== "/patient-dashboard" && pathname.startsWith(item.href + "/"))
 
           return (
@@ -86,7 +95,7 @@ export function PatientSidebar() {
                 isActive ? "text-gray-900 font-semibold" : "text-gray-600 hover:bg-gray-50"
               )}
               style={isActive ? { backgroundColor: BRAND_COLORS.surfaceActive } : {}}
-              title={!isExpanded ? item.label : undefined}
+              title={!isExpanded ? t(item.labelKey) : undefined}
             >
               <Icon
                 className={cn(
@@ -100,7 +109,7 @@ export function PatientSidebar() {
                   isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
                 )}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </button>
           )

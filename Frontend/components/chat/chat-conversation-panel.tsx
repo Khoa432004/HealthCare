@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -42,13 +43,14 @@ interface ChatConversationPanelProps {
 }
 
 export function ChatConversationPanel({ conversation }: ChatConversationPanelProps) {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES)
 
   if (!conversation) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-tr-[20px] text-[#899091]">
-        <p className="text-sm font-medium">Select a conversation</p>
-        <p className="text-xs mt-1">Choose from the inbox to start chatting</p>
+        <p className="text-sm font-medium">{t("selectConversation")}</p>
+        <p className="text-xs mt-1">{t("chooseFromInbox")}</p>
       </div>
     )
   }
@@ -85,7 +87,7 @@ export function ChatConversationPanel({ conversation }: ChatConversationPanelPro
       <ScrollArea className="flex-1 min-h-0">
         <div className="py-4">
           <div className="text-center mb-4">
-            <span className="text-sm font-semibold text-[#0b0c0c]/80">Today</span>
+            <span className="text-sm font-semibold text-[#0b0c0c]/80">{t("today")}</span>
           </div>
           {messages.map((msg) => (
             <ChatMessageBubble
@@ -97,7 +99,7 @@ export function ChatConversationPanel({ conversation }: ChatConversationPanelPro
           ))}
           <div className="flex items-center justify-center gap-5 my-5">
             <div className="flex-1 h-px bg-[#899091]" />
-            <span className="text-xs font-medium text-[#0b0c0c]">new message</span>
+            <span className="text-xs font-medium text-[#0b0c0c]">{t("newMessageLabel")}</span>
             <div className="flex-1 h-px bg-[#899091]" />
           </div>
         </div>

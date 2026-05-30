@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Trash2, FileText, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +83,7 @@ export default function MedicalReportTab({
   embedded = false,
   onReportCompleted,
 }: MedicalReportTabProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -188,9 +190,9 @@ export default function MedicalReportTab({
       }
     } catch (error: any) {
       console.error('Error loading medical report:', error)
-      const errorMessage = error.message || "Không thể tải báo cáo y tế"
+      const errorMessage = error.message || t("reportLoadFailed")
       toast({
-        title: "Lỗi",
+        title: t("error"),
         description: errorMessage,
         variant: "destructive",
       })
@@ -221,13 +223,13 @@ export default function MedicalReportTab({
         })
         setMedicineForms(prev => [...prev, ...newForms])
         toast({
-          title: "Đã gợi ý thuốc",
-          description: `Đã thêm ${newForms.length} form thuốc. Chỉ các trường có sẵn đã được điền, bác sĩ vui lòng nhập thêm các trường còn trống rồi bấm thêm vào danh sách.`,
+          title: t("suggestMedicine"),
+          description: t("medicineSuggestedDesc", "Đã thêm {{count}} form thuốc. Chỉ các trường có sẵn đã được điền, bác sĩ vui lòng nhập thêm các trường còn trống rồi bấm thêm vào danh sách.").replace("{{count}}", String(newForms.length)),
         })
       }
     } catch (e) {
       console.error("Fetch medications by ICD failed", e)
-      toast({ title: "Lỗi", description: "Không tải được danh sách thuốc gợi ý.", variant: "destructive" })
+      toast({ title: t("error"), description: t("medicineSuggestLoadFailed", "Không tải được danh sách thuốc gợi ý."), variant: "destructive" })
     }
   }, [])
 
@@ -363,8 +365,8 @@ export default function MedicalReportTab({
   const handleSaveDraft = async () => {
     if (!appointmentId) {
       toast({
-        title: "Lỗi",
-        description: "Không tìm thấy ID lịch hẹn",
+        title: t("error"),
+        description: t("appointmentIdNotFound", "Không tìm thấy ID lịch hẹn"),
         variant: "destructive",
       })
       return
@@ -376,8 +378,8 @@ export default function MedicalReportTab({
       await medicalReportService.saveDraft(request)
       
       toast({
-        title: "Thành công",
-        description: "Đã lưu báo cáo y tế dưới dạng bản nháp",
+        title: t("success"),
+        description: t("reportSaved"),
       })
       
       // Reload report
@@ -385,8 +387,8 @@ export default function MedicalReportTab({
     } catch (error: any) {
       console.error('Error saving draft:', error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể lưu báo cáo y tế",
+        title: t("error"),
+        description: error.message || t("reportSaveFailed", "Không thể lưu báo cáo y tế"),
         variant: "destructive",
       })
     } finally {
@@ -397,8 +399,8 @@ export default function MedicalReportTab({
   const handleCompleteReport = async () => {
     if (!appointmentId) {
       toast({
-        title: "Lỗi",
-        description: "Không tìm thấy ID lịch hẹn",
+        title: t("error"),
+        description: t("appointmentIdNotFound", "Không tìm thấy ID lịch hẹn"),
         variant: "destructive",
       })
       return
@@ -407,8 +409,8 @@ export default function MedicalReportTab({
     // Validate required fields
     if (!form.icdCode || form.icdCode.trim() === "") {
       toast({
-        title: "Lỗi",
-        description: "Mã ICD là bắt buộc khi hoàn thành báo cáo",
+        title: t("error"),
+        description: t("icdRequired"),
         variant: "destructive",
       })
       return
@@ -416,8 +418,8 @@ export default function MedicalReportTab({
 
     if (!form.diagnosis || form.diagnosis.trim() === "") {
       toast({
-        title: "Lỗi",
-        description: "Chẩn đoán là bắt buộc khi hoàn thành báo cáo",
+        title: t("error"),
+        description: t("diagnosisRequired"),
         variant: "destructive",
       })
       return
@@ -425,8 +427,8 @@ export default function MedicalReportTab({
 
     if (!confirmed) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng xác nhận đã xem xét và xác minh tất cả thông tin y tế",
+        title: t("error"),
+        description: t("confirmReviewRequired", "Vui lòng xác nhận đã xem xét và xác minh tất cả thông tin y tế"),
         variant: "destructive",
       })
       return
@@ -438,8 +440,8 @@ export default function MedicalReportTab({
       const report = await medicalReportService.completeReport(request)
       
       toast({
-        title: "Thành công",
-        description: "Đã hoàn thành báo cáo y tế. Lịch hẹn đã được đánh dấu là hoàn thành.",
+        title: t("success"),
+        description: t("reportCompleted"),
       })
       
       // Reload report to show completed state
@@ -455,8 +457,8 @@ export default function MedicalReportTab({
     } catch (error: any) {
       console.error('Error completing report:', error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể hoàn thành báo cáo y tế",
+        title: t("error"),
+        description: error.message || t("reportCompleteFailed", "Không thể hoàn thành báo cáo y tế"),
         variant: "destructive",
       })
     } finally {
@@ -474,7 +476,7 @@ export default function MedicalReportTab({
   if (isLoading) {
     return (
       <div className={`flex items-center justify-center ${embedded ? 'py-8' : 'py-16'}`}>
-        <p className="text-gray-500">Đang tải...</p>
+        <p className="text-gray-500">{t("loading")}</p>
       </div>
     )
   }
@@ -483,10 +485,10 @@ export default function MedicalReportTab({
     <div className={embedded ? 'flex min-h-0 flex-col' : 'space-y-6'}>
       {!embedded && (
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Medical Report</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("medicalReport")}</h3>
           {reportCompleted && (
             <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-              Completed
+              {t("completed")}
             </span>
           )}
         </div>
@@ -498,9 +500,9 @@ export default function MedicalReportTab({
           <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
             <FileText className="w-10 h-10 text-gray-400" />
           </div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">Chưa có báo cáo y tế</h4>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">{t("noMedicalReport")}</h4>
           <p className="text-sm text-gray-500 text-center max-w-md">
-            Báo cáo y tế sẽ được tạo khi bác sĩ xác nhận khám và bắt đầu quá trình khám bệnh.
+            {t("medicalReportWillBeCreated", "Báo cáo y tế sẽ được tạo khi bác sĩ xác nhận khám và bắt đầu quá trình khám bệnh.")}
           </p>
         </div>
       )}
@@ -516,10 +518,10 @@ export default function MedicalReportTab({
         >
           {!embedded && (
             <div className="flex items-center justify-between border-b border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900">Báo cáo y tế</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t("medicalReport")}</h2>
               {reportCompleted && (
                 <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                  Đã hoàn thành
+                  {t("completed")}
                 </span>
               )}
             </div>
@@ -530,7 +532,7 @@ export default function MedicalReportTab({
               {/* Vital Signs Section */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900">Vital signs</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{t("vitalSigns")}</h4>
                   {!showVitalSignsSelector && canEdit && (
                     <Button
                       onClick={() => setShowVitalSignsSelector(true)}
@@ -540,7 +542,7 @@ export default function MedicalReportTab({
                       disabled={!canEdit}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add
+                      {t("addVitalSign")}
                     </Button>
                   )}
                 </div>
@@ -561,7 +563,7 @@ export default function MedicalReportTab({
                             htmlFor={vitalSign.id}
                             className="text-sm font-medium text-gray-700 cursor-pointer"
                           >
-                            {vitalSign.name}
+                            {t(vitalSign.id === "spO2" ? "spo2" : vitalSign.id)}
                           </label>
                         </div>
                       ))}
@@ -579,7 +581,7 @@ export default function MedicalReportTab({
                       return (
                         <div key={vitalSignId}>
                           <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            {vitalSign.name} <span className="text-red-500">*</span>
+                            {t(vitalSign.id === "spO2" ? "spo2" : vitalSign.id)} <span className="text-red-500">*</span>
                           </label>
                           <div className="relative">
                             <Input
@@ -604,7 +606,7 @@ export default function MedicalReportTab({
               {/* Medicine Section */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900">Medicine</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{t("medicine")}</h4>
                   {canEdit && (
                     <Button
                       onClick={addMedicineForm}
@@ -614,7 +616,7 @@ export default function MedicalReportTab({
                       disabled={!canEdit}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add
+                      {t("addMedication")}
                     </Button>
                   )}
                 </div>
@@ -632,11 +634,11 @@ export default function MedicalReportTab({
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
-                                <p className="text-xs text-gray-600">Dosage</p>
+                                <p className="text-xs text-gray-600">{t("dosage")}</p>
                                 <p className="font-medium text-gray-900">{medication.medicationDosage}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-600">Use with meals</p>
+                                <p className="text-xs text-gray-600">{t("useWithMeals")}</p>
                                 <p className="font-medium text-gray-900 capitalize">
                                   {medication.medicationMealTiming.replace("-", " ")}
                                 </p>
@@ -646,13 +648,13 @@ export default function MedicalReportTab({
                               <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                                 {medication.durationDays && (
                                   <div>
-                                    <p className="text-xs text-gray-600">Duration</p>
-                                    <p className="font-medium text-gray-900">{medication.durationDays} days</p>
+                                    <p className="text-xs text-gray-600">{t("duration")}</p>
+                                    <p className="font-medium text-gray-900">{medication.durationDays} {t("days")}</p>
                                   </div>
                                 )}
                                 {medication.startDate && (
                                   <div>
-                                    <p className="text-xs text-gray-600">Start date</p>
+                                    <p className="text-xs text-gray-600">{t("startDate")}</p>
                                     <p className="font-medium text-gray-900">{medication.startDate}</p>
                                   </div>
                                 )}
@@ -660,7 +662,7 @@ export default function MedicalReportTab({
                             )}
                             {medication.note && (
                               <div className="mt-2">
-                                <p className="text-xs text-gray-600">Note</p>
+                                <p className="text-xs text-gray-600">{t("note")}</p>
                                 <p className="font-medium text-gray-900">{medication.note}</p>
                               </div>
                             )}
@@ -699,10 +701,10 @@ export default function MedicalReportTab({
                         
                         <div>
                           <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Medication name <span className="text-red-500">*</span>
+                            {t("medicationNameLabel", "Medication name")} <span className="text-red-500">*</span>
                           </label>
                           <Input
-                            placeholder="e.g., Aspirin"
+                            placeholder={t("medicationNamePlaceholder", "e.g., Aspirin")}
                             value={form.medicationName}
                             onChange={(e) => updateMedicineForm(form.id, { medicationName: e.target.value })}
                             disabled={!canEdit}
@@ -712,10 +714,10 @@ export default function MedicalReportTab({
                         <div className="grid grid-cols-2 gap-4 mt-3">
                           <div>
                             <label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Medication dosage <span className="text-red-500">*</span>
+                              {t("medicationDosageLabel", "Medication dosage")} <span className="text-red-500">*</span>
                             </label>
                             <Input
-                              placeholder="e.g., 500mg"
+                              placeholder={t("medicationDosagePlaceholder", "e.g., 500mg")}
                               value={form.medicationDosage}
                               onChange={(e) => updateMedicineForm(form.id, { medicationDosage: e.target.value })}
                               disabled={!canEdit}
@@ -723,7 +725,7 @@ export default function MedicalReportTab({
                           </div>
                           <div>
                             <label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Medication type <span className="text-red-500">*</span>
+                              {t("medicationTypeLabel", "Medication type")} <span className="text-red-500">*</span>
                             </label>
                             <Select
                               value={form.medicationType}
@@ -731,27 +733,27 @@ export default function MedicalReportTab({
                               disabled={!canEdit}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue placeholder={t("selectType", "Select type")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="tablet">Tablet</SelectItem>
-                                <SelectItem value="capsule">Capsule</SelectItem>
-                                <SelectItem value="liquid">Liquid</SelectItem>
-                                <SelectItem value="powder">Powder (Bột)</SelectItem>
-                                <SelectItem value="injection">Injection</SelectItem>
+                                <SelectItem value="tablet">{t("tablet")}</SelectItem>
+                                <SelectItem value="capsule">{t("capsule")}</SelectItem>
+                                <SelectItem value="liquid">{t("liquid")}</SelectItem>
+                                <SelectItem value="powder">{t("powder")}</SelectItem>
+                                <SelectItem value="injection">{t("injection")}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
 
                         <div className="mt-3">
-                          <label className="text-sm font-medium text-gray-700 mb-3 block">Medication use with meals</label>
+                          <label className="text-sm font-medium text-gray-700 mb-3 block">{t("useWithMeals")}</label>
                           <div className="flex gap-2">
                             {[
-                              { value: "before-meal", label: "Before meal" },
-                              { value: "with-food", label: "With food" },
-                              { value: "after-meal", label: "After meal" },
-                              { value: "anytime", label: "Anytime" },
+                              { value: "before-meal", label: t("beforeMeal") },
+                              { value: "with-food", label: t("withMeal") },
+                              { value: "after-meal", label: t("afterMeal") },
+                              { value: "anytime", label: t("anytime") },
                             ].map((option) => (
                               <button
                                 key={option.value}
@@ -772,11 +774,11 @@ export default function MedicalReportTab({
                         <div className="grid grid-cols-2 gap-4 mt-3">
                           <div>
                             <label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Duration (days)
+                              {t("durationDaysLabel", "Duration (days)")}
                             </label>
                             <Input
                               type="number"
-                              placeholder="e.g., 7"
+                              placeholder={t("durationPlaceholder", "e.g., 7")}
                               value={form.durationDays || ""}
                               onChange={(e) => updateMedicineForm(form.id, { durationDays: e.target.value ? parseInt(e.target.value) : undefined })}
                               disabled={!canEdit}
@@ -784,7 +786,7 @@ export default function MedicalReportTab({
                           </div>
                           <div>
                             <label className="text-sm font-medium text-gray-700 mb-2 block">
-                              Start date
+                              {t("startDate")}
                             </label>
                             <Input
                               type="date"
@@ -796,9 +798,9 @@ export default function MedicalReportTab({
                         </div>
 
                         <div className="mt-3">
-                          <label className="text-sm font-medium text-gray-700 mb-2 block">Note</label>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">{t("note")}</label>
                           <textarea
-                            placeholder="Enter medication note"
+                            placeholder={t("medicationNotePlaceholder", "Enter medication note")}
                             value={form.note || ""}
                             onChange={(e) => updateMedicineForm(form.id, { note: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -813,22 +815,22 @@ export default function MedicalReportTab({
               </div>
 
               <div className="border-t border-gray-200 pt-6">
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Report Information</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">{t("reportInformation", "Report Information")}</h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Clinic</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">{t("clinic")}</label>
                     <Input
-                      placeholder="Enter clinic name"
+                      placeholder={t("enterClinicName", "Enter clinic name")}
                       value={form.clinic}
                       onChange={(e) => setForm({ ...form, clinic: e.target.value })}
                       disabled={!canEdit}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Province</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">{t("province")}</label>
                     <Input
-                      placeholder="Enter province"
+                      placeholder={t("enterProvince", "Enter province")}
                       value={form.province}
                       onChange={(e) => setForm({ ...form, province: e.target.value })}
                       disabled={!canEdit}
@@ -837,9 +839,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Chronic Conditions</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("chronicConditions")}</label>
                   <textarea
-                    placeholder="Enter chronic conditions"
+                    placeholder={t("enterChronicConditions", "Enter chronic conditions")}
                     value={form.chronicConditions}
                     onChange={(e) => setForm({ ...form, chronicConditions: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -849,9 +851,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Illness</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("illness", "Illness")}</label>
                   <textarea
-                    placeholder="Enter illness description"
+                    placeholder={t("enterIllness", "Enter illness description")}
                     value={form.illness}
                     onChange={(e) => setForm({ ...form, illness: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -861,9 +863,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Medical Exam</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("medicalExam", "Medical Exam")}</label>
                   <textarea
-                    placeholder="Enter medical examination results"
+                    placeholder={t("enterMedicalExam", "Enter medical examination results")}
                     value={form.medicalExam}
                     onChange={(e) => setForm({ ...form, medicalExam: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -874,7 +876,7 @@ export default function MedicalReportTab({
 
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">ICD-10 / Tên bệnh</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">{t("icdDiagnosis")}</label>
                     <Button
                       type="button"
                       variant="outline"
@@ -884,7 +886,7 @@ export default function MedicalReportTab({
                     >
                       {form.icdCode && form.diagnosis
                         ? `${form.icdCode} - ${form.diagnosis.length > 40 ? form.diagnosis.slice(0, 40) + "…" : form.diagnosis}`
-                        : "Chọn mã ICD (theo chương hoặc tìm kiếm)..."}
+                        : t("selectIcdCode", "Chọn mã ICD (theo chương hoặc tìm kiếm)...")}
                     </Button>
                     <IcdPickerDialog
                       open={icdPickerOpen}
@@ -894,9 +896,9 @@ export default function MedicalReportTab({
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Coverage</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">{t("coverage", "Coverage")}</label>
                     <Input
-                      placeholder="Enter coverage details"
+                      placeholder={t("enterCoverage", "Enter coverage details")}
                       value={form.coverage}
                       onChange={(e) => setForm({ ...form, coverage: e.target.value })}
                       disabled={!canEdit}
@@ -905,9 +907,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Diagnosis</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("diagnosis")}</label>
                   <textarea
-                    placeholder="Enter diagnosis"
+                    placeholder={t("enterDiagnosis", "Enter diagnosis")}
                     value={form.diagnosis}
                     onChange={(e) => setForm({ ...form, diagnosis: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -917,9 +919,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Recommendation</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("treatmentPlan")}</label>
                   <textarea
-                    placeholder="Enter recommendations"
+                    placeholder={t("enterRecommendations", "Enter recommendations")}
                     value={form.recommendation}
                     onChange={(e) => setForm({ ...form, recommendation: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -929,9 +931,9 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Notes</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("clinicalNotes")}</label>
                   <textarea
-                    placeholder="Enter additional notes"
+                    placeholder={t("enterAdditionalNotes", "Enter additional notes")}
                     value={form.note}
                     onChange={(e) => setForm({ ...form, note: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -941,7 +943,7 @@ export default function MedicalReportTab({
                 </div>
 
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Follow-up date</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("followUp")}</label>
                   <Input
                     type="date"
                     value={form.followUpDate}
@@ -960,7 +962,7 @@ export default function MedicalReportTab({
                       disabled={!canEdit}
                     />
                     <label htmlFor="confirm" className="text-sm text-gray-700">
-                      I confirm that i have reviewed and verified all the medical information provided above.
+                      {t("confirmMedicalReview", "I confirm that i have reviewed and verified all the medical information provided above.")}
                     </label>
                   </div>
                 )}
@@ -974,14 +976,14 @@ export default function MedicalReportTab({
                     variant="outline"
                     className="rounded-full px-6 border-teal-600 text-teal-600 hover:bg-teal-50 bg-transparent"
                   >
-                    {isSaving ? "Đang lưu..." : "Saving as draft"}
+                    {isSaving ? t("saving") : t("saveDraft")}
                   </Button>
                   <Button 
                     onClick={handleCompleteReport}
                     disabled={isSaving || isLoading || !confirmed}
                     className="gradient-primary text-white rounded-full px-6"
                   >
-                    {isSaving ? "Đang hoàn thành..." : "Complete the report"}
+                    {isSaving ? t("processing") : t("completeReport")}
                   </Button>
                 </div>
               )}
@@ -991,7 +993,7 @@ export default function MedicalReportTab({
                 <div className="border-t border-gray-200 pt-6">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <p className="text-sm text-green-800">
-                      Báo cáo y tế đã được hoàn thành và không thể chỉnh sửa.
+                      {t("reportCompletedReadOnly", "Báo cáo y tế đã được hoàn thành và không thể chỉnh sửa.")}
                     </p>
                   </div>
                 </div>

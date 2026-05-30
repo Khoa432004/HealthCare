@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from "recharts"
 
 interface StatusChartItem {
@@ -9,12 +10,6 @@ interface StatusChartItem {
   color: string
   percentage?: string
 }
-
-const defaultData: StatusChartItem[] = [
-  { name: "Completed", value: 53, color: "#007A94", percentage: "81%" },
-  { name: "Pending", value: 10, color: "#F59E0B", percentage: "15%" },
-  { name: "Cancel", value: 2, color: "#EF4444", percentage: "3%" },
-]
 
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props
@@ -40,8 +35,17 @@ interface AppointmentStatusChartProps {
   data?: StatusChartItem[]
 }
 
-export default function AppointmentStatusChart({ data = defaultData }: AppointmentStatusChartProps) {
+export default function AppointmentStatusChart({ data }: AppointmentStatusChartProps) {
+  const { t } = useTranslation()
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
+  const defaultData: StatusChartItem[] = [
+    { name: t("completed"), value: 53, color: "#007A94", percentage: "81%" },
+    { name: t("pending"), value: 10, color: "#F59E0B", percentage: "15%" },
+    { name: t("cancelled"), value: 2, color: "#EF4444", percentage: "3%" },
+  ]
+
+  const resolvedData = data ?? defaultData
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index)
@@ -51,24 +55,24 @@ export default function AppointmentStatusChart({ data = defaultData }: Appointme
     setActiveIndex(null)
   }
 
-  const centerLabel = activeIndex !== null ? data[activeIndex]?.name : data[0]?.name || "Completed"
-  const centerValue = activeIndex !== null ? data[activeIndex]?.value : data[0]?.value || 0
+  const centerLabel = activeIndex !== null ? resolvedData[activeIndex]?.name : resolvedData[0]?.name || t("completed")
+  const centerValue = activeIndex !== null ? resolvedData[activeIndex]?.value : resolvedData[0]?.value || 0
 
   return (
     <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 h-full min-h-[520px] hover-lift flex flex-col">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">Appointment Status Breakdown</h3>
-        <span className="text-sm text-gray-500 font-medium">In month</span>
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">{t("appointmentStatusBreakdown")}</h3>
+        <span className="text-sm text-gray-500 font-medium">{t("inMonth")}</span>
       </div>
 
       <div className="relative h-56 mb-6 shrink-0">
         {activeIndex !== null && (
           <div
             className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white px-4 py-2 rounded-lg shadow-lg z-10 pointer-events-none"
-            style={{ backgroundColor: data[activeIndex].color }}
+            style={{ backgroundColor: resolvedData[activeIndex].color }}
           >
             <div className="text-sm font-medium whitespace-nowrap">
-              {data[activeIndex].name}: {data[activeIndex].value}
+              {resolvedData[activeIndex].name}: {resolvedData[activeIndex].value}
             </div>
           </div>
         )}
@@ -76,7 +80,7 @@ export default function AppointmentStatusChart({ data = defaultData }: Appointme
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={resolvedData}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -90,7 +94,7 @@ export default function AppointmentStatusChart({ data = defaultData }: Appointme
               stroke="#fff"
               strokeWidth={2}
             >
-              {data.map((entry, index) => (
+              {resolvedData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={entry.color}
@@ -112,13 +116,13 @@ export default function AppointmentStatusChart({ data = defaultData }: Appointme
       </div>
 
       <div className="space-y-3 mt-auto">
-        {data.map((item, index) => (
+        {resolvedData.map((item, index) => (
           <div key={index} className="flex items-center justify-between glass rounded-xl p-3 hover:bg-white transition-smooth">
             <div className="flex items-center space-x-3">
               <div className="w-3.5 h-3.5 rounded-full shadow-soft" style={{ backgroundColor: item.color }} />
               <span className="text-sm text-gray-700 font-medium">{item.name}:</span>
             </div>
-            <span className="text-sm font-semibold text-gray-900">{item.value} visits</span>
+            <span className="text-sm font-semibold text-gray-900">{item.value} {t("visits")}</span>
           </div>
         ))}
       </div>

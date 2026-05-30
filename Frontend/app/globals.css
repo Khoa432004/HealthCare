@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap")
+layer(base);
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -75,6 +78,10 @@
 }
 
 @theme inline {
+  --font-*: initial;
+  --font-outfit: Montserrat, sans-serif;
+  --font-sans: Montserrat, sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -161,7 +168,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply relative font-normal font-outfit bg-background text-foreground;
   }
   
   /* Smooth scrolling */

@@ -165,8 +165,12 @@ class PatientExamPackageService {
         expirationDate: p.expirationDate ?? p.expiration_date ?? p.expiredAt ?? '',
         status: p.status ?? 'pending',
         remainingDays: Number(p.remainingDays ?? p.remaining_days ?? 0),
-        messagesRemaining: Number(p.messagesRemaining ?? p.messages_remaining ?? 0),
-        sessionsRemaining: Number(p.sessionsRemaining ?? p.sessions_remaining ?? 0),
+        messagesRemaining: Number(
+          p.remainingMessages ?? p.messagesRemaining ?? p.messages_remaining ?? 0
+        ),
+        sessionsRemaining: Number(
+          p.remainingSessions ?? p.sessionsRemaining ?? p.sessions_remaining ?? 0
+        ),
       }))
     } catch (error) {
       console.error('Error fetching my packages:', error)

@@ -10,8 +10,10 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -19,14 +21,19 @@ import org.springframework.stereotype.Service;
 
 import com.example.HealthCare.dto.response.PatientDashboardOverviewResponse;
 import com.example.HealthCare.enums.AppointmentStatus;
+import com.example.HealthCare.enums.MealRelation;
+import com.example.HealthCare.enums.ReportStatus;
 import com.example.HealthCare.enums.MeasurementBadge;
 import com.example.HealthCare.enums.MeasurementMetricType;
 import com.example.HealthCare.model.Appointment;
+import com.example.HealthCare.model.MedicalReport;
 import com.example.HealthCare.model.MedicalReportMedication;
+import com.example.HealthCare.model.PatientExamPackagePurchase;
 import com.example.HealthCare.model.PatientVitalMeasurement;
 import com.example.HealthCare.repository.AppointmentRepository;
 import com.example.HealthCare.repository.MedicalReportMedicationRepository;
 import com.example.HealthCare.repository.MedicalReportRepository;
+import com.example.HealthCare.repository.PatientExamPackagePurchaseRepository;
 import com.example.HealthCare.repository.PatientVitalMeasurementRepository;
 import com.example.HealthCare.service.PatientDashboardService;
 
@@ -52,6 +59,7 @@ public class PatientDashboardServiceImpl implements PatientDashboardService {
     private final AppointmentRepository appointmentRepository;
     private final MedicalReportRepository medicalReportRepository;
     private final MedicalReportMedicationRepository medicalReportMedicationRepository;
+    private final PatientExamPackagePurchaseRepository packagePurchaseRepository;
 
     @Override
     public PatientDashboardOverviewResponse getOverview(UUID patientId) {
@@ -61,8 +69,8 @@ public class PatientDashboardServiceImpl implements PatientDashboardService {
         return PatientDashboardOverviewResponse.builder()
             .metricCards(buildMetricCards(measurements))
             .glucoseTrend(buildGlucoseTrend(measurements))
-            .currentPlan(buildCurrentPlan(appointments))
-            .todayMedicines(buildTodayMedicines(appointments))
+            .currentPlan(buildCurrentPlan(patientId))
+            .todayMedicines(buildTodayMedicines(patientId))
             .pendingAppointment(buildPendingAppointment(appointments))
             .weeklyAppointments(buildWeeklyAppointments(appointments))
             .build();
@@ -141,66 +149,174 @@ public class PatientDashboardServiceImpl implements PatientDashboardService {
             .build();
     }
 
-    private PatientDashboardOverviewResponse.CurrentPlan buildCurrentPlan(List<Appointment> appointments) {
+    private PatientDashboardOverviewResponse.CurrentPlan buildCurrentPlan(UUID patientId) {
         LocalDate today = LocalDate.now();
-        long remainingAppointments = appointments.stream()
-            .filter(a -> a.getScheduledStart() != null && a.getScheduledStart().toLocalDate().isAfter(today))
-            .count();
+        PatientExamPackagePurchase activePackage = packagePurchaseRepository
+            .findByPatientIdOrderByPurchaseDateDesc(patientId)
+            .stream()
+            .filter(pkg -> "active".equalsIgnoreCase(pkg.getStatus()))
+            .filter(pkg -> pkg.getExpirationDate() == null
+                || !pkg.getExpirationDate().toLocalDate().isBefore(today))
+            .findFirst()
+            .orElse(null);
 
-        LocalDate startDate = appointments.stream()
-            .map(Appointment::getScheduledStart)
-            .filter(java.util.Objects::nonNull)
-            .map(OffsetDateTime::toLocalDate)
-            .min(LocalDate::compareTo)
-            .orElse(today);
+        if (activePackage == null) {
+            return PatientDashboardOverviewResponse.CurrentPlan.builder().build();
+        }
 
-        LocalDate endDate = appointments.stream()
-            .map(Appointment::getScheduledStart)
-            .filter(java.util.Objects::nonNull)
-            .map(OffsetDateTime::toLocalDate)
-            .max(LocalDate::compareTo)
-            .orElse(today.plusDays(90));
+        LocalDate startDate = activePackage.getPurchaseDate() != null
+            ? activePackage.getPurchaseDate().toLocalDate()
+            : today;
+        LocalDate endDate = activePackage.getExpirationDate() != null
+            ? activePackage.getExpirationDate().toLocalDate()
+            : startDate.plusDays(activePackage.getDurationDays() != null ? activePackage.getDurationDays() : 0);
+
+        int totalDays = Math.max(
+            1,
+            activePackage.getDurationDays() != null ? activePackage.getDurationDays() : (int) startDate.until(endDate).getDays()
+        );
+        int daysLeft = (int) Math.max(0, today.until(endDate).getDays());
+        int elapsedDays = Math.max(0, totalDays - daysLeft);
+        int progressPercent = Math.min(100, (elapsedDays * 100) / totalDays);
 
         return PatientDashboardOverviewResponse.CurrentPlan.builder()
-            .title(appointments.isEmpty() ? null : "6 Month Package")
-            .status(appointments.isEmpty() ? null : (remainingAppointments > 0 ? "Active" : "No upcoming appointments"))
-            .progressPercent(appointments.isEmpty() ? 0 : Math.min(95, 30 + appointments.size() * 8))
-            .daysLeft(appointments.isEmpty() ? 0 : (int) Math.max(0, today.until(endDate).getDays()))
-            .appointmentSummary(appointments.isEmpty() ? null : appointments.size() + " appointments this month")
+            .title(activePackage.getPackageName())
+            .status(formatPackageStatus(activePackage.getStatus()))
+            .progressPercent(progressPercent)
+            .daysLeft(daysLeft)
             .startDate(startDate)
             .endDate(endDate)
             .build();
     }
 
-    private List<PatientDashboardOverviewResponse.MedicineScheduleItem> buildTodayMedicines(List<Appointment> appointments) {
+    private List<PatientDashboardOverviewResponse.MedicineScheduleItem> buildTodayMedicines(UUID patientId) {
         LocalDate today = LocalDate.now();
-        List<Appointment> sortedAppointments = appointments.stream()
-            .sorted(Comparator.comparing(Appointment::getScheduledStart))
-            .collect(Collectors.toList());
+        List<Appointment> completedAppointments = appointmentRepository.findCompletedByPatientId(
+            patientId,
+            AppointmentStatus.COMPLETED,
+            ReportStatus.COMPLETED
+        );
 
         List<PatientDashboardOverviewResponse.MedicineScheduleItem> result = new ArrayList<>();
-        for (Appointment appointment : sortedAppointments) {
-            if (appointment.getScheduledStart() == null || !appointment.getScheduledStart().toLocalDate().equals(today)) {
+        Set<String> seenDrugNames = new HashSet<>();
+        String[] defaultTimes = {"09:00", "11:00", "15:00", "21:00"};
+        int timeIndex = 0;
+
+        for (Appointment appointment : completedAppointments) {
+            MedicalReport report = appointment.getMedicalReport();
+            if (report == null) {
                 continue;
             }
-            medicalReportRepository.findByAppointmentId(appointment.getId())
-                .ifPresent(report -> {
-                    List<MedicalReportMedication> meds = medicalReportMedicationRepository.findByMedicalReportId(report.getId());
-                    for (MedicalReportMedication med : meds) {
-                        result.add(PatientDashboardOverviewResponse.MedicineScheduleItem.builder()
-                            .time(appointment.getScheduledStart().toLocalTime().toString())
-                            .drugName(med.getMedicationName())
-                            .dosage(med.getDosage())
-                            .instruction(med.getMealRelation() != null
-                                ? med.getMealRelation().name().replace("_", " ")
-                                : "With meal")
-                            .status("Take")
-                            .build());
-                    }
-                });
+
+            List<MedicalReportMedication> medications = medicalReportMedicationRepository
+                .findByMedicalReportId(report.getId());
+
+            for (MedicalReportMedication medication : medications) {
+                if (!isMedicationActiveToday(medication, today, appointment)) {
+                    continue;
+                }
+
+                String drugName = medication.getMedicationName();
+                if (drugName == null || drugName.isBlank()) {
+                    continue;
+                }
+                String drugKey = drugName.toLowerCase(Locale.ENGLISH);
+                if (seenDrugNames.contains(drugKey)) {
+                    continue;
+                }
+                seenDrugNames.add(drugKey);
+
+                String time = defaultTimes[Math.min(timeIndex, defaultTimes.length - 1)];
+                timeIndex++;
+
+                result.add(PatientDashboardOverviewResponse.MedicineScheduleItem.builder()
+                    .time(time)
+                    .drugName(drugName)
+                    .dosage(formatDosage(medication))
+                    .instruction(formatMealRelation(medication.getMealRelation()))
+                    .status("Take")
+                    .build());
+            }
+
+            if (result.size() >= 12) {
+                break;
+            }
         }
 
         return result;
+    }
+
+    private boolean isMedicationActiveToday(
+        MedicalReportMedication medication,
+        LocalDate today,
+        Appointment appointment
+    ) {
+        LocalDate startDate = medication.getStartDate();
+        if (startDate == null && appointment.getScheduledStart() != null) {
+            startDate = appointment.getScheduledStart().atZoneSameInstant(DISPLAY_ZONE).toLocalDate();
+        }
+        if (startDate == null) {
+            return true;
+        }
+        if (startDate.isAfter(today)) {
+            return false;
+        }
+        if (medication.getDurationDays() == null || medication.getDurationDays() <= 0) {
+            return true;
+        }
+        return !startDate.plusDays(medication.getDurationDays()).isBefore(today);
+    }
+
+    private String formatDosage(MedicalReportMedication medication) {
+        String dosage = medication.getDosage() != null ? medication.getDosage().trim() : "";
+        if (dosage.isEmpty()) {
+            return "N/A";
+        }
+        String lowerDosage = dosage.toLowerCase(Locale.ENGLISH);
+        if (lowerDosage.contains("mg")
+            || lowerDosage.contains("ml")
+            || lowerDosage.contains("pill")
+            || lowerDosage.contains("viên")
+            || lowerDosage.contains("tablet")
+            || lowerDosage.contains("capsule")) {
+            return dosage;
+        }
+
+        String unit = switch (medication.getMedicationType() != null
+            ? medication.getMedicationType().toLowerCase(Locale.ENGLISH)
+            : "") {
+            case "capsule" -> "viên nang";
+            case "liquid" -> "ml";
+            case "powder" -> "gói";
+            case "injection" -> "ống";
+            default -> "viên";
+        };
+        return dosage + " " + unit;
+    }
+
+    private String formatMealRelation(MealRelation mealRelation) {
+        if (mealRelation == null) {
+            return "With meal";
+        }
+        return switch (mealRelation) {
+            case before -> "Before meal";
+            case after -> "After meal";
+            case with -> "With meal";
+        };
+    }
+
+    private String formatPackageStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "Active";
+        }
+        String normalized = status.trim().toLowerCase(Locale.ENGLISH);
+        return switch (normalized) {
+            case "active" -> "Active";
+            case "expired" -> "Expired";
+            case "cancelled", "canceled" -> "Cancelled";
+            case "pending" -> "Pending";
+            default -> status.substring(0, 1).toUpperCase(Locale.ENGLISH) + status.substring(1);
+        };
     }
 
     private BigDecimal resolveDisplayValue(PatientVitalMeasurement measurement) {

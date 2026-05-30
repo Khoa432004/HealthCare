@@ -10,6 +10,11 @@ export interface MedicalExaminationHistorySummaryDto {
     diagnosis?: string;
     notes?: string;
     completedAt?: string;
+    doctorId?: string;
+    doctorCode?: string;
+    doctorSpecialty?: string;
+    scheduledEnd?: string;
+    formatType?: string;
 }
 
 export interface MedicalReportVitalSignDto {

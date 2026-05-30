@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { YsalusChatList } from "./YsalusChatList"
 import { YsalusChatContent } from "./YsalusChatContent"
 import type { SelectedChatType } from "./types"
@@ -18,6 +19,7 @@ export function YsalusChatPage({
   inboxAllowedFilters,
   initialReceiverId,
 }: YsalusChatPageProps) {
+  const { t } = useTranslation()
   const [selectedChat, setSelectedChat] = useState<SelectedChatType | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -30,7 +32,7 @@ export function YsalusChatPage({
   if (!currentUserId) {
     return (
       <div className="h-full w-full flex items-center justify-center text-sm text-gray-500 p-4">
-        Sign in to use chat.
+        {t("signInToChat")}
       </div>
     )
   }

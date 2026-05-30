@@ -1,6 +1,7 @@
 "use client"
 
 import { LayoutDashboard, Users, Bell, BarChart3, FileText, Settings, LogOut, RefreshCw, XCircle, DollarSign, Stethoscope, MessageSquare, Package } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
@@ -33,17 +34,18 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
+  const { t } = useTranslation()
   const menuItems = [
-    { id: "overview" as const, icon: LayoutDashboard, label: "Overview" },
-    { id: "users" as const, icon: Users, label: "User Management" },
-    { id: "exam-packages" as const, icon: Package, label: "Exam packages" },
-    { id: "chats" as const, icon: MessageSquare, label: "Chats" },
-    { id: "statistics" as const, icon: BarChart3, label: "Statistics" },
-    { id: "notifications" as const, icon: Bell, label: "Notifications" },
-    { id: "refunds" as const, icon: RefreshCw, label: "Refunds" },
-    { id: "cancellations" as const, icon: XCircle, label: "Cancellations" },
-    { id: "revenue" as const, icon: DollarSign, label: "Revenue" },
-    { id: "doctors" as const, icon: Stethoscope, label: "Doctors" },
+    { id: "overview" as const, icon: LayoutDashboard, label: t("overview") },
+    { id: "users" as const, icon: Users, label: t("userManagement") },
+    { id: "exam-packages" as const, icon: Package, label: t("examPackages") },
+    { id: "chats" as const, icon: MessageSquare, label: t("chats") },
+    { id: "statistics" as const, icon: BarChart3, label: t("statistics") },
+    { id: "notifications" as const, icon: Bell, label: t("notifications") },
+    { id: "refunds" as const, icon: RefreshCw, label: t("refunds") },
+    { id: "cancellations" as const, icon: XCircle, label: t("cancellations") },
+    { id: "revenue" as const, icon: DollarSign, label: t("revenue") },
+    { id: "doctors" as const, icon: Stethoscope, label: t("doctors") },
   ]
 
   return (

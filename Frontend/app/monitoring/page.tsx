@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { ChevronLeft, ChevronRight, MoreVertical, Search } from "lucide-react"
 import DoctorSidebar from "@/components/doctor-sidebar"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
@@ -66,6 +67,7 @@ function calcRemainingDays(expirationDate: string): number {
 
 function DoctorMonitoringContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [patientPackages, setPatientPackages] = useState<ActivePackagePatient[]>([])
   const [search, setSearch] = useState("")
@@ -174,10 +176,10 @@ function DoctorMonitoringContent() {
   const paginatedRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const statusLabel = (status: MonitoringStatus) => {
-    if (status === "active") return "ACTIVE"
-    if (status === "upcoming") return "UP COMING"
-    if (status === "pending") return "PENDING"
-    return "COMPLETED"
+    if (status === "active") return t("active")
+    if (status === "upcoming") return t("upcoming")
+    if (status === "pending") return t("pending")
+    return t("completed")
   }
 
   const statusTone = (status: MonitoringStatus) => {
@@ -205,7 +207,7 @@ function DoctorMonitoringContent() {
           <div className="flex items-center justify-between gap-3">
             <PageHeaderTitleRow
               role="doctor"
-              title="Monitoring"
+              title={t("monitoring")}
               titleClassName="text-lg"
             />
             <div className="flex items-center gap-3">
@@ -215,7 +217,7 @@ function DoctorMonitoringContent() {
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search"
+                  placeholder={t("searchPlaceholder")}
                   className="h-9 pl-9"
                 />
               </div>
@@ -241,7 +243,7 @@ function DoctorMonitoringContent() {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {tab.label}
+                {t("allPatients")}
               </button>
             ))}
             </div>
@@ -252,12 +254,12 @@ function DoctorMonitoringContent() {
             <table className="w-full min-w-[980px]">
               <thead className="bg-[#0f6f84] text-white sticky top-0 z-[1]">
                 <tr className="text-[13px] font-semibold">
-                  <th className="text-left px-4 py-3.5">Patient Name</th>
-                  <th className="text-left px-4 py-3.5">Package Type</th>
-                  <th className="text-left px-4 py-3.5">Status</th>
-                  <th className="text-center px-4 py-3.5">Remaining Days</th>
-                  <th className="text-center px-4 py-3.5">Start Date</th>
-                  <th className="text-center px-4 py-3.5">End Date</th>
+                  <th className="text-left px-4 py-3.5">{t("patientName")}</th>
+                  <th className="text-left px-4 py-3.5">{t("packageType")}</th>
+                  <th className="text-left px-4 py-3.5">{t("status")}</th>
+                  <th className="text-center px-4 py-3.5">{t("remainingDays")}</th>
+                  <th className="text-center px-4 py-3.5">{t("startDate")}</th>
+                  <th className="text-center px-4 py-3.5">{t("endDate")}</th>
                   <th className="text-right px-4 py-3.5"></th>
                 </tr>
               </thead>
@@ -265,13 +267,13 @@ function DoctorMonitoringContent() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-sm text-gray-500">
-                      Loading monitoring data...
+                      {t("loadingMonitoring")}
                     </td>
                   </tr>
                 ) : paginatedRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-sm text-gray-500">
-                      Chưa có bệnh nhân nào đang sử dụng gói của bạn
+                      {t("noMonitoringPatients")}
                     </td>
                   </tr>
                 ) : (
@@ -334,8 +336,8 @@ function DoctorMonitoringContent() {
           <div className="shrink-0 px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
             <p>
               {filteredRows.length > 0
-                ? `Showing ${(page - 1) * PAGE_SIZE + 1} - ${Math.min(page * PAGE_SIZE, filteredRows.length)} of ${filteredRows.length} items`
-                : "Showing 0 - 0 of 0 items"}
+                ? t("showingItems", { from: (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filteredRows.length), total: filteredRows.length })
+                : t("showingItems", { from: 0, to: 0, total: 0 })}
             </p>
             <div className="flex items-center gap-1.5">
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>

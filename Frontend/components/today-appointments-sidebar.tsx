@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import type { Appointment } from "@/services/appointment.service"
 
 interface TodayAppointmentsSidebarProps {
@@ -9,6 +10,7 @@ interface TodayAppointmentsSidebarProps {
 }
 
 export default function TodayAppointmentsSidebar({ appointmentsData }: TodayAppointmentsSidebarProps) {
+  const { t } = useTranslation()
   const router = useRouter()
   const [now, setNow] = useState(new Date())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -155,7 +157,7 @@ export default function TodayAppointmentsSidebar({ appointmentsData }: TodayAppo
           {day.toLocaleDateString("en-US", { weekday: "long" })}
         </span>
         <h3 className="text-base font-semibold text-gray-900 mt-0.5">
-          Today Appointments ({normalizedAppointments.length})
+          {t("todayAppointments", "Today Appointments")} ({normalizedAppointments.length})
         </h3>
       </div>
 
@@ -197,7 +199,7 @@ export default function TodayAppointmentsSidebar({ appointmentsData }: TodayAppo
             ))}
             {normalizedAppointments.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-                No appointments today
+                {t("noAppointmentsToday", "No appointments today")}
               </div>
             )}
 

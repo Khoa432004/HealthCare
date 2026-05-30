@@ -11,18 +11,20 @@ import {
 import { BrandLogo } from "@/components/brand-logo"
 import { BRAND, BRAND_COLORS } from "@/lib/brand"
 import { useSidebarExpanded } from "@/hooks/use-sidebar-expanded"
+import { useTranslation } from "react-i18next"
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/doctor-dashboard" },
-  { icon: Calendar, label: "Calendar", href: "/calendar" },
-  { icon: Activity, label: "Monitoring", href: "/monitoring" },
-  { icon: MessageSquare, label: "Chats", href: "/doctor-chat" },
+  { icon: LayoutDashboard, labelKey: "dashboard", href: "/doctor-dashboard" },
+  { icon: Calendar, labelKey: "calendar", href: "/calendar" },
+  { icon: Activity, labelKey: "monitoring", href: "/monitoring" },
+  { icon: MessageSquare, labelKey: "chats", href: "/doctor-chat" },
 ]
 
 export default function DoctorSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { isExpanded } = useSidebarExpanded("doctor")
+  const { t } = useTranslation()
 
   return (
     <aside
@@ -82,7 +84,7 @@ export default function DoctorSidebar() {
                 isActive ? "text-gray-900 font-semibold" : "text-gray-600 hover:bg-gray-50"
               )}
               style={isActive ? { backgroundColor: BRAND_COLORS.surfaceActive } : {}}
-              title={!isExpanded ? item.label : undefined}
+              title={!isExpanded ? t(item.labelKey) : undefined}
             >
               <Icon
                 className={cn(
@@ -96,7 +98,7 @@ export default function DoctorSidebar() {
                   isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
                 )}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </button>
           )

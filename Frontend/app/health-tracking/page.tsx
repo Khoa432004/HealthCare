@@ -2,37 +2,22 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Activity, LogOut, Search, User } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { Activity, Search } from "lucide-react"
 
 import { AuthGuard } from "@/components/auth-guard"
 import { PatientMetricsSection } from "@/components/medical-records/patient-metrics/PatientMetricsSection"
 import { NotificationBell } from "@/components/notification-bell"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import { PageHeaderTitleRow } from "@/components/page-header-title-row"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
 import DoctorSidebar from "@/components/doctor-sidebar"
 
-function getInitials(name?: string) {
-  if (!name) return "PT"
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  }
-  return name.slice(0, 2).toUpperCase()
-}
-
 function MetricsContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{
     id: string
@@ -68,17 +53,6 @@ function MetricsContent() {
     }
   }, [searchParams])
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-    } catch (err) {
-      console.error("Logout error", err)
-      authService.clearAuthData()
-    } finally {
-      router.push("/login")
-    }
-  }
-
   const isDoctor = String(userInfo?.role || "").toUpperCase() === "DOCTOR"
   const displayedPatientId = isDoctor
     ? trackingTarget?.patientId || ""
@@ -108,7 +82,7 @@ function MetricsContent() {
             <PageHeaderTitleRow
               role={isDoctor ? "doctor" : "patient"}
               icon={Activity}
-              title="Metrics"
+              title={t("metrics")}
               titleClassName="text-lg"
             />
 
@@ -117,47 +91,18 @@ function MetricsContent() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <Input
                   type="search"
-                  placeholder="Tìm kiếm..."
+                  placeholder={t("searchPlaceholder")}
                   className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm"
                 />
               </div>
 
               <NotificationBell />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-2 h-9 px-2"
-                  >
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(userInfo?.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">
-                        {userInfo?.fullName || "Patient"}
-                      </p>
-                      <p className="text-[10px] text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => router.push("/patient-profile")}
-                  >
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+                contentClassName="w-48"
+              />
             </div>
           </div>
         </header>
@@ -173,8 +118,8 @@ function MetricsContent() {
             <PlaceholderMessage
               text={
                 isDoctor
-                  ? "Vui lòng chọn bệnh nhân từ Monitoring để theo dõi."
-                  : "Đang lấy thông tin người dùng..."
+                  ? t("selectPatientFromMonitoring")
+                  : t("loadingUserInfo")
               }
             />
           )}

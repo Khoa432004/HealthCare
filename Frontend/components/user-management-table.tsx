@@ -12,8 +12,10 @@ import { userService, type User } from "@/services/user.service"
 import { authService } from "@/services/auth.service"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { useTranslation } from "react-i18next"
 
 export function UserManagementTable() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
@@ -42,8 +44,8 @@ export function UserManagementTable() {
       setUsers(response.content || [])
     } catch (error: any) {
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải danh sách người dùng",
+        title: t("error"),
+        description: error.message || t("loadUsersFailed", "Unable to load user list"),
         variant: "destructive"
       })
     } finally {
@@ -91,15 +93,15 @@ export function UserManagementTable() {
     try {
       await authService.approveDoctor(selectedUser.id)
       toast({
-        title: "Thành công",
-        description: "Đã phê duyệt tài khoản bác sĩ thành công",
+        title: t("success"),
+        description: t("approveDoctorSuccess", "Doctor account approved successfully"),
       })
       setApproveModalOpen(false)
       loadUsers()
     } catch (error: any) {
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể phê duyệt tài khoản bác sĩ",
+        title: t("error"),
+        description: error.message || t("approveDoctorFailed", "Unable to approve doctor account"),
         variant: "destructive"
       })
     }
@@ -109,14 +111,16 @@ export function UserManagementTable() {
     try {
       await userService.toggleAccountStatus(user.id, activate)
       toast({
-        title: "Thành công",
-        description: activate ? "Đã mở khóa tài khoản thành công" : "Đã khóa tài khoản thành công",
+        title: t("success"),
+        description: activate
+          ? t("unlockAccountSuccess", "Account unlocked successfully")
+          : t("lockAccountSuccess", "Account locked successfully"),
       })
       loadUsers()
     } catch (error: any) {
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể cập nhật trạng thái tài khoản",
+        title: t("error"),
+        description: error.message || t("updateAccountStatusFailed", "Unable to update account status"),
         variant: "destructive"
       })
     }
@@ -129,11 +133,11 @@ export function UserManagementTable() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{t("active")}</Badge>
       case 'PENDING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">{t("pending")}</Badge>
       case 'INACTIVE':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">{t("inactive")}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -142,9 +146,9 @@ export function UserManagementTable() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'DOCTOR':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Doctor</Badge>
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{t("doctor")}</Badge>
       case 'PATIENT':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Patient</Badge>
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">{t("patient")}</Badge>
       default:
         return <Badge variant="outline">{role}</Badge>
     }
@@ -157,7 +161,7 @@ export function UserManagementTable() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search users..."
+            placeholder={t("searchUsers")}
             className="pl-10 bg-white/70"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -166,24 +170,24 @@ export function UserManagementTable() {
         
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-full md:w-[180px] bg-white/70">
-            <SelectValue placeholder="All Roles" />
+            <SelectValue placeholder={t("allRoles")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="DOCTOR">Bác sĩ</SelectItem>
-            <SelectItem value="PATIENT">Bệnh nhân</SelectItem>
+            <SelectItem value="all">{t("all")}</SelectItem>
+            <SelectItem value="DOCTOR">{t("doctor")}</SelectItem>
+            <SelectItem value="PATIENT">{t("patient")}</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full md:w-[180px] bg-white/70">
-            <SelectValue placeholder="All Status" />
+            <SelectValue placeholder={t("allStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="INACTIVE">Inactive</SelectItem>
+            <SelectItem value="all">{t("all")}</SelectItem>
+            <SelectItem value="ACTIVE">{t("active")}</SelectItem>
+            <SelectItem value="PENDING">{t("pending")}</SelectItem>
+            <SelectItem value="INACTIVE">{t("inactive")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -198,20 +202,20 @@ export function UserManagementTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">User</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Email</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Role</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Created At</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("user")}</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("email")}</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("phone")}</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("role")}</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("status")}</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t("createdAt")}</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t("actions")}</th>
             </tr>
           </thead>
           <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-gray-500">
-                    No users found
+                    {t("noUsersFound")}
                   </td>
                 </tr>
               ) : (
@@ -251,7 +255,7 @@ export function UserManagementTable() {
                             }}
                           >
                             <Check className="w-4 h-4 mr-1" />
-                            Approve
+                            {t("approve")}
                           </Button>
                         )}
                         <Button
@@ -263,7 +267,7 @@ export function UserManagementTable() {
                           }}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          View Details
+                          {t("view")}
                         </Button>
                         {!hasPendingApproval(user) && (
                           user.status === 'ACTIVE' ? (
@@ -275,7 +279,7 @@ export function UserManagementTable() {
                                 onClick={() => handleToggleStatus(user, false)}
                               >
                                 <Lock className="w-4 h-4 mr-1" />
-                                Khóa
+                                {t("lock")}
                               </Button>
                             )
                           ) : (
@@ -286,7 +290,7 @@ export function UserManagementTable() {
                               onClick={() => handleToggleStatus(user, true)}
                             >
                               <Unlock className="w-4 h-4 mr-1" />
-                              Mở khóa
+                              {t("unlock")}
                       </Button>
                           )
                         )}
@@ -304,21 +308,21 @@ export function UserManagementTable() {
       <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Approve Doctor Account</DialogTitle>
+            <DialogTitle>{t("approveDoctorAccount", "Approve Doctor Account")}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to approve this doctor account?</p>
+            <p>{t("approveDoctorConfirm", "Are you sure you want to approve this doctor account?")}</p>
             <p className="text-sm text-gray-600 mt-2">
-              Account: <strong>{selectedUser?.fullName}</strong> ({selectedUser?.email})
+              {t("account")}: <strong>{selectedUser?.fullName}</strong> ({selectedUser?.email})
             </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setApproveModalOpen(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button className="bg-green-600 hover:bg-green-700" onClick={handleApprove}>
               <Check className="w-4 h-4 mr-2" />
-              Approve
+              {t("approve")}
             </Button>
           </div>
         </DialogContent>
@@ -328,35 +332,35 @@ export function UserManagementTable() {
       <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>{t("userDetails", "User Details")}</DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-6">
               <div className="border-b pb-4">
-                <h3 className="font-semibold text-lg mb-3">Basic Information</h3>
+                <h3 className="font-semibold text-lg mb-3">{t("basicInformation")}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Full Name</p>
+                    <p className="text-sm text-gray-600">{t("fullNameField")}</p>
                     <p className="font-medium">{selectedUser.fullName}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="text-sm text-gray-600">{t("email")}</p>
                     <p className="font-medium">{selectedUser.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Phone</p>
+                    <p className="text-sm text-gray-600">{t("phone")}</p>
                     <p className="font-medium">{selectedUser.phoneNumber}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Role</p>
+                    <p className="text-sm text-gray-600">{t("role")}</p>
                     <div className="mt-1">{getRoleBadge(selectedUser.role)}</div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Status</p>
+                    <p className="text-sm text-gray-600">{t("status")}</p>
                     <div className="mt-1">{getStatusBadge(selectedUser.status)}</div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Created At</p>
+                    <p className="text-sm text-gray-600">{t("createdAt")}</p>
                     <p className="font-medium">
                       {new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}
                     </p>
@@ -375,7 +379,7 @@ export function UserManagementTable() {
                     className="w-full"
                   >
                     <Lock className="w-4 h-4 mr-2" />
-                    Khóa tài khoản
+                    {t("lockAccount", "Lock account")}
                   </Button>
                 )
               ) : (
@@ -387,7 +391,7 @@ export function UserManagementTable() {
                   }}
                 >
                   <Unlock className="w-4 h-4 mr-2" />
-                  Mở khóa tài khoản
+                  {t("unlockAccount", "Unlock account")}
                 </Button>
               )}
             </div>

@@ -47,21 +47,42 @@ public class MedicalExaminationHistoryServiceImpl implements MedicalExaminationH
             .map(apt -> {
                 // Get medical report for additional information (diagnosis, notes, completedAt)
                 var medicalReport = apt.getMedicalReport();
-                
+                var doctorProfile = apt.getDoctor().getDoctorProfile();
+                String doctorCode = doctorProfile.getPracticeLicenseNo();
+                if (doctorCode == null || doctorCode.isBlank()) {
+                    doctorCode = "DR" + apt.getDoctorId().toString().substring(0, 4).toUpperCase();
+                }
+
                 return MedicalExaminationHistorySummaryDto.builder()
                     .id(apt.getId().toString())
                     .patientId(patientId.toString())
                     .doctor(apt.getDoctor().getFullName())
                     .date(apt.getScheduledStart())
                     .reason(apt.getReason())
-                    .clinic(apt.getDoctor().getDoctorProfile().getWorkplaceName())
+                    .clinic(doctorProfile.getWorkplaceName())
                     // UC-17: Additional fields for doctors - full notes, diagnosis, completed date
                     .diagnosis(medicalReport != null ? medicalReport.getDiagnosis() : null)
                     .notes(medicalReport != null ? medicalReport.getNote() : null)
                     .completedAt(medicalReport != null ? medicalReport.getCompletedAt() : null)
+                    .doctorId(apt.getDoctorId().toString())
+                    .doctorCode(doctorCode)
+                    .doctorSpecialty(doctorProfile.getSpecialties())
+                    .scheduledEnd(apt.getScheduledEnd())
+                    .formatType(resolveFormatType(apt))
                     .build();
             })
             .collect(Collectors.toList());
+    }
+
+    private String resolveFormatType(Appointment appointment) {
+        if (appointment.getTitle() == null || appointment.getTitle().isBlank()) {
+            return "Online";
+        }
+        String title = appointment.getTitle().toLowerCase();
+        if (title.startsWith("at clinic") || title.contains("offline") || title.contains("in-person")) {
+            return "At Clinic";
+        }
+        return "Online";
     }
 
 

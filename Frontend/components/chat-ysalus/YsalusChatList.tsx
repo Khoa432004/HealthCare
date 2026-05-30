@@ -1,6 +1,7 @@
 "use client"
 
 import { type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { useTranslation } from "react-i18next"
 import { MessageCircle, Shield, Stethoscope, Users } from "lucide-react"
 import { YsalusAvatar } from "./YsalusAvatar"
 import { YsalusLabel } from "./YsalusLabel"
@@ -28,14 +29,6 @@ const INBOX_CATEGORY_DEFS: { icon: ReactNode; filter: InboxFilter }[] = [
   { icon: <Users className="size-4" />, filter: "patient" },
   { icon: <Stethoscope className="size-4" />, filter: "doctor" },
 ]
-
-const labelDisplay: Record<InboxFilter, string> = {
-  all: "All",
-  patient: "Patient",
-  doctor: "Doctor",
-  nurse: "Nurse",
-  receptionist: "Receptionist",
-}
 
 function genderLabel(g?: string) {
   if (!g) return ""
@@ -78,6 +71,7 @@ export function YsalusChatList({
   selectedReceiverId,
   setSelectedChat,
 }: YsalusChatListProps) {
+  const { t } = useTranslation()
   const visibleCategories = useMemo(() => {
     if (inboxAllowedFilters?.length) {
       return INBOX_CATEGORY_DEFS.filter((c) => inboxAllowedFilters.includes(c.filter))
@@ -108,7 +102,7 @@ export function YsalusChatList({
         const data = await fetchChatPeers()
         if (!cancelled) setPeers(data)
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Failed to load inbox")
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("failedLoadInbox"))
       }
     })()
     return () => {
@@ -152,7 +146,7 @@ export function YsalusChatList({
         onClick={() => setSelectedCat(filter)}
       >
         {icon}
-        <span className="text-sm font-medium">{labelDisplay[filter]}</span>
+        <span className="text-sm font-medium">{t(filter)}</span>
       </div>
     )
   }
@@ -164,7 +158,7 @@ export function YsalusChatList({
           isActive={selectedReceiverId === AI_ASSISTANT_RECEIVER_ID}
           onClick={() => setSelectedChat(createAiAssistantSelection(currentUserId))}
         />
-        <YsalusLabel className="text-md font-semibold">Inbox</YsalusLabel>
+        <YsalusLabel className="text-md font-semibold">{t("inbox")}</YsalusLabel>
         {loadError && <p className="text-xs text-error-400 px-1">{loadError}</p>}
         {showInboxCategoryFilters && (
           <div className="flex flex-wrap gap-2">
@@ -221,7 +215,7 @@ export function YsalusChatList({
                       )}
                       {adminRow && (
                         <span className="shrink-0 rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                          Admin
+                          {t("admin")}
                         </span>
                       )}
                     </span>
@@ -230,7 +224,7 @@ export function YsalusChatList({
                     </span>
                   </div>
                   {adminRow && (
-                    <span className="text-xs font-medium text-amber-800/90">Kênh hỗ trợ & liên hệ quản trị</span>
+                    <span className="text-xs font-medium text-amber-800/90">{t("supportContactAdmin")}</span>
                   )}
                   {!adminRow && item.receiverGender != null && item.receiverAge != null && (
                     <span className="flex-1 truncate text-xs font-medium text-gray-500">

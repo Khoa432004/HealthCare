@@ -13,7 +13,6 @@ import {
   FileText,
   Settings,
   HelpCircle,
-  LogOut,
 } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
@@ -23,24 +22,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { AddChronicModal } from "@/components/add-chronic-modal"
 import { AddAllergiesModal } from "@/components/add-allergies-modal"
 import { PatientSidebar } from "@/components/patient-sidebar"
+import { PatientUserMenu } from "@/components/patient-user-menu"
 import { authService } from "@/services/auth.service"
 import { userService, PersonalInfoDetailResponse, UpdatePersonalInfoRequest } from "@/services/user.service"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { useTranslation } from "react-i18next"
 
 function PatientProfileContent() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [activeTab, setActiveTab] = useState("personal")
@@ -137,8 +132,8 @@ function PatientProfileContent() {
     } catch (error) {
       console.error("Error loading personal info:", error)
       toast({
-        title: "Error",
-        description: "Failed to load personal information",
+        title: t("error"),
+        description: t("loadPersonalFailed"),
         variant: "destructive",
       })
     } finally {
@@ -189,14 +184,14 @@ function PatientProfileContent() {
         setIsEditMode(false)
         
         toast({
-          title: "Success",
-          description: "Personal information updated successfully",
+          title: t("success"),
+          description: t("personalInfoUpdated"),
         })
       } catch (error: any) {
         console.error("Error saving personal info:", error)
         toast({
-          title: "Error",
-          description: error.message || "Failed to update personal information",
+          title: t("error"),
+          description: error.message || t("updatePersonalFailed", "Failed to update personal information"),
           variant: "destructive",
         })
       }
@@ -207,17 +202,6 @@ function PatientProfileContent() {
   const handleCancel = () => {
     setPersonalData(originalPersonalData)
     setIsEditMode(false)
-  }
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-      authService.clearAuthData()
-      router.push('/login')
-    }
   }
 
   return (
@@ -232,7 +216,7 @@ function PatientProfileContent() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="w-5 h-5 text-gray-700" />
-                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
+                <h1 className="text-xl font-semibold text-gray-900">{t("myProfile")}</h1>
               </div>
             </div>
 
@@ -242,7 +226,7 @@ function PatientProfileContent() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input 
                   type="search"
-                  placeholder="Search..." 
+                  placeholder={t("searchPlaceholder")} 
                   className="pl-10 bg-gray-50 border-gray-200" 
                 />
               </div>
@@ -251,31 +235,7 @@ function PatientProfileContent() {
               <NotificationBell />
 
               {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>{userInfo ? getInitials(userInfo.fullName) : 'PT'}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-sm font-medium">{userInfo?.fullName || 'Patient'}</p>
-                      <p className="text-xs text-gray-500">Bệnh nhân</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => router.push('/patient-profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PatientUserMenu userInfo={userInfo} />
             </div>
           </div>
         </header>
@@ -289,13 +249,13 @@ function PatientProfileContent() {
                   value="personal"
                   className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
                 >
-                  Personal
+                  {t("personalInformation")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="orders"
                   className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-6 pb-3 font-medium"
                 >
-                  My Orders
+                  {t("myOrders")}
                 </TabsTrigger>
               </TabsList>
 
@@ -313,14 +273,14 @@ function PatientProfileContent() {
                     : "bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700"
                 } text-white rounded-full px-6`}
               >
-                {isEditMode ? "Cancel" : "Edit"}
+                {isEditMode ? t("cancel") : t("edit")}
               </Button>
               {isEditMode && (
                 <Button
                   onClick={handleSave}
                   className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-full px-6"
                 >
-                  Save
+                  {t("save")}
                 </Button>
               )}
             </div>
@@ -352,7 +312,7 @@ function PatientProfileContent() {
                       {/* Hàng 1: Full name */}
                       <div className="grid grid-cols-1 gap-6 mb-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Full name</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t("fullName")}</label>
                           <Input
                             value={personalData.fullName}
                             onChange={(e) => setPersonalData({ ...personalData, fullName: e.target.value })}
@@ -365,19 +325,19 @@ function PatientProfileContent() {
                       {/* Hàng 2: Gender & Identification number (2 cột) */}
                       <div className="grid grid-cols-2 gap-6 mb-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t("gender")}</label>
                           <Select value={personalData.gender} onValueChange={(value) => setPersonalData({ ...personalData, gender: value })} disabled={!isEditMode}>
                             <SelectTrigger className="border-gray-300 rounded-lg">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Male">Male</SelectItem>
-                              <SelectItem value="Female">Female</SelectItem>
+                              <SelectItem value="Male">{t("male")}</SelectItem>
+                              <SelectItem value="Female">{t("female")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Identification number</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t("identificationNumber")}</label>
                           <Input 
                             value={personalData.identificationNumber}
                             onChange={(e) => setPersonalData({ ...personalData, identificationNumber: e.target.value })}
@@ -394,7 +354,7 @@ function PatientProfileContent() {
                   <div className="grid grid-cols-2 gap-6 mb-4">
                     {/* Date of birth */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Date of birth</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t("dateOfBirth")}</label>
                       <div className="relative">
                         <Input
                           type="date"
@@ -410,7 +370,7 @@ function PatientProfileContent() {
                     
                     {/* Phone number */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone number</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t("phoneNumber")}</label>
                       <div className="flex space-x-2">
                         <Select value={personalData.countryCode} onValueChange={(value) => setPersonalData({ ...personalData, countryCode: value })} disabled={!isEditMode}>
                           <SelectTrigger className="w-20 border-gray-300 rounded-lg">
@@ -451,7 +411,7 @@ function PatientProfileContent() {
                   </div>
                   {/* Hàng 4: Email (Chiếm toàn bộ chiều ngang form) */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t("email")}</label>
                     <Input
                       value={personalData.email}
                       onChange={(e) => setPersonalData({ ...personalData, email: e.target.value })}
@@ -462,13 +422,13 @@ function PatientProfileContent() {
 
                   {/* Address */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t("address")}</label>
                     <Input
                       value={personalData.address}
                       onChange={(e) => setPersonalData({ ...personalData, address: e.target.value })}
                       className="border-gray-300 rounded-lg"
                       disabled={!isEditMode}
-                      placeholder="Enter your address"
+                      placeholder={t("enterAddress")}
                     />
                   </div>
 
@@ -479,8 +439,8 @@ function PatientProfileContent() {
 
             <TabsContent value="orders" className="mt-0">
               <div className="bg-white rounded-2xl p-8 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">My Orders</h3>
-                <p className="text-gray-500">No orders yet.</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("myOrders")}</h3>
+                <p className="text-gray-500">{t("noOrdersYet")}</p>
               </div>
             </TabsContent>
           </Tabs>

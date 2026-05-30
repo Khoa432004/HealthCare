@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search, MessageSquare, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import { SuppressAiFloatingChat } from "@/components/ai-floating-chat-context"
 import type { InboxFilter } from "@/types/chat"
 
 function DoctorChatContent() {
+  const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
@@ -68,7 +70,7 @@ function DoctorChatContent() {
             <PageHeaderTitleRow
               role="doctor"
               icon={MessageSquare}
-              title="Chats"
+              title={t("chats")}
               iconClassName="text-[#007A94]"
               titleClassName="text-lg"
             />
@@ -78,7 +80,7 @@ function DoctorChatContent() {
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                 <Input
                   type="search"
-                  placeholder="Search..."
+                  placeholder={t("searchPlaceholder")}
                   className="pl-9 bg-gray-50 border-gray-200 h-9 text-sm"
                 />
               </div>

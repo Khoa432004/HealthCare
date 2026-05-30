@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { NeedHelpBanner } from "./need-help-banner"
 import { ChatFilterTabs } from "./chat-filter-tabs"
@@ -57,6 +58,7 @@ export function ChatInboxPanel({
   showNeedHelpBanner = true,
   allowedFilters,
 }: ChatInboxPanelProps) {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState<InboxFilter>("all")
 
   const conversations = useMemo(() => {
@@ -69,7 +71,7 @@ export function ChatInboxPanel({
       <div className="p-4 space-y-4 flex-shrink-0">
         {showNeedHelpBanner && (
           <NeedHelpBanner
-            title="Need help? Chat with the Admin now!"
+            title={t("needHelpAdmin")}
             onChatClick={() => {
               const adminConv = MOCK_CONVERSATIONS.find((c) => c.participantType === "admin")
               if (adminConv) onSelectConversation(adminConv)
@@ -77,7 +79,7 @@ export function ChatInboxPanel({
           />
         )}
         <div>
-          <h2 className="text-base font-semibold text-[#0b0c0c] mb-3">Inbox</h2>
+          <h2 className="text-base font-semibold text-[#0b0c0c] mb-3">{t("inbox")}</h2>
           <ChatFilterTabs value={filter} onChange={setFilter} allowedFilters={allowedFilters} />
         </div>
       </div>

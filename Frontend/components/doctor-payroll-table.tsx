@@ -26,8 +26,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { payrollService, DoctorPayroll } from "@/services/payroll.service"
+import { useTranslation } from "react-i18next"
 
 export function DoctorPayrollTable() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [payrolls, setPayrolls] = useState<DoctorPayroll[]>([])
   const [loading, setLoading] = useState(false)
@@ -54,8 +56,8 @@ export function DoctorPayrollTable() {
     } catch (error: any) {
       console.error("Error loading payrolls:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải danh sách bảng lương",
+        title: t("error"),
+        description: error.message || t("loadPayrollFailed", "Unable to load payroll list"),
         variant: "destructive",
       })
       setPayrolls([])
@@ -78,8 +80,8 @@ export function DoctorPayrollTable() {
     // Validate confirmation
     if (!confirmNoAdjustments) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng xác nhận không có điều chỉnh thêm",
+        title: t("error"),
+        description: t("confirmNoAdjustmentsRequired", "Please confirm there are no further adjustments"),
         variant: "destructive",
       })
       return
@@ -95,8 +97,8 @@ export function DoctorPayrollTable() {
       })
 
       toast({
-        title: "Thành công",
-        description: `Tất toán lương thành công cho ${settleDialog.payroll.doctorName}`,
+        title: t("success"),
+        description: `${t("settleSuccess", "Salary settled successfully for")} ${settleDialog.payroll.doctorName}`,
       })
 
       setSettleDialog({ open: false, payroll: null })
@@ -106,8 +108,8 @@ export function DoctorPayrollTable() {
     } catch (error: any) {
       console.error("Error settling payroll:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể xử lý thanh toán lương",
+        title: t("error"),
+        description: error.message || t("settleFailed", "Unable to process salary settlement"),
         variant: "destructive",
       })
     } finally {
@@ -126,17 +128,17 @@ export function DoctorPayrollTable() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "settled":
-        return <Badge className="bg-green-500">Đã thanh toán</Badge>
+        return <Badge className="bg-green-500">{t("settled", "Settled")}</Badge>
       case "unsettled":
-        return <Badge variant="outline">Chưa thanh toán</Badge>
+        return <Badge variant="outline">{t("unsettled", "Unsettled")}</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
   }
 
   const monthNames = [
-    "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-    "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+    t("month1"), t("month2"), t("month3"), t("month4"), t("month5"), t("month6"),
+    t("month7"), t("month8"), t("month9"), t("month10"), t("month11"), t("month12")
   ]
 
   return (
@@ -144,9 +146,9 @@ export function DoctorPayrollTable() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Bảng lương bác sĩ</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("doctorPayroll")}</h2>
           <p className="text-sm text-gray-500">
-            Quản lý và thanh toán lương cho bác sĩ ({payrolls.length} bác sĩ)
+            {t("doctorPayrollDesc", "Manage and settle doctor salaries")} ({payrolls.length})
           </p>
         </div>
       </div>
@@ -154,7 +156,7 @@ export function DoctorPayrollTable() {
       {/* Filter: Year & Month */}
       <div className="flex gap-3 items-end">
         <div className="flex-1">
-          <label className="text-sm font-medium mb-2 block">Chọn tháng/năm</label>
+          <label className="text-sm font-medium mb-2 block">{t("selectMonthYear")}</label>
           <div className="flex gap-2">
             <select
               value={selectedMonth}
@@ -185,7 +187,7 @@ export function DoctorPayrollTable() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Tìm kiếm theo tên, email, SĐT..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -193,7 +195,7 @@ export function DoctorPayrollTable() {
           />
         </div>
         <Button onClick={handleSearch} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tìm kiếm"}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t("search")}
         </Button>
       </div>
 
@@ -202,13 +204,13 @@ export function DoctorPayrollTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Bác sĩ</TableHead>
-              <TableHead className="text-center">Số lịch khám</TableHead>
-              <TableHead className="text-right">Tổng doanh thu</TableHead>
-              <TableHead className="text-right">Phí nền tảng (15%)</TableHead>
-              <TableHead className="text-right">Lương bác sĩ (Net)</TableHead>
-              <TableHead className="text-center">Trạng thái thanh toán</TableHead>
-              <TableHead className="text-center">Thao tác</TableHead>
+              <TableHead>{t("doctor")}</TableHead>
+              <TableHead className="text-center">{t("appointmentCount", "Appointments")}</TableHead>
+              <TableHead className="text-right">{t("totalRevenue", "Total revenue")}</TableHead>
+              <TableHead className="text-right">{t("platformFee", "Platform fee")} (15%)</TableHead>
+              <TableHead className="text-right">{t("doctorSalaryNet", "Doctor salary (Net)")}</TableHead>
+              <TableHead className="text-center">{t("paymentStatus", "Payment status")}</TableHead>
+              <TableHead className="text-center">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -221,7 +223,7 @@ export function DoctorPayrollTable() {
             ) : payrolls.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  Không có dữ liệu cho tháng này
+                  {t("noPayrollData", "No data for this month")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -256,10 +258,10 @@ export function DoctorPayrollTable() {
                         className="text-blue-600 hover:text-blue-700"
                       >
                         <CheckCircle2 className="w-4 h-4 mr-1" />
-                        Xác nhận tất toán
+                        {t("settlePayment")}
                       </Button>
                     ) : payroll.totalRevenue === 0 ? (
-                      <span className="text-xs text-gray-500">Không có lương để thực hiện thanh toán</span>
+                      <span className="text-xs text-gray-500">{t("noSalaryToSettle")}</span>
                     ) : (
                       <span className="text-xs text-gray-500">-</span>
                     )}
@@ -285,52 +287,52 @@ export function DoctorPayrollTable() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {settleDialog.payroll && `Xác nhận tất toán lương — ${settleDialog.payroll.doctorName} — ${monthNames[selectedMonth - 1]}/${selectedYear}`}
+              {settleDialog.payroll && `${t("confirmSettleTitle", "Confirm salary settlement")} — ${settleDialog.payroll.doctorName} — ${monthNames[selectedMonth - 1]}/${selectedYear}`}
             </DialogTitle>
             <DialogDescription>
-              Vui lòng kiểm tra và xác nhận thông tin trước khi tất toán
+              {t("settleConfirmDesc", "Please review and confirm before settling")}
             </DialogDescription>
           </DialogHeader>
           {settleDialog.payroll && (
             <div className="space-y-3 py-4">
               {/* Số lịch khám */}
               <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-sm font-medium">Số lịch khám</span>
+                <span className="text-sm font-medium">{t("appointmentCount", "Appointments")}</span>
                 <span className="text-sm text-gray-600">{settleDialog.payroll.completedAppointments}</span>
               </div>
 
               {/* Tổng doanh thu */}
               <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-sm font-medium">Tổng doanh thu (Gross)</span>
+                <span className="text-sm font-medium">{t("totalRevenueGross", "Total revenue (Gross)")}</span>
                 <span className="text-sm font-semibold">{formatCurrency(settleDialog.payroll.totalRevenue)}</span>
               </div>
 
               {/* Refunds */}
               <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-sm font-medium">Hoàn tiền</span>
+                <span className="text-sm font-medium">{t("refund")}</span>
                 <span className="text-sm text-red-600">{formatCurrency(settleDialog.payroll.refunds)}</span>
               </div>
 
               {/* Phí nền tảng */}
               <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-sm font-medium">Phí nền tảng (15%)</span>
+                <span className="text-sm font-medium">{t("platformFee", "Platform fee")} (15%)</span>
                 <span className="text-sm text-red-600">{formatCurrency(settleDialog.payroll.platformFee)}</span>
               </div>
 
               {/* Lương bác sĩ Net */}
               <div className="flex justify-between items-center pt-2">
-                <span className="text-sm font-bold">Lương bác sĩ (Net)</span>
+                <span className="text-sm font-bold">{t("doctorSalaryNet", "Doctor salary (Net)")}</span>
                 <span className="text-lg font-bold text-green-600">{formatCurrency(settleDialog.payroll.doctorSalary)}</span>
               </div>
 
               {/* Note field */}
               <div className="space-y-2 pt-4">
                 <Label htmlFor="settleNote" className="text-sm font-medium">
-                  Ghi chú (tùy chọn)
+                  {t("noteOptional", "Note (optional)")}
                 </Label>
                 <Textarea
                   id="settleNote"
-                  placeholder="Nhập ghi chú nếu có..."
+                  placeholder={t("enterNoteOptional", "Enter a note if any...")}
                   value={settleNote}
                   onChange={(e) => setSettleNote(e.target.value)}
                   rows={2}
@@ -349,7 +351,7 @@ export function DoctorPayrollTable() {
                   htmlFor="confirmNoAdjustments"
                   className="text-sm font-normal cursor-pointer leading-5"
                 >
-                  Tôi xác nhận không có điều chỉnh thêm cho kỳ này.
+                  {t("confirmNoAdjustments", "I confirm there are no further adjustments for this period.")}
                 </Label>
               </div>
             </div>
@@ -360,16 +362,16 @@ export function DoctorPayrollTable() {
               setSettleNote("")
               setConfirmNoAdjustments(false)
             }}>
-              Hủy
+              {t("cancel")}
             </Button>
             <Button onClick={handleSettle} disabled={settling || !confirmNoAdjustments}>
               {settling ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang xử lý...
+                  {t("processing")}
                 </>
               ) : (
-                "Xác nhận"
+                t("confirm")
               )}
             </Button>
           </DialogFooter>
