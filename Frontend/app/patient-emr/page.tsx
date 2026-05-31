@@ -279,7 +279,13 @@ function EhrContent() {
                               <p className="text-xs text-gray-500 mt-0.5">{time}</p>
                             ) : null}
                           </td>
-                          <td className="px-2 py-3.5 align-middle text-right">
+                          <td
+                            className="px-2 py-3.5 align-middle text-right cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/patient-medical-examination-history/${record.id}`)
+                            }}
+                          >
                             <RowChevron className="h-4 w-4 text-[#007A94] opacity-0 transition-opacity group-hover:opacity-100" />
                           </td>
                         </tr>
