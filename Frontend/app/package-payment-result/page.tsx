@@ -7,12 +7,24 @@ import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/api-config"
 import { AuthLanguageBar } from "@/components/auth-language-bar"
 
+/** Safely parse JSON from a Response; returns null if body is empty or not JSON. */
+async function safeJsonParse(response: Response): Promise<any> {
+    const text = await response.text()
+    if (!text || text.trim() === "") return null
+    try {
+        return JSON.parse(text)
+    } catch {
+        return null
+    }
+}
+
 function PackagePaymentResultContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const { t } = useTranslation()
     const [isProcessing, setIsProcessing] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState(false)
 
     const payment = searchParams?.get("payment")
     const orderInfo = searchParams?.get("orderInfo")
@@ -24,8 +36,15 @@ function PackagePaymentResultContent() {
         }
 
         if (payment === "success") {
-            createPackagePurchase()
+            const packageData = localStorage.getItem("pendingPackagePurchase")
+            if (packageData) {
+                createPackagePurchase()
+            } else {
+                // Nothing pending — user may have refreshed after success
+                setSuccess(true)
+            }
         }
+        // If payment === "fail", just show failure message
     }, [payment, router])
 
     const createPackagePurchase = async () => {
@@ -88,12 +107,19 @@ function PackagePaymentResultContent() {
             })
 
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.message || t("packagePurchaseFailed"))
+                // Safe parse — body may be empty (e.g. 401 from middleware)
+                const errorData = await safeJsonParse(response)
+                throw new Error(
+                    (errorData?.message) ||
+                    (response.status === 401 ? t("sessionExpiredPleaseLogin") : t("packagePurchaseFailed"))
+                )
             }
 
             localStorage.removeItem("pendingPackagePurchase")
-            setError(null)
+            setSuccess(true)
+            setTimeout(() => {
+                router.push("/patient-purchased-packages")
+            }, 2000)
         } catch (err: any) {
             console.error("Error creating package purchase:", err)
             setError(err.message || t("packagePurchaseFailed"))
@@ -127,7 +153,7 @@ function PackagePaymentResultContent() {
                     </div>
                 )}
 
-                {!isProcessing && payment === "success" && !error && (
+                {success && !isProcessing && !error && (
                     <div className="p-4 rounded-md mb-4 bg-green-50 border border-green-200 text-green-800">
                         {t("packagePurchaseSuccess")}
                     </div>

@@ -647,5 +647,7 @@
   "clinic": "Phòng khám",
   "province": "Tỉnh/Thành",
   "expired": "Đã hết hạn",
-  "alreadyHaveAccountQ": "Đã có tài khoản?"
+  "alreadyHaveAccountQ": "Đã có tài khoản?",
+  "sessionExpiredPleaseLogin": "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.",
+  "viewMyCalendar": "Xem lịch hẹn của tôi"
 }

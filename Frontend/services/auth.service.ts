@@ -235,8 +235,8 @@ class AuthService {
     localStorage.setItem(STORAGE_KEYS.USER_ROLE, data.user.role)
     
     // Also set cookies for middleware access
-    document.cookie = `access_token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`
-    document.cookie = `user_role=${data.user.role}; path=/; max-age=86400; SameSite=Strict`
+    document.cookie = `access_token=${data.access_token}; path=/; max-age=86400; SameSite=Lax`
+    document.cookie = `user_role=${data.user.role}; path=/; max-age=86400; SameSite=Lax`
   }
 
   /**
