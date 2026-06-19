@@ -647,5 +647,7 @@
   "clinic": "Clinic",
   "province": "Province",
   "expired": "Expired",
-  "alreadyHaveAccountQ": "Already have an account?"
+  "alreadyHaveAccountQ": "Already have an account?",
+  "sessionExpiredPleaseLogin": "Session expired. Please log in again.",
+  "viewMyCalendar": "View My Calendar"
 }
