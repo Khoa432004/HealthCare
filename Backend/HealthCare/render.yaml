@@ -1,46 +1,62 @@
-# Render Blueprint for HealthCare Application
-# This file can be used to automatically provision services on Render
+# Render Blueprint — HealthCare Application
+# Deploy: git push origin hosting → Render auto-deploy
+#
+# Services:
+#   1. healthcare-redis   — Render Managed Redis (free, Singapore)
+#   2. healthcare-backend — Spring Boot (Docker, Singapore)
+#
+# Database: Aiven Cloud PostgreSQL (external, giữ nguyên)
+#
+# Cách deploy:
+#   1. Vào https://dashboard.render.com → New → Blueprint
+#   2. Connect repo, chọn branch: hosting
+#   3. Render đọc file này và tạo services tự động
+#   4. Thêm các secret env vars trong Render Dashboard:
+#      - SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+#      - SECURITY_JWT_SECRET
+#      - SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD
+#      - AGORA_APP_ID, AGORA_APP_CERTIFICATE
+#      - GOOGLE_API_KEY
 
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: healthcare-db
-    env: docker
-    plan: free
-    region: singapore
-    databases:
-      - name: healthcare_db
-        user: postgres
-
-  # Redis Cache
+  # ----------------------------------------------------------
+  # Redis Cache — Render Managed Redis (Free Tier)
+  # ----------------------------------------------------------
   - type: redis
     name: healthcare-redis
     plan: free
     region: singapore
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []   # chỉ cho phép internal services truy cập
 
-  # Spring Boot Backend
+  # ----------------------------------------------------------
+  # Spring Boot Backend — Docker Build
+  # ----------------------------------------------------------
   - type: web
     name: healthcare-backend
     env: docker
     region: singapore
     plan: free
+    branch: hosting
     rootDir: Backend/HealthCare
     dockerfilePath: Backend/HealthCare/Dockerfile
     healthCheckPath: /actuator/health
+
     envVars:
+      # ---- Database (Aiven Cloud — external) ----
+      # Nhập giá trị thật trong Render Dashboard (sync: false)
       - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: healthcare-db
-          property: connectionString
+        sync: false
       - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: healthcare-db
-          property: user
+        sync: false
       - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: healthcare-db
-          property: password
+        sync: false
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_JPA_SHOW_SQL
+        value: "false"
+
+      # ---- Redis (Render Managed — auto-injected) ----
       - key: SPRING_DATA_REDIS_HOST
         fromService:
           type: redis
@@ -51,16 +67,52 @@ services:
           type: redis
           name: healthcare-redis
           property: port
+      - key: SPRING_DATA_REDIS_PASSWORD
+        fromService:
+          type: redis
+          name: healthcare-redis
+          property: password
+      - key: SPRING_DATA_REDIS_SSL_ENABLED
+        value: "true"
+      - key: SPRING_CACHE_TYPE
+        value: redis
+
+      # ---- JWT ----
       - key: SECURITY_JWT_SECRET
         generateValue: true
       - key: SECURITY_JWT_EXPIRATION_MS
-        value: 86400000
+        value: "86400000"
       - key: SECURITY_JWT_REFRESH_EXPIRATION_MS
-        value: 604800000
+        value: "604800000"
+
+      # ---- Email (Gmail SMTP) ----
+      - key: SPRING_MAIL_HOST
+        value: smtp.gmail.com
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
+        value: "true"
+      - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+        value: "true"
+
+      # ---- Agora Video SDK ----
+      - key: AGORA_APP_ID
+        sync: false
+      - key: AGORA_APP_CERTIFICATE
+        sync: false
+
+      # ---- Google Generative AI ----
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GOOGLE_MODEL_ID
+        value: gemini-1.5-flash
+
+      # ---- Server / Profile ----
+      - key: SERVER_PORT
+        value: "8080"
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: update
-      - key: SERVER_PORT
-        value: 8080
-

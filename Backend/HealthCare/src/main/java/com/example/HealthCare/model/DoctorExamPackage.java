@@ -26,8 +26,8 @@ public class DoctorExamPackage extends BaseEntity {
 	@Column(name = "package_name", nullable = false, length = 255)
 	private String packageName;
 
-	@Column(name = "duration_minutes", nullable = false)
-	private Integer durationMinutes;
+	@Column(name = "duration_days", nullable = false)
+	private Integer durationDays;
 
 	@Column(name = "price_vnd", nullable = false)
 	private Long priceVnd;

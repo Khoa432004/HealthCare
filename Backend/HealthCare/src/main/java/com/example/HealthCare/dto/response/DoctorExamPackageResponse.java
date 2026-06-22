@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class DoctorExamPackageResponse {
 	private UUID packageId;
 	private String packageName;
-	private int durationMinutes;
+	private int durationDays;
 	private long priceVnd;
 	private boolean applicable;
 	private Integer sortOrder;

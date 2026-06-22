@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 
 export function NotificationBell() {
+  const { t } = useTranslation()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -223,7 +225,7 @@ export function NotificationBell() {
       // Simple time ago format (fallback if date-fns locale fails)
       return formatDistanceToNow(date, { addSuffix: true })
     } catch {
-      return "Vừa xong"
+      return t("justNow")
     }
   }
 
@@ -243,7 +245,7 @@ export function NotificationBell() {
         <DropdownMenuContent align="end" className="w-96 p-0">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg">Thông báo</h3>
+              <h3 className="font-semibold text-lg">{t("notifications")}</h3>
               {hasUnread && (
                 <Button
                   variant="ghost"
@@ -251,7 +253,7 @@ export function NotificationBell() {
                   onClick={handleMarkAllAsRead}
                   className="text-xs h-auto py-1 px-2"
                 >
-                  Đánh dấu tất cả đã đọc
+                  {t("markAllRead")}
                 </Button>
               )}
             </div>
@@ -260,11 +262,11 @@ export function NotificationBell() {
           <ScrollArea className="h-[400px]">
             {isLoading ? (
               <div className="p-4 text-center text-sm text-gray-500">
-                Đang tải...
+                {t("loading")}
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-sm text-gray-500">
-                Không có thông báo
+                {t("noNotifications")}
               </div>
             ) : (
               <div className="divide-y">
@@ -301,7 +303,7 @@ export function NotificationBell() {
                           </span>
                           {notification.readAt && (
                             <span className="text-xs text-gray-400">
-                              Đã đọc: {formatTimeAgo(notification.readAt)}
+                              {t("read")}: {formatTimeAgo(notification.readAt)}
                             </span>
                           )}
                         </div>
@@ -328,24 +330,24 @@ export function NotificationBell() {
                     </DialogTitle>
                     <DialogDescription className="text-sm text-gray-500 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span>Người gửi: {selectedNotification.createdByName}</span>
+                        <span>{t("sender")}: {selectedNotification.createdByName}</span>
                         <span className="text-gray-300">•</span>
                         <span>{formatTimeAgo(selectedNotification.createdAt)}</span>
                       </div>
                       {selectedNotification.readAt && (
                         <div className="text-xs">
-                          Đã đọc: {formatTimeAgo(selectedNotification.readAt)}
+                          {t("read")}: {formatTimeAgo(selectedNotification.readAt)}
                         </div>
                       )}
                       {!selectedNotification.isRead && (
                         <div className="flex items-center gap-2 text-xs">
                           <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          <span className="text-blue-600 font-medium">Chưa đọc</span>
+                          <span className="text-blue-600 font-medium">{t("unread")}</span>
                         </div>
                       )}
                       {selectedNotification.isRead && (
                         <div className="text-xs text-green-600 font-medium">
-                          ✓ Đã đọc
+                          ✓ {t("read")}
                         </div>
                       )}
                     </DialogDescription>
@@ -363,11 +365,11 @@ export function NotificationBell() {
                 <div className="mt-6 pt-4 border-t flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center gap-4">
                     <span>
-                      Loại: <span className="font-medium">{selectedNotification.type}</span>
+                      {t("type")}: <span className="font-medium">{selectedNotification.type}</span>
                     </span>
                     {selectedNotification.targetRoles && selectedNotification.targetRoles.length > 0 && (
                       <span>
-                        Đối tượng: <span className="font-medium">
+                        {t("recipient")}: <span className="font-medium">
                           {selectedNotification.targetRoles.join(", ")}
                         </span>
                       </span>

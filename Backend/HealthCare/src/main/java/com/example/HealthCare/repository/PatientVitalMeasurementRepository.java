@@ -21,14 +21,14 @@ public interface PatientVitalMeasurementRepository
     List<PatientVitalMeasurement> findAllByPatientOrderByTakenAtAsc(
         @Param("patientId") UUID patientId);
 
-    @Query("select m from PatientVitalMeasurement m "
-        + "where m.patientId = :patientId "
-        + "and m.takenAt between :from and :to "
-        + "order by m.takenAt asc")
-    List<PatientVitalMeasurement> findAllByPatientInRange(
-        @Param("patientId") UUID patientId,
-        @Param("from") OffsetDateTime from,
-        @Param("to") OffsetDateTime to);
+    List<PatientVitalMeasurement> findByPatientIdAndTakenAtBetweenOrderByTakenAtAsc(
+        UUID patientId, OffsetDateTime from, OffsetDateTime to);
+
+    List<PatientVitalMeasurement> findByPatientIdAndTakenAtGreaterThanEqualOrderByTakenAtAsc(
+        UUID patientId, OffsetDateTime from);
+
+    List<PatientVitalMeasurement> findByPatientIdAndTakenAtLessThanEqualOrderByTakenAtAsc(
+        UUID patientId, OffsetDateTime to);
 
     @Query("select m from PatientVitalMeasurement m "
         + "left join fetch m.patient p "

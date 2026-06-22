@@ -1,6 +1,7 @@
 "use client"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "react-i18next"
 
 interface RevenuePoint {
   day: number
@@ -21,40 +22,42 @@ const defaultData: RevenuePoint[] = Array.from({ length: 31 }).map((_, index) =>
   package: 0,
 }))
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-gray-900 mb-2">{payload[0].payload.day}</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center space-x-2 text-sm">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-            <span className="text-gray-700">{entry.name}:</span>
-            <span className="font-semibold text-gray-900">{entry.value.toLocaleString()} VND</span>
-          </div>
-        ))}
-      </div>
-    )
-  }
-  return null
-}
-
 export default function AppointmentTrendChart({
   data = defaultData,
   totalRevenue = 0,
   revenueChangePercent = 0,
-  comparisonText = "vs Previous Month",
+  comparisonText,
 }: AppointmentTrendChartProps) {
+  const { t } = useTranslation()
   const isDown = revenueChangePercent < 0
+  const resolvedComparisonText = comparisonText ?? t("vsPreviousMonth")
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-gray-900 mb-2">{payload[0].payload.day}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center space-x-2 text-sm">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="text-gray-700">{entry.name}:</span>
+              <span className="font-semibold text-gray-900">{entry.value.toLocaleString()} {t("vnd")}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 h-full min-h-[520px] flex flex-col">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue</h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">{t("revenue")}</h3>
 
       <div className="mb-4">
         <div className="flex items-baseline space-x-2">
           <span className="text-3xl font-bold text-gray-900">{totalRevenue.toLocaleString()}</span>
-          <span className="text-sm font-medium text-gray-500">VND</span>
+          <span className="text-sm font-medium text-gray-500">{t("vnd")}</span>
         </div>
         <div className="flex items-center space-x-2 mt-1">
           <Badge
@@ -67,7 +70,7 @@ export default function AppointmentTrendChart({
           >
             {isDown ? "↓" : "↑"} {Math.abs(revenueChangePercent).toFixed(1)}%
           </Badge>
-          <span className="text-sm text-gray-500">{comparisonText}</span>
+          <span className="text-sm text-gray-500">{resolvedComparisonText}</span>
         </div>
       </div>
 
@@ -91,11 +94,11 @@ export default function AppointmentTrendChart({
             <Line
               type="monotone"
               dataKey="appointment"
-              stroke="#16a1bd"
+              stroke="#007A94"
               strokeWidth={2}
-              dot={{ fill: "#16a1bd", r: 3 }}
-              activeDot={{ r: 6, fill: "#16a1bd" }}
-              name="Appointment"
+              dot={{ fill: "#007A94", r: 3 }}
+              activeDot={{ r: 6, fill: "#007A94" }}
+              name={t("appointmentLegend")}
             />
             <Line
               type="monotone"
@@ -104,7 +107,7 @@ export default function AppointmentTrendChart({
               strokeWidth={2}
               dot={{ fill: "#9ca3af", r: 3 }}
               activeDot={{ r: 6, fill: "#9ca3af" }}
-              name="Package"
+              name={t("packageLegend")}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -112,12 +115,12 @@ export default function AppointmentTrendChart({
 
       <div className="flex items-center justify-center space-x-6 mt-4">
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-[#16a1bd]" />
-          <span className="text-sm text-gray-700">Appointment</span>
+          <div className="w-3 h-3 rounded-full bg-[#007A94]" />
+          <span className="text-sm text-gray-700">{t("appointmentLegend")}</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 rounded-full bg-gray-400" />
-          <span className="text-sm text-gray-700">Package</span>
+          <span className="text-sm text-gray-700">{t("packageLegend")}</span>
         </div>
       </div>
     </div>

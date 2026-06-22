@@ -14,6 +14,7 @@ public class HealthCareApplication {
 
 	public static void main(String[] args) {
 		loadDotEnvIntoSystemProperties();
+		renameDurationColumn();
 		SpringApplication.run(HealthCareApplication.class, args);
 	}
 
@@ -53,6 +54,9 @@ public class HealthCareApplication {
 	static Path resolveDotEnvDirectory() {
 		Path cwd = Paths.get("").toAbsolutePath().normalize();
 		Path[] candidates = new Path[] {
+				// Render Secret Files: file .env được đặt tại /etc/secrets/.env
+				Paths.get("/etc/secrets"),
+				// Local dev: tìm từ thư mục chạy
 				cwd.resolve("HealthCare").resolve("Backend").resolve("HealthCare"),
 				cwd.resolve("Backend").resolve("HealthCare"),
 				cwd
@@ -64,6 +68,28 @@ public class HealthCareApplication {
 			}
 		}
 		return null;
+	}
+
+	static void renameDurationColumn() {
+		String url = System.getProperty("SPRING_DATASOURCE_URL");
+		String user = System.getProperty("SPRING_DATASOURCE_USERNAME");
+		String pass = System.getProperty("SPRING_DATASOURCE_PASSWORD");
+		if (url == null || user == null || pass == null) {
+			url = System.getenv("SPRING_DATASOURCE_URL");
+			user = System.getenv("SPRING_DATASOURCE_USERNAME");
+			pass = System.getenv("SPRING_DATASOURCE_PASSWORD");
+		}
+		if (url == null || user == null || pass == null) {
+			return;
+		}
+		try (java.sql.Connection conn = java.sql.DriverManager.getConnection(url, user, pass)) {
+			try (java.sql.Statement stmt = conn.createStatement()) {
+				stmt.execute("ALTER TABLE doctor_exam_package RENAME COLUMN duration_minutes TO duration_days");
+				System.out.println("[HealthCare] Successfully renamed column duration_minutes to duration_days in doctor_exam_package table.");
+			}
+		} catch (Exception e) {
+			System.out.println("[HealthCare] Info: Rename column duration_minutes to duration_days skipped or already done: " + e.getMessage());
+		}
 	}
 
 }

@@ -303,14 +303,14 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
         {/* Header */}
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[#16a1bd]">NEW APPOINTMENT</h2>
+            <h2 className="text-lg font-semibold text-[#007A94]">NEW APPOINTMENT</h2>
             <Button variant="ghost" size="icon" onClick={onClose} disabled={isCreating}>
               <X className="w-5 h-5" />
             </Button>
           </div>
           {/* Current Date/Time Display */}
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Clock className="w-4 h-4 text-[#16a1bd]" />
+            <Clock className="w-4 h-4 text-[#007A94]" />
             <span>{formatCurrentDateTime()}</span>
           </div>
         </div>
@@ -391,7 +391,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
                 </div>
               ) : (
                 <>
-                  <div className="w-8 h-8 bg-[#16a1bd] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  <div className="w-8 h-8 bg-[#007A94] rounded-full flex items-center justify-center text-white text-sm font-medium">
                     {getInitials(doctorName)}
                   </div>
                   <span className="text-sm">{getDoctorDisplayName()}</span>
@@ -413,7 +413,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
             <h3 className="text-sm font-medium text-slate-700 mb-4">Details</h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
-                <Smile className="w-5 h-5 text-[#16a1bd] mt-2" />
+                <Smile className="w-5 h-5 text-[#007A94] mt-2" />
                 <Input
                   placeholder="Reason"
                   value={formData.reason}
@@ -422,7 +422,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
               </div>
 
               <div className="flex items-start space-x-3">
-                <Calendar className="w-5 h-5 text-[#16a1bd] mt-2" />
+                <Calendar className="w-5 h-5 text-[#007A94] mt-2" />
                 <Input
                   placeholder="Symptoms onset"
                   value={formData.symptomsOnset}
@@ -431,7 +431,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
               </div>
 
               <div className="flex items-start space-x-3">
-                <Plus className="w-5 h-5 text-[#16a1bd] mt-2" />
+                <Plus className="w-5 h-5 text-[#007A94] mt-2" />
                 <Input
                   placeholder="Symptoms severity"
                   value={formData.symptomsSeverity}
@@ -440,7 +440,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
               </div>
 
               <div className="flex items-start space-x-3">
-                <Pill className="w-5 h-5 text-[#16a1bd] mt-2" />
+                <Pill className="w-5 h-5 text-[#007A94] mt-2" />
                 <Input
                   placeholder="Medications being used"
                   value={formData.medications}
@@ -449,7 +449,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
               </div>
 
               <div className="flex items-start space-x-3">
-                <FileText className="w-5 h-5 text-[#16a1bd] mt-2" />
+                <FileText className="w-5 h-5 text-[#007A94] mt-2" />
                 <Textarea
                   placeholder="Notes"
                   value={formData.notes}
@@ -500,7 +500,7 @@ export function NewAppointmentModal({ onClose, onSuccess }: NewAppointmentModalP
             Cancel
           </Button>
           <Button 
-            className="bg-[#16a1bd] hover:bg-[#0d6171] text-white px-8" 
+            className="bg-[#007A94] hover:bg-[#005566] text-white px-8" 
             onClick={handleCreate}
             disabled={isCreating}
           >

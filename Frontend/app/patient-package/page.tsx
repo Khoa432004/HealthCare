@@ -1,0 +1,825 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowLeft,
+  Search,
+  MapPin,
+  Clock,
+  SlidersHorizontal,
+  CalendarDays,
+  ArrowRight,
+  Calendar,
+  User,
+  LogOut,
+  ClipboardList,
+  AlertCircle,
+  Lock as LockIcon
+} from "lucide-react";
+import { PatientSidebar } from "@/components/patient-sidebar";
+import { PatientUserMenu } from "@/components/patient-user-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { patientExamPackageService } from "@/services/patient-exam-package.service";
+import { NotificationBell } from "@/components/notification-bell";
+import { AuthGuard } from "@/components/auth-guard";
+import { API_BASE_URL } from "@/lib/api-config";
+import { PageHeaderTitleRow } from "@/components/page-header-title-row";
+import { authService } from "@/services/auth.service";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface DoctorWithPackages {
+  id: string;
+  name: string;
+  title?: string;
+  specialty: string;
+  clinic?: string;
+  experience?: string;
+  rating?: number;
+  reviews?: number;
+  packages: any[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Package Detail / Review Screen
+// ─────────────────────────────────────────────────────────────────────────────
+interface PackageDetailProps {
+  doctor: DoctorWithPackages;
+  pkg: any;
+  onBack: () => void;
+  userInfo: { fullName: string; role: string } | null;
+  handleLogout: () => Promise<void>;
+  getInitials: (name: string) => string;
+}
+
+const parseSpecialtyTags = (specialtyStr: string): string[] => {
+  if (!specialtyStr) return [];
+  const cleaned = specialtyStr.replace(/[{}]/g, "").replace(/"/g, "");
+  return cleaned.split(",").map((item: string) => item.trim());
+};
+
+function PackageDetailView({
+  doctor,
+  pkg,
+  onBack,
+  userInfo,
+  handleLogout,
+  getInitials,
+}: PackageDetailProps) {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isConfirmedPolicy, setIsConfirmedPolicy] = useState<boolean>(false);
+  const [isAgreedShareData, setIsAgreedShareData] = useState<boolean>(false);
+
+  const handlePayment = async () => {
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      const accessToken = localStorage.getItem("access_token");
+      if (!accessToken) {
+        throw new Error(t("authTokenNotFound", "Authentication token not found. Please login again."));
+      }
+
+      const orderTotal = pkg.priceVnd;
+      const orderInfo = `Thanh toan goi kham - ${pkg.packageName} - Bac si ${doctor.name}`;
+
+      const pendingPackagePurchase = {
+        doctorId: doctor.id,
+        packageId: pkg.packageId,
+        packageName: pkg.packageName,
+        priceVnd: pkg.priceVnd,
+        durationDays: pkg.durationDays,
+        purchaseDate: new Date().toISOString(),
+      };
+
+      localStorage.setItem("pendingPackagePurchase", JSON.stringify(pendingPackagePurchase));
+
+      const submitUrl = `/api/v1/vnpay/submitOrder?orderTotal=${orderTotal}&orderInfo=${encodeURIComponent(orderInfo)}`;
+      const paymentUrl = `${API_BASE_URL}${submitUrl}`;
+
+      window.location.href = paymentUrl;
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setError(err?.message || t("paymentGatewayFailed"));
+      setIsProcessing(false);
+    }
+  };
+
+  const formatDate = (offsetDays = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const formatPrice = (amount: number) =>
+    amount > 0 ? Number(amount).toLocaleString("vi-VN") + " đ" : "0 đ";
+  return (
+    <>
+      {/* Main Content — rendered inside the parent's flex column */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {/* ── Left column ─────────────────────────────────────── */}
+            <div className="lg:col-span-2 space-y-4">
+
+              {/* "You are buying" banner */}
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center flex-shrink-0">
+                    <CalendarDays className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">{t("youAreBuying")}</p>
+                    <h2 className="text-xl font-bold text-gray-900">{pkg.packageName}</h2>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">{t("buyDate")}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    <strong>{formatDate()}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Patient & Doctor cards */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Patient */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t("patient")}</h3>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback className="bg-gray-200 text-gray-600 text-sm font-semibold">
+                        {userInfo ? getInitials(userInfo.fullName) : "PT"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm leading-tight">
+                        {userInfo?.fullName || t("patient")}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t("patientLabel")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Doctor */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t("doctor")}</h3>
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`}
+                      />
+                      <AvatarFallback className="bg-teal-600 text-white text-sm font-semibold">
+                        {doctor.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm leading-tight">{doctor.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        {parseSpecialtyTags(doctor.specialty || "").join(" • ")}
+                      </p>
+                      {doctor.clinic && (
+                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                          <span>🏥</span>
+                          <span className="truncate">{doctor.clinic}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Package information */}
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">{t("packageInformation")}</h3>
+                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-3">
+                    <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-4 h-4 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">{t("duration")}</p>
+                        <p className="text-sm font-bold text-gray-900">{pkg.durationDays} {t("days")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-4 h-4 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">{t("startDate")}</p>
+                        <p className="text-sm font-bold text-gray-900">{formatDate()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-4 h-4 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">{t("endDate")}</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatDate(pkg.durationDays || 7)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Right column: Checkout ───────────────────────────── */}
+            <div>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 sticky top-4">
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h3 className="text-base font-bold text-gray-900">{t("checkout")}</h3>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* Fee Breakdown */}
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">{t("serviceFee")}</span>
+                      <span className="font-medium text-gray-900">{formatPrice(pkg.priceVnd)}</span>
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <span className="text-sm font-semibold text-gray-900">{t("totalCost")}</span>
+                    <span className="text-lg font-bold text-red-500">{formatPrice(pkg.priceVnd)}</span>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 mb-3">{t("paymentMethod")}</p>
+                    <div className="flex items-center justify-between p-3.5 border border-teal-500 bg-teal-50/20 ring-1 ring-teal-500 rounded-xl select-none">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center p-1.5 shadow-sm shrink-0">
+                          <img
+                            src="https://dsvn.vn/images/logo-dvtt-VNP.png"
+                            alt="VNPAY Logo"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-800">{t("paymentMethodVnpay")}</span>
+                          <span className="text-[11px] text-gray-400">{t("vnpaySupport")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Checkboxes */}
+                  <div className="space-y-4">
+                    {/* Khu vực Checkbox Điều khoản */}
+                    <div className="space-y-3 pt-1">
+                      {/* 1. Checkbox Privacy Policy */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                        <input
+                          type="checkbox"
+                          checked={isConfirmedPolicy}
+                          onChange={(e) => setIsConfirmedPolicy(e.target.checked)}
+                          className="mt-0.5 accent-teal-600 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 leading-normal group-hover:text-gray-800 transition-colors">
+                          {t("consentReadAgree", "Tôi xác nhận đã đọc và đồng ý với")}{" "}
+                          <span
+                            onClick={(e) => {
+                              e.preventDefault(); // Ngăn hành động tick checkbox khi click vào chữ link công ty
+                              // Thêm hàm mở Modal hoặc Link điều khoản tại đây nếu cần
+                            }}
+                            className="text-teal-600 underline hover:text-teal-700 font-medium cursor-pointer mx-0.5"
+                          >
+                            {t("consentPrivacyPolicyTerms", "Chính sách bảo mật & Điều khoản sử dụng")}
+                          </span>
+                        </span>
+                      </label>
+
+                      {/* 2. Checkbox Share Medical Data */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                        <input
+                          type="checkbox"
+                          checked={isAgreedShareData}
+                          onChange={(e) => setIsAgreedShareData(e.target.checked)}
+                          className="mt-0.5 accent-teal-600 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600 leading-normal group-hover:text-gray-800 transition-colors">
+                          {t("consentShareMedicalData", "Tôi đồng ý chia sẻ dữ liệu y tế cá nhân của mình cho Bác sĩ / Phòng khám phụ trách gói dịch vụ này")}
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Hiển thị thông báo Lỗi của hệ thống nếu có */}
+                    {error && (
+                      <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <p className="text-xs font-medium text-red-800">{error}</p>
+                      </div>
+                    )}
+
+                    {/* Nút bấm Thanh toán - Tự động khóa thông minh */}
+                    <Button
+                      onClick={handlePayment}
+                      // Logic khóa nút: Nếu đang xử lý HOẶC 1 trong 2 checkbox chưa được tích thì sẽ disabled
+                      disabled={isProcessing || !isConfirmedPolicy || !isAgreedShareData}
+                      className="w-full h-11 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2
+      disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:shadow-none disabled:cursor-not-allowed
+      bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-700/10"
+                    >
+                      {isProcessing ? (
+                        t("processing")
+                      ) : !isConfirmedPolicy || !isAgreedShareData ? (
+                        <>
+                          <LockIcon className="w-4 h-4 opacity-70" />
+                          <span>{t("pleaseAgreeTerms", "Vui lòng đồng ý điều khoản")}</span>
+                        </>
+                      ) : (
+                        t("confirmAndPay")
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main listing screen (doctors + their packages)
+// ─────────────────────────────────────────────────────────────────────────────
+function PatientPackageContent() {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [doctorsWithPackages, setDoctorsWithPackages] = useState<DoctorWithPackages[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null);
+  // doctorIds the patient currently holds an active/pending package with
+  const [blockedDoctorIds, setBlockedDoctorIds] = useState<Set<string>>(new Set());
+
+  // Detail view state
+  const [selectedDoctor, setSelectedDoctor] = useState<DoctorWithPackages | null>(null);
+  const [selectedPkg, setSelectedPkg] = useState<any | null>(null);
+
+  // Load user info
+  useEffect(() => {
+    const user = authService.getUserInfo();
+    if (user) {
+      setUserInfo({
+        fullName: user.fullName || "Patient",
+        role: user.role || "PATIENT",
+      });
+    }
+  }, []);
+
+  // Load patient's currently held packages → block buying from same doctor
+  useEffect(() => {
+    (async () => {
+      try {
+        const myPackages = await patientExamPackageService.getMyPackages();
+        const ids = new Set<string>(
+          (myPackages || [])
+            .filter((p: any) => p?.status === "active" || p?.status === "pending")
+            .map((p: any) => p?.doctorId)
+            .filter(Boolean)
+        );
+        setBlockedDoctorIds(ids);
+      } catch (err) {
+        console.error("Error loading my packages for validation:", err);
+      }
+    })();
+  }, []);
+
+  // Load doctors and their packages on mount
+  useEffect(() => {
+    loadDoctorsWithPackages("");
+  }, []);
+
+  const loadDoctorsWithPackages = async (query: string) => {
+    setLoading(true);
+    try {
+      const doctors = await patientExamPackageService.getAllDoctors(query);
+
+      const doctorPromises = doctors.map(async (doctor) => {
+        const packages = await patientExamPackageService.getDoctorExamPackages(doctor.id);
+        // Only keep packages that are currently active/applicable
+        const activePackages = (packages || []).filter((p) => p.applicable);
+        return { ...doctor, packages: activePackages };
+      });
+
+      const allDoctors = await Promise.all(doctorPromises);
+      // Only keep doctors who have at least 1 active package
+      const doctorsData = allDoctors.filter((d) => d.packages.length > 0);
+      setDoctorsWithPackages(doctorsData);
+
+      const uniqueSpecialties = Array.from(
+        new Set(doctorsData.map((d) => d.specialty).filter(Boolean))
+      ) as string[];
+      setSpecialties(uniqueSpecialties);
+    } catch (error) {
+      console.error("Error loading doctors with packages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    loadDoctorsWithPackages(query);
+  };
+
+  const filteredDoctors = doctorsWithPackages.filter((doctor) => {
+    const matchesSearch =
+      doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialty = !selectedSpecialty || doctor.specialty === selectedSpecialty;
+    return matchesSearch && matchesSpecialty;
+  });
+
+  // When user clicks "Select" → show detail/review screen
+  const handlePackageSelect = (doctor: DoctorWithPackages, pkg: any) => {
+    if (blockedDoctorIds.has(doctor.id)) return;
+    setSelectedDoctor(doctor);
+    setSelectedPkg(pkg);
+  };
+
+  // Go back from detail to listing
+  const handleBackToList = () => {
+    setSelectedDoctor(null);
+    setSelectedPkg(null);
+  };
+
+  // User details helper functions
+  const getInitials = (name: string): string => {
+    if (!name) return "PT";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      authService.clearAuthData();
+      router.push("/login");
+    }
+  };
+
+  // ── Single stable layout wrapper to prevent hydration/removeChild errors ────
+  return (
+    <div className="flex h-screen" style={{ backgroundColor: "#E8F5F1" }}>
+      <PatientSidebar />
+
+      {/* Main Content wrapper */}
+      <div className="flex-1 flex flex-col overflow-y-auto" style={{ paddingTop: "12px" }}>
+        {selectedDoctor && selectedPkg ? (
+          <>
+            {/* Header for Package Detail view */}
+            <header
+              className="bg-white py-3 mx-3 mb-3 shrink-0"
+              style={{ borderRadius: "14px", paddingLeft: "24px", paddingRight: "20px" }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBackToList}
+                    className="p-1.5 hover:bg-gray-100 rounded-lg transition mr-1"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-gray-900" />
+                  </button>
+                  <PageHeaderTitleRow
+                    role="patient"
+                    icon={ClipboardList}
+                    title={t("packageDetails")}
+                    titleClassName="text-lg"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <NotificationBell />
+                  <PatientUserMenu
+                    userInfo={userInfo}
+                    triggerClassName="flex items-center gap-2 h-9 px-2"
+                    contentClassName="w-48"
+                  />
+                </div>
+              </div>
+            </header>
+
+            <PackageDetailView
+              doctor={selectedDoctor}
+              pkg={selectedPkg}
+              onBack={handleBackToList}
+              userInfo={userInfo}
+              handleLogout={handleLogout}
+              getInitials={getInitials}
+            />
+          </>
+        ) : (
+          <>
+            {/* Header */}
+            <header
+              className="bg-white py-3 mx-3 mb-3 shrink-0"
+              style={{ borderRadius: "14px", paddingLeft: "24px", paddingRight: "20px" }}
+            >
+              <div className="flex items-center justify-between">
+                <PageHeaderTitleRow
+                  role="patient"
+                  icon={ClipboardList}
+                  title={t("buyPackage")}
+                  titleClassName="text-lg"
+                />
+
+                <div className="flex items-center space-x-3">
+                  {/* Notifications */}
+                  <NotificationBell />
+
+                  {/* User Menu */}
+                  <PatientUserMenu
+                    userInfo={userInfo}
+                    triggerClassName="flex items-center gap-2 h-9 px-2"
+                    contentClassName="w-48"
+                  />
+                </div>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <ScrollArea className="flex-1 w-full">
+              <div className="p-4 max-w-7xl mx-auto">
+                {/* Search and Filter */}
+                <Card className="mb-4 overflow-hidden border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] bg-white rounded-2xl">
+                  <CardContent className="p-4">
+                    {/* Search bar */}
+                    <div className="relative flex items-center mb-3">
+                      <Search className="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                      <Input
+                        placeholder={t("searchDoctorPackage")}
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="w-full pl-9 pr-3 h-9 bg-gray-50/70 border-gray-200 focus-visible:border-teal-500 focus-visible:ring-teal-500/20 rounded-lg placeholder:text-gray-400 text-sm"
+                      />
+                    </div>
+
+                    {/* Specialty filters */}
+                    {specialties.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 px-0.5">
+                          <SlidersHorizontal className="w-3 h-3" />
+                          <span>{t("filterSpecialty")}</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 max-h-[110px] overflow-y-auto pr-1 scrollbar-thin">
+                          <Badge
+                            variant="outline"
+                            className={`cursor-pointer px-3 py-1 rounded-lg text-[11px] font-medium transition-all border select-none h-auto flex items-center
+                    ${selectedSpecialty === null
+                                ? "bg-teal-600 border-teal-600 text-white shadow-sm shadow-teal-600/20"
+                                : "bg-gray-50/50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                              }`}
+                            onClick={() => setSelectedSpecialty(null)}
+                          >
+                            {t("allCatalogue")}
+                          </Badge>
+
+                          {specialties.map((specialtyStr) => {
+                            const isSelected = selectedSpecialty === specialtyStr;
+                            const subSpecialties = parseSpecialtyTags(specialtyStr);
+
+                            return (
+                              <div
+                                key={specialtyStr}
+                                onClick={() => setSelectedSpecialty(isSelected ? null : specialtyStr)}
+                                className={`cursor-pointer px-2.5 py-1 rounded-lg border transition-all select-none flex items-center gap-1 text-[11px] font-medium
+                        ${isSelected
+                                    ? "bg-teal-50 border-teal-500 text-teal-700 shadow-sm shadow-teal-600/5 ring-1 ring-teal-500"
+                                    : "bg-gray-50/50 border-gray-200 text-gray-600 hover:bg-teal-50/30 hover:border-teal-200 hover:text-teal-600"
+                                  }`}
+                              >
+                                <div className="flex items-center gap-1">
+                                  {subSpecialties.map((sub, idx) => (
+                                    <span key={idx} className="flex items-center">
+                                      <span>{sub}</span>
+                                      {idx < subSpecialties.length - 1 && (
+                                        <span
+                                          className={`mx-1 opacity-40 ${isSelected ? "text-teal-400" : "text-gray-300"
+                                            }`}
+                                        >
+                                          •
+                                        </span>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Specialists count */}
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-gray-700">
+                    {t("ourSpecialists")} ({filteredDoctors.length})
+                  </h2>
+                </div>
+
+                {/* Doctors with Packages */}
+                <div className="space-y-4">
+                  {loading ? (
+                    <div className="text-center py-12 text-gray-500">
+                      {t("loadingDoctorsPackages", "Loading doctors and packages...")}
+                    </div>
+                  ) : filteredDoctors && filteredDoctors.length > 0 ? (
+                    filteredDoctors.map((doctor) => {
+                      const isBlocked = blockedDoctorIds.has(doctor.id);
+                      return (
+                      <Card key={doctor.id} className="border-0 shadow-sm overflow-hidden rounded-2xl">
+                        <CardContent className="p-4">
+                          {/* Doctor Info Header */}
+                          <div className="flex items-start gap-3 mb-4 pb-4 border-b border-gray-100">
+                            <Avatar className="w-14 h-14 flex-shrink-0">
+                              <AvatarImage
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${doctor.name}&backgroundColor=0CC8C8&textColor=ffffff`}
+                                alt={doctor.name}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-teal-600 text-white text-sm">
+                                {doctor.name?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-semibold text-base text-gray-900">
+                                  {doctor.name}
+                                </h3>
+                                {isBlocked && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <AlertCircle className="w-2.5 h-2.5" />
+                                    {t("alreadyPurchased")}
+                                  </span>
+                                )}
+                              </div>
+                              {doctor.specialty && (
+                                <div className="flex flex-wrap gap-1 mb-1.5">
+                                  {parseSpecialtyTags(doctor.specialty).map((spec: string, idx: number) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100/80 select-none"
+                                    >
+                                      {spec}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {doctor.clinic && (
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                                  {doctor.clinic}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Packages Grid */}
+                          {doctor.packages && doctor.packages.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {doctor.packages.map((pkg: any) => (
+                                <div
+                                  key={pkg.packageId}
+                                  className="group relative flex flex-col justify-between overflow-hidden bg-white border border-gray-100 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.06)] hover:border-teal-500/30 transition-all duration-300"
+                                >
+                                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-teal-500 via-teal-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                                  <div className="p-3.5 pb-2">
+                                    {/* Package name */}
+                                    <div className="mb-3">
+                                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                                        {t("consultationPackage", "Gói tư vấn")}
+                                      </span>
+                                      <p className="text-sm font-bold text-gray-900 truncate">
+                                        {pkg.packageName || `Gói ${pkg.durationDays} ngày`}
+                                      </p>
+                                    </div>
+
+                                    {/* Duration */}
+                                    <div className="flex items-center gap-2 mb-3 py-2 border-t border-gray-50">
+                                      <div className="p-1.5 bg-teal-50 rounded-lg text-teal-600">
+                                        <Calendar className="w-3.5 h-3.5" />
+                                      </div>
+                                      <div>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                                          {t("duration")}
+                                        </span>
+                                        <p className="text-xs font-bold text-gray-800">
+                                          {pkg.durationDays} {t("days")}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Price */}
+                                    <div className="pt-2 border-t border-gray-50">
+                                      <p className="text-[10px] text-gray-400 font-bold mb-0.5 uppercase tracking-wider">
+                                        {t("serviceFee")}
+                                      </p>
+                                      <div className="flex items-baseline gap-1">
+                                        <span className="text-base font-bold text-gray-900 tracking-tight transition-colors group-hover:text-teal-600 duration-200">
+                                          {Number(pkg.priceVnd).toLocaleString("vi-VN")}
+                                        </span>
+                                        <span className="text-[10px] font-medium text-gray-400">đ</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-3.5 pt-1.5 mt-auto border-t border-gray-50 bg-gradient-to-b from-transparent to-gray-50/30">
+                                    <Button
+                                      onClick={() => handlePackageSelect(doctor, pkg)}
+                                      disabled={isBlocked}
+                                      title={
+                                        isBlocked
+                                          ? t("alreadyPurchasedDoctorTooltip", "Bạn đang sử dụng gói của bác sĩ này, không thể mua thêm")
+                                          : undefined
+                                      }
+                                      className="w-full h-9 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg shadow-sm shadow-teal-700/10 hover:shadow-md hover:shadow-teal-700/20 transition-all duration-200 flex items-center justify-center gap-1.5 group/btn disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200"
+                                    >
+                                      {isBlocked ? (
+                                        <>
+                                          <LockIcon className="w-3.5 h-3.5 opacity-70" />
+                                          <span>{t("alreadyPurchased")}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>{t("selectPackage", "Chọn gói dịch vụ")}</span>
+                                          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4 text-sm text-gray-500">
+                              {t("noPackagesFound")}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">{t("noPackagesFound")}</div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+export default function PatientPackagePage() {
+  return (
+    <AuthGuard>
+      <PatientPackageContent />
+    </AuthGuard>
+  );
+}

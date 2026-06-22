@@ -11,10 +11,12 @@ import { CalendarIcon, XIcon, AlertCircle, CheckCircle2 } from "lucide-react"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { authService } from "@/services/auth.service"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export function SignUpForm() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
@@ -130,7 +132,7 @@ export function SignUpForm() {
       if (currentStep === 1) {
         // Validate required fields for step 1
         if (!formData.fullName || !formData.phone || !formData.email || !formData.gender || !formData.dateOfBirth || !formData.identityCard || !formData.address) {
-          setError("Vui lòng điền đầy đủ thông tin bắt buộc")
+          setError(t("fillRequiredFields", "Vui lòng điền đầy đủ thông tin bắt buộc"))
           setIsLoading(false)
           return
         }
@@ -138,7 +140,7 @@ export function SignUpForm() {
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(formData.email)) {
-          setError("Email không đúng định dạng")
+          setError(t("emailInvalidFormat", "Email không đúng định dạng"))
           setIsLoading(false)
           return
         }
@@ -146,7 +148,7 @@ export function SignUpForm() {
         // Validate phone number (Vietnamese phone: 10 digits starting with 0)
         const phoneRegex = /^0[0-9]{9}$/
         if (!phoneRegex.test(formData.phone)) {
-          setError("Số điện thoại phải có 10 số và bắt đầu bằng 0")
+          setError(t("phoneInvalid", "Số điện thoại phải có 10 số và bắt đầu bằng 0"))
           setIsLoading(false)
           return
         }
@@ -154,14 +156,14 @@ export function SignUpForm() {
         // Validate identity card (9-12 digits)
         const identityCardRegex = /^[0-9]{9,12}$/
         if (!identityCardRegex.test(formData.identityCard)) {
-          setError("Số CCCD phải có từ 9 đến 12 chữ số")
+          setError(t("identityCardInvalid", "Số CCCD phải có từ 9 đến 12 chữ số"))
           setIsLoading(false)
           return
         }
 
         // Validate full name (at least 2 characters, no numbers)
         if (formData.fullName.length < 2 || formData.fullName.length > 100) {
-          setError("Họ và tên phải có từ 2 đến 100 ký tự")
+          setError(t("fullNameLength", "Họ và tên phải có từ 2 đến 100 ký tự"))
           setIsLoading(false)
           return
         }
@@ -169,7 +171,7 @@ export function SignUpForm() {
         // Validate date of birth (YYYY-MM-DD format)
         const dateRegex = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
         if (!dateRegex.test(formData.dateOfBirth)) {
-          setError("Ngày sinh phải đúng định dạng YYYY-MM-DD")
+          setError(t("dobFormat", "Ngày sinh phải đúng định dạng YYYY-MM-DD"))
           setIsLoading(false)
           return
         }
@@ -178,14 +180,14 @@ export function SignUpForm() {
         const inputDate = new Date(formData.dateOfBirth)
         const today = new Date()
         if (inputDate > today) {
-          setError("Ngày sinh không thể là ngày trong tương lai")
+          setError(t("dobFuture", "Ngày sinh không thể là ngày trong tương lai"))
           setIsLoading(false)
           return
         }
 
         // Validate address
         if (formData.address.length < 5 || formData.address.length > 200) {
-          setError("Địa chỉ phải có từ 5 đến 200 ký tự")
+          setError(t("addressLength", "Địa chỉ phải có từ 5 đến 200 ký tự"))
           setIsLoading(false)
           return
         }
@@ -202,49 +204,49 @@ export function SignUpForm() {
       } else {
         // Validate required fields
         if (!formData.clinicHospital || !formData.practicingCertificationId || !formData.department) {
-          setError("Vui lòng điền đầy đủ thông tin chuyên môn bắt buộc")
+          setError(t("fillRequiredProfessional", "Vui lòng điền đầy đủ thông tin chuyên môn bắt buộc"))
           setIsLoading(false)
           return
         }
 
         // Validate clinic hospital name
         if (formData.clinicHospital.length < 3 || formData.clinicHospital.length > 100) {
-          setError("Tên phòng khám/bệnh viện phải có từ 3 đến 100 ký tự")
+          setError(t("clinicHospitalLength", "Tên phòng khám/bệnh viện phải có từ 3 đến 100 ký tự"))
           setIsLoading(false)
           return
         }
 
         // Validate practicing certification ID
         if (formData.practicingCertificationId.length < 5 || formData.practicingCertificationId.length > 50) {
-          setError("Số chứng chỉ hành nghề phải có từ 5 đến 50 ký tự")
+          setError(t("certIdLength", "Số chứng chỉ hành nghề phải có từ 5 đến 50 ký tự"))
           setIsLoading(false)
           return
         }
 
         // Validate department
         if (formData.department.length < 2 || formData.department.length > 100) {
-          setError("Khoa phải có từ 2 đến 100 ký tự")
+          setError(t("departmentLength", "Khoa phải có từ 2 đến 100 ký tự"))
           setIsLoading(false)
           return
         }
 
         // Validate specialties (at least one required)
         if (!formData.specialties || formData.specialties.length === 0) {
-          setError("Vui lòng chọn ít nhất một chuyên khoa")
+          setError(t("specialtyAtLeastOne", "Vui lòng chọn ít nhất một chuyên khoa"))
           setIsLoading(false)
           return
         }
 
         // Validate treatment conditions (at least one required)
         if (!formData.treatmentConditions || formData.treatmentConditions.length === 0) {
-          setError("Vui lòng chọn ít nhất một bệnh lý điều trị")
+          setError(t("treatmentAtLeastOne", "Vui lòng chọn ít nhất một bệnh lý điều trị"))
           setIsLoading(false)
           return
         }
 
         // Validate medical care target (at least one checkbox should be checked)
         if (!formData.careForAdults && !formData.careForChildren) {
-          setError("Vui lòng chọn ít nhất một đối tượng chăm sóc")
+          setError(t("careTargetAtLeastOne", "Vui lòng chọn ít nhất một đối tượng chăm sóc"))
           setIsLoading(false)
           return
         }
@@ -252,18 +254,18 @@ export function SignUpForm() {
         // Validate work experience years if provided
         if (formData.workFromYear && formData.workToYear) {
           if (formData.workFromYear > formData.workToYear) {
-            setError("Năm bắt đầu không thể lớn hơn năm kết thúc")
+            setError(t("fromYearGreater", "Năm bắt đầu không thể lớn hơn năm kết thúc"))
             setIsLoading(false)
             return
           }
           const currentYear = new Date().getFullYear()
           if (formData.workFromYear < 1900 || formData.workFromYear > currentYear) {
-            setError("Năm bắt đầu không hợp lệ")
+            setError(t("fromYearInvalid", "Năm bắt đầu không hợp lệ"))
             setIsLoading(false)
             return
           }
           if (formData.workToYear < formData.workFromYear || formData.workToYear > currentYear) {
-            setError("Năm kết thúc không hợp lệ")
+            setError(t("toYearInvalid", "Năm kết thúc không hợp lệ"))
             setIsLoading(false)
             return
           }
@@ -273,14 +275,14 @@ export function SignUpForm() {
         if (formData.graduationYear) {
           const currentYear = new Date().getFullYear()
           if (formData.graduationYear < 1900 || formData.graduationYear > currentYear) {
-            setError("Năm tốt nghiệp không hợp lệ")
+            setError(t("graduationYearInvalid", "Năm tốt nghiệp không hợp lệ"))
             setIsLoading(false)
             return
           }
         }
         
         if (!formData.termsAccepted || !formData.dataProtectionAccepted) {
-          setError("Vui lòng đồng ý với các điều khoản và chính sách")
+          setError(t("agreeTermsPolicies", "Vui lòng đồng ý với các điều khoản và chính sách"))
           setIsLoading(false)
           return
         }
@@ -344,7 +346,7 @@ export function SignUpForm() {
       }
     } catch (error: any) {
       console.error("Error submitting form:", error)
-      setError(error.message || "Đăng ký thất bại. Vui lòng thử lại.")
+      setError(error.message || t("registrationFailed", "Đăng ký thất bại. Vui lòng thử lại."))
     } finally {
       setIsLoading(false)
     }
@@ -361,10 +363,10 @@ export function SignUpForm() {
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
               </div>
               <DialogTitle className="text-2xl font-bold text-center text-gray-900">
-                Đăng ký thành công!
+                {t("registrationSuccess", "Đăng ký thành công!")}
               </DialogTitle>
               <DialogDescription className="text-center text-base text-gray-600">
-                Vui lòng chờ phê duyệt. Mật khẩu sẽ được gửi qua email khi Quản trị viên phê duyệt. Đang chuyển hướng đến trang đăng nhập...
+                {t("registrationSuccessDesc", "Vui lòng chờ phê duyệt. Mật khẩu sẽ được gửi qua email khi Quản trị viên phê duyệt. Đang chuyển hướng đến trang đăng nhập...")}
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -389,8 +391,8 @@ export function SignUpForm() {
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-bold text-[#A6ACAD]">STEP 1</div>
-                <div className="text-sm text-[#0B0C0C]">Personal Information</div>
+                <div className="text-sm font-bold text-[#A6ACAD]">{t("stepLabel1", "STEP 1")}</div>
+                <div className="text-sm text-[#0B0C0C]">{t("personalInformation")}</div>
               </div>
             </div>
 
@@ -414,8 +416,8 @@ export function SignUpForm() {
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-bold text-[#A6ACAD]">STEP 2</div>
-                <div className="text-sm text-[#0B0C0C]">Professional Information</div>
+                <div className="text-sm font-bold text-[#A6ACAD]">{t("stepLabel2", "STEP 2")}</div>
+                <div className="text-sm text-[#0B0C0C]">{t("professionalInformation")}</div>
               </div>
             </div>
           </div>
@@ -423,7 +425,7 @@ export function SignUpForm() {
 
         <div className="block sm:hidden text-center mb-6">
           <div className="text-sm font-medium text-gray-600">
-            Step {currentStep} of 2: {currentStep === 1 ? "Personal Profile" : "Professional Profile"}
+            {t("stepXof2", "Step {{step}} of 2", { step: currentStep })}: {currentStep === 1 ? t("personalProfile", "Personal Profile") : t("professionalProfile", "Professional Profile")}
           </div>
         </div>
 
@@ -438,11 +440,11 @@ export function SignUpForm() {
         {currentStep === 1 ? (
           <div className="space-y-4 sm:space-y-6">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Personal information</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">{t("personalInformation")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="fullName" className="text-sm font-medium">
-                    Full name
+                    {t("fullName")}
                   </Label>
                   <Input
                     id="fullName"
@@ -454,7 +456,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="identityCard" className="text-sm font-medium">
-                    Identity Card
+                    {t("identificationNumber")}
                   </Label>
                   <Input
                     id="identityCard"
@@ -466,21 +468,21 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="gender" className="text-sm font-medium">
-                    Gender
+                    {t("gender")}
                   </Label>
                   <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                     <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="FEMALE" />
+                      <SelectValue placeholder={t("female")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="FEMALE">Female</SelectItem>
-                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">{t("female")}</SelectItem>
+                      <SelectItem value="MALE">{t("male")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="dateOfBirth" className="text-sm font-medium">
-                    Date of birth
+                    {t("dateOfBirth")}
                   </Label>
                   <div className="relative mt-1">
                     <Input
@@ -494,7 +496,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="phone" className="text-sm font-medium">
-                    Phone number <span className="text-red-500">*</span>
+                    {t("phoneNumber")} <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex mt-1">
                     <div className="flex items-center justify-center w-16 sm:w-20 bg-gradient-to-r from-[#01D2D5] via-[#06B4CC] to-[#16A1BD] border border-r-0 border-gray-300 rounded-l-md px-3">
@@ -510,7 +512,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium">
-                    Email <span className="text-red-500">*</span>
+                    {t("email")} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="email"
@@ -525,11 +527,11 @@ export function SignUpForm() {
             </div>
 
             <div>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Address</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">{t("address")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="country" className="text-sm font-medium">
-                    Country
+                    {t("country", "Country")}
                   </Label>
                   <Select value={formData.country || "Vietnam"} onValueChange={(value) => handleInputChange("country", value)}>
                     <SelectTrigger className="mt-1">
@@ -542,7 +544,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="state" className="text-sm font-medium">
-                    State / Province
+                    {t("stateProvince", "State / Province")}
                   </Label>
                   <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
                     <SelectTrigger className="mt-1">
@@ -556,7 +558,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="city" className="text-sm font-medium">
-                    City
+                    {t("city", "City")}
                   </Label>
                   <Select value={formData.city} onValueChange={(value) => handleInputChange("city", value)}>
                     <SelectTrigger className="mt-1">
@@ -570,7 +572,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="zipCode" className="text-sm font-medium">
-                    ZIP Code
+                    {t("zipCode", "ZIP Code")}
                   </Label>
                   <Input
                     id="zipCode"
@@ -582,7 +584,7 @@ export function SignUpForm() {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="address" className="text-sm font-medium">
-                    Full Address <span className="text-red-500">*</span>
+                    {t("fullAddress", "Full Address")} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="address"
@@ -599,21 +601,21 @@ export function SignUpForm() {
               <Button
                 onClick={handleContinue}
                 disabled={false}
-                className="bg-[#0d6171] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#005566] hover:bg-[#0a4d5a] text-white px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Continue
+                {t("continueBtn")}
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-6">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Professional information</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">{t("professionalInformation")}</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="title" className="text-sm font-medium">
-                    Title
+                    {t("titleLabel")}
                   </Label>
                   <div className="flex items-center space-x-2 mt-1">
                     <span className="inline-flex items-center px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm">
@@ -626,7 +628,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="currentProvince" className="text-sm font-medium">
-                    Current Province
+                    {t("currentProvince", "Current Province")}
                   </Label>
                   <Select
                     value={formData.currentProvince}
@@ -645,11 +647,11 @@ export function SignUpForm() {
 
               <div className="mt-4">
                 <Label htmlFor="clinicHospital" className="text-sm font-medium">
-                  Clinic / Hospital <span className="text-red-500">*</span>
+                  {t("clinicHospital", "Clinic / Hospital")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="clinicHospital"
-                  placeholder="Nhập tên phòng khám hoặc bệnh viện"
+                  placeholder={t("enterClinicHospital", "Nhập tên phòng khám hoặc bệnh viện")}
                     value={formData.clinicHospital}
                   onChange={(e) => handleInputChange("clinicHospital", e.target.value)}
                   className="mt-1"
@@ -657,7 +659,7 @@ export function SignUpForm() {
               </div>
 
               <div className="mt-4">
-                <Label className="text-sm font-medium">Medical care for</Label>
+                <Label className="text-sm font-medium">{t("medicalCareFor", "Medical care for")}</Label>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mt-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -666,7 +668,7 @@ export function SignUpForm() {
                       onCheckedChange={(checked) => handleInputChange("careForAdults", checked)}
                     />
                     <Label htmlFor="adults" className="text-sm">
-                      Adults
+                      {t("adults", "Adults")}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -676,29 +678,29 @@ export function SignUpForm() {
                       onCheckedChange={(checked) => handleInputChange("careForChildren", checked)}
                     />
                     <Label htmlFor="children" className="text-sm">
-                      Children
+                      {t("children", "Children")}
                     </Label>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4">
-                <Label className="text-sm font-medium">Specialties</Label>
+                <Label className="text-sm font-medium">{t("specialties")}</Label>
                 <div className="mt-1">
                   <TagInput
                     field="specialties"
-                    placeholder="Add specialty"
+                    placeholder={t("addSpecialty", "Add specialty")}
                     suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
                   />
                 </div>
               </div>
 
               <div className="mt-4">
-                <Label className="text-sm font-medium">Treatment of conditions</Label>
+                <Label className="text-sm font-medium">{t("treatmentOfConditions", "Treatment of conditions")}</Label>
                 <div className="mt-1">
                   <TagInput
                     field="treatmentConditions"
-                    placeholder="Add condition"
+                    placeholder={t("addCondition", "Add condition")}
                     suggestions={["HEART FAILURE", "HYPERTENSION", "CARDIOMYOPATHY", "DIABETES"]}
                   />
                 </div>
@@ -707,31 +709,31 @@ export function SignUpForm() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
                 <div>
                   <Label htmlFor="practicingCertificationId" className="text-sm font-medium">
-                    Practicing Certification ID
+                    {t("practicingCertificationId", "Practicing Certification ID")}
                   </Label>
                   <Input
                     id="practicingCertificationId"
-                    placeholder="Certification ID"
+                    placeholder={t("certificationId", "Certification ID")}
                     value={formData.practicingCertificationId}
                     onChange={(e) => handleInputChange("practicingCertificationId", e.target.value)}
                     className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Languages</Label>
+                  <Label className="text-sm font-medium">{t("languages", "Languages")}</Label>
                   <div className="mt-1 p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    Vietnamese
+                    {t("vietnamese", "Vietnamese")}
                   </div>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Work experience</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">{t("workExperience", "Work experience")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="workFromYear" className="text-sm font-medium">
-                    From year
+                    {t("fromYear", "From year")}
                   </Label>
                   <Select
                     value={formData.workFromYear.toString()}
@@ -751,7 +753,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="workToYear" className="text-sm font-medium">
-                    To year
+                    {t("toYear", "To year")}
                   </Label>
                   <Select value={formData.workToYear.toString()} onValueChange={(value) => handleInputChange("workToYear", parseInt(value))}>
                     <SelectTrigger className="mt-1">
@@ -768,11 +770,11 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="workClinicHospital" className="text-sm font-medium">
-                    Work Clinic / Hospital
+                    {t("workClinicHospital", "Work Clinic / Hospital")}
                   </Label>
                   <Input
                     id="workClinicHospital"
-                    placeholder="Nhập tên phòng khám hoặc bệnh viện"
+                    placeholder={t("enterClinicHospital", "Nhập tên phòng khám hoặc bệnh viện")}
                     value={formData.workClinicHospital}
                     onChange={(e) => handleInputChange("workClinicHospital", e.target.value)}
                     className="mt-1"
@@ -780,7 +782,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="workLocation" className="text-sm font-medium">
-                    Clinic / hospital location
+                    {t("clinicHospitalLocation", "Clinic / hospital location")}
                   </Label>
                   <Input
                     id="workLocation"
@@ -793,11 +795,11 @@ export function SignUpForm() {
               </div>
 
               <div className="mt-4">
-                  <Label className="text-sm font-medium">Specialties</Label>
+                  <Label className="text-sm font-medium">{t("specialties")}</Label>
                   <div className="mt-1">
                     <TagInput
                       field="workSpecialties"
-                      placeholder="Add specialty"
+                      placeholder={t("addSpecialty", "Add specialty")}
                       suggestions={["ENDOCRINOLOGY", "CARDIOLOGY", "NEUROLOGY", "PEDIATRICS"]}
                     />
                   </div>
@@ -805,11 +807,11 @@ export function SignUpForm() {
             </div>
 
             <div>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Education</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">{t("education", "Education")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="educationalInstitution" className="text-sm font-medium">
-                    Educational Institution
+                    {t("educationalInstitution", "Educational Institution")}
                   </Label>
                   <Select
                     value={formData.educationalInstitution}
@@ -828,7 +830,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="graduationYear" className="text-sm font-medium">
-                    Year of graduation
+                    {t("yearOfGraduation", "Year of graduation")}
                   </Label>
                   <Select
                     value={formData.graduationYear.toString()}
@@ -851,7 +853,7 @@ export function SignUpForm() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
                 <div>
                   <Label htmlFor="specialty" className="text-sm font-medium">
-                    Specialty
+                    {t("specialty")}
                   </Label>
                   <Input
                     id="specialty"
@@ -863,7 +865,7 @@ export function SignUpForm() {
                 </div>
                 <div>
                   <Label htmlFor="department" className="text-sm font-medium">
-                    Department
+                    {t("department", "Department")}
                   </Label>
                   <Input
                     id="department"
@@ -885,8 +887,7 @@ export function SignUpForm() {
                   className="mt-0.5"
                 />
                 <Label htmlFor="terms" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  By clicking Sign Up, I confirm that I have read, understood and accepted all the Terms of Use,
-                  Application Using Policy and Privacy Policy of Bác Sỹ Ơi platform
+                  {t("signupTermsConsent", "By clicking Sign Up, I confirm that I have read, understood and accepted all the Terms of Use, Application Using Policy and Privacy Policy of iMed platform")}
                 </Label>
               </div>
               <div className="flex items-start space-x-2">
@@ -897,8 +898,7 @@ export function SignUpForm() {
                   className="mt-0.5"
                 />
                 <Label htmlFor="dataProtection" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  I confirm that I have read, understood and follow all instructions about personal data protection
-                  under the government decree No. 13/2023/NĐ-CP.
+                  {t("dataProtectionConsent", "I confirm that I have read, understood and follow all instructions about personal data protection under the government decree No. 13/2023/NĐ-CP.")}
                 </Label>
               </div>
             </div>
@@ -910,7 +910,7 @@ export function SignUpForm() {
                 disabled={isLoading}
                 className="px-6 sm:px-8 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Back
+                {t("back")}
               </Button>
               <Button
                 onClick={handleContinue}
@@ -920,10 +920,10 @@ export function SignUpForm() {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <LoadingSpinner size="sm" className="text-white" />
-                    <span>Finishing...</span>
+                    <span>{t("finishing", "Finishing...")}</span>
                   </div>
                 ) : (
-                  "Finish registration"
+                  t("finishRegistration", "Finish registration")
                 )}
               </Button>
             </div>

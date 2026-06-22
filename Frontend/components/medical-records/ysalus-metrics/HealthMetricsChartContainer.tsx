@@ -80,6 +80,24 @@ export const HealthMetricsChartContainer = ({
     [chartData.series]
   )
 
+  const hasChartData =
+    chartData.series.length > 0 && chartData.categories.length > 0
+
+  if (!hasChartData) {
+    const resolvedHeight =
+      typeof height === "number" ? `${height}px` : height ?? "350px"
+    return (
+      <div
+        className={[className, "flex items-center justify-center text-sm text-gray-500"]
+          .filter(Boolean)
+          .join(" ")}
+        style={{ minHeight: resolvedHeight }}
+      >
+        Không có dữ liệu trong khoảng thời gian đã chọn.
+      </div>
+    )
+  }
+
   return (
     <HealthMetricsChart
       className={className}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Bot, ChevronLeft, MoreVertical, Shield, Sparkles } from "lucide-react"
 import { formatDateWithSuffix } from "./dateTime.util"
 import { NewMessagesDivider } from "./NewMessagesDivider"
@@ -112,6 +113,7 @@ function MessageThreadView({
   scrollRef: React.RefObject<HTMLUListElement | null>
   readThreadKey: string
 }) {
+  const { t } = useTranslation()
   const [readEpoch, setReadEpoch] = useState(0)
   const flat = useMemo(() => flattenChatAscending(chatMessagesGroupByDateData), [chatMessagesGroupByDateData])
 
@@ -158,7 +160,7 @@ function MessageThreadView({
       className="w-full flex-1 flex flex-col overflow-y-auto custom-scrollbar px-4 pb-4"
     >
       {chatMessagesGroupByDateData.length === 0 && (
-        <li className="mt-6 text-center text-xs text-gray-400 px-2">Chưa có tin nhắn. Hãy gửi tin bên dưới.</li>
+        <li className="mt-6 text-center text-xs text-gray-400 px-2">{t("noMessagesYet")}</li>
       )}
       {chatMessagesGroupByDateData.map((item) => (
         <li key={item.date} className="mt-4 flex w-full flex-col gap-4">
@@ -243,6 +245,7 @@ function YsalusAiChatRoom({
   setSelectedChat,
   currentUserId,
 }: YsalusChatContentProps) {
+  const { t } = useTranslation()
   const [chatMessagesGroupByDateData, setChatMessagesGroupByDateData] = useState<ChatMessagesGroupByDate[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -282,7 +285,7 @@ function YsalusAiChatRoom({
         }
         setChatMessagesGroupByDateData((prev) => appendMessage(prev, botMsg))
       } catch (e) {
-        const err = e instanceof Error ? e.message : "AI failed"
+        const err = e instanceof Error ? e.message : t("aiFailed")
         setLoadError(err)
         const errMsg: ChatMessageResponse = {
           id: `e-${Date.now()}`,
@@ -312,7 +315,7 @@ function YsalusAiChatRoom({
           </div>
           <div className="flex-1 flex flex-col items-start overflow-hidden gap-1">
             <span className="text-gray-800 font-semibold truncate">{selectedChat.receiverName}</span>
-            <span className="text-xs text-gray-500">Trả lời tự động — không thay thế tư vấn bác sĩ.</span>
+            <span className="text-xs text-gray-500">{t("autoReplyDisclaimer")}</span>
           </div>
         </div>
         <MoreVertical className="size-5 cursor-pointer opacity-40" aria-hidden />
@@ -335,6 +338,7 @@ function YsalusAiChatRoom({
 
 /** Chat 1-1 với peer thật — hooks chỉ chạy trong component này, không nhánh trước return. */
 function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: YsalusChatContentProps) {
+  const { t } = useTranslation()
   const selectedChatRef = useRef(selectedChat)
   selectedChatRef.current = selectedChat
 
@@ -362,7 +366,7 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
         const raw = await fetchChatMessagesGrouped(selectedChat.receiverId, currentUserId)
         if (!cancelled) setChatMessagesGroupByDateData(raw.length ? mapApiToGroups(raw) : [])
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Failed to load messages")
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("failedLoadMessages"))
       }
     })()
     return () => {
@@ -414,7 +418,7 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
         })
         touchPeerConversationOrder(selectedChat.receiverId)
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : "Send failed")
+        setLoadError(e instanceof Error ? e.message : t("sendFailed"))
       }
     },
     [selectedChat.receiverId, currentUserId]
@@ -455,12 +459,12 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
               {isAdminReceiver(selectedChat) && (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
                   <Shield className="size-3.5" aria-hidden />
-                  Quản trị viên
+                  {t("admin")}
                 </span>
               )}
             </div>
             {isAdminReceiver(selectedChat) && (
-              <span className="text-xs font-medium text-amber-800/90">Tin nhắn tới đội ngũ quản trị hệ thống</span>
+              <span className="text-xs font-medium text-amber-800/90">{t("messagesToAdmin")}</span>
             )}
             {!isAdminReceiver(selectedChat) && selectedChat.receiverGender && (
               <span className="flex-1 truncate text-xs font-medium text-gray-500">
@@ -473,7 +477,7 @@ function YsalusPeerChatRoom({ selectedChat, setSelectedChat, currentUserId }: Ys
       </div>
       {loadError && <p className="px-4 py-2 text-xs text-error-400">{loadError}</p>}
       {chatMessagesGroupByDateData === null && (
-        <YsalusLoading className="h-svh place-content-center" message="Please wait for minutes" />
+        <YsalusLoading className="h-svh place-content-center" message={t("pleaseWait")} />
       )}
       {chatMessagesGroupByDateData && (
         <MessageThreadView

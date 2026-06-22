@@ -32,8 +32,10 @@ import {
 import { Plus, Search, Edit, Trash2, Eye, Loader2 } from "lucide-react"
 import { notificationService, type Notification } from "@/services/notification.service"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "react-i18next"
 
 export function NotificationManagement() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
@@ -67,8 +69,8 @@ export function NotificationManagement() {
     } catch (error: any) {
       console.error("Error loading notifications:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải danh sách thông báo",
+        title: t("error"),
+        description: error.message || t("loadNotificationsFailed", "Unable to load notifications"),
         variant: "destructive",
       })
       setNotifications([])
@@ -120,8 +122,8 @@ export function NotificationManagement() {
   const handleSaveCreate = async () => {
     if (!formData.title.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tiêu đề thông báo",
+        title: t("error"),
+        description: t("notificationTitleRequired", "Please enter a notification title"),
         variant: "destructive",
       })
       return
@@ -129,8 +131,8 @@ export function NotificationManagement() {
 
     if (!formData.sendToAll && formData.targetRoles.length === 0) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng chọn đối tượng nhận thông báo",
+        title: t("error"),
+        description: t("selectRecipientsRequired", "Please select notification recipients"),
         variant: "destructive",
       })
       return
@@ -145,16 +147,16 @@ export function NotificationManagement() {
         targetRoles: formData.sendToAll ? ["DOCTOR", "PATIENT", "ADMIN"] : formData.targetRoles,
       })
       toast({
-        title: "Thành công",
-        description: "Gửi thông báo thành công",
+        title: t("success"),
+        description: t("sendNotificationSuccess", "Notification sent successfully"),
       })
       setCreateDialogOpen(false)
       loadNotifications()
     } catch (error: any) {
       console.error("Error creating notification:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể gửi thông báo",
+        title: t("error"),
+        description: error.message || t("sendNotificationFailed", "Unable to send notification"),
         variant: "destructive",
       })
     } finally {
@@ -166,8 +168,8 @@ export function NotificationManagement() {
     if (!selectedNotification) return
     if (!formData.title.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tiêu đề thông báo",
+        title: t("error"),
+        description: t("notificationTitleRequired", "Please enter a notification title"),
         variant: "destructive",
       })
       return
@@ -175,8 +177,8 @@ export function NotificationManagement() {
 
     if (!formData.sendToAll && formData.targetRoles.length === 0) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng chọn đối tượng nhận thông báo",
+        title: t("error"),
+        description: t("selectRecipientsRequired", "Please select notification recipients"),
         variant: "destructive",
       })
       return
@@ -191,16 +193,16 @@ export function NotificationManagement() {
         targetRoles: formData.sendToAll ? ["DOCTOR", "PATIENT", "ADMIN"] : formData.targetRoles,
       })
       toast({
-        title: "Thành công",
-        description: "Cập nhật thành công",
+        title: t("success"),
+        description: t("updateNotificationSuccess", "Notification updated successfully"),
       })
       setEditDialogOpen(false)
       loadNotifications()
     } catch (error: any) {
       console.error("Error updating notification:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể cập nhật thông báo",
+        title: t("error"),
+        description: error.message || t("updateNotificationFailed", "Unable to update notification"),
         variant: "destructive",
       })
     } finally {
@@ -215,16 +217,16 @@ export function NotificationManagement() {
     try {
       await notificationService.deleteNotification(selectedNotification.id)
       toast({
-        title: "Thành công",
-        description: "Xóa thông báo thành công",
+        title: t("success"),
+        description: t("deleteNotificationSuccess", "Notification deleted successfully"),
       })
       setDeleteDialogOpen(false)
       loadNotifications()
     } catch (error: any) {
       console.error("Error deleting notification:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể xóa thông báo",
+        title: t("error"),
+        description: error.message || t("deleteNotificationFailed", "Unable to delete notification"),
         variant: "destructive",
       })
     } finally {
@@ -245,9 +247,9 @@ export function NotificationManagement() {
   const getTypeBadge = (type: string) => {
     switch (type.toUpperCase()) {
       case "ADMIN":
-        return <Badge className="bg-blue-500">Admin</Badge>
+        return <Badge className="bg-blue-500">{t("admin")}</Badge>
       case "SYSTEM":
-        return <Badge className="bg-purple-500">System</Badge>
+        return <Badge className="bg-purple-500">{t("system")}</Badge>
       default:
         return <Badge variant="secondary">{type}</Badge>
     }
@@ -279,17 +281,17 @@ export function NotificationManagement() {
                         roles.includes("ADMIN")
     
     if (!roles || roles.length === 0 || hasAllRoles) {
-      return <Badge variant="outline">Tất cả người dùng</Badge>
+      return <Badge variant="outline">{t("allUsers")}</Badge>
     }
     return (
       <div className="flex flex-wrap gap-1">
         {roles.map((role) => (
           <Badge key={role} variant="outline">
             {role === "DOCTOR" 
-              ? "Bác sĩ"
+              ? t("doctor")
               : role === "PATIENT"
-              ? "Bệnh nhân"
-              : "Quản trị viên"}
+              ? t("patient")
+              : t("admin")}
           </Badge>
         ))}
       </div>
@@ -310,14 +312,14 @@ export function NotificationManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý thông báo</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("notificationManagement")}</h2>
           <p className="text-sm text-gray-500">
-            Xem và quản lý tất cả thông báo trong hệ thống ({notifications.length} thông báo)
+            {t("notificationManagementDesc")} ({notifications.length})
           </p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
-          Tạo thông báo mới
+          {t("createNotification")}
         </Button>
       </div>
 
@@ -326,7 +328,7 @@ export function NotificationManagement() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Tìm kiếm theo tiêu đề, nội dung, người tạo..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -339,13 +341,13 @@ export function NotificationManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tiêu đề</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Người tạo</TableHead>
-              <TableHead>Người nhận</TableHead>
-              <TableHead>Đã đọc</TableHead>
-              <TableHead>Thời gian</TableHead>
-              <TableHead>Thao tác</TableHead>
+              <TableHead>{t("notificationTitle")}</TableHead>
+              <TableHead>{t("type")}</TableHead>
+              <TableHead>{t("sender")}</TableHead>
+              <TableHead>{t("recipients")}</TableHead>
+              <TableHead>{t("read")}</TableHead>
+              <TableHead>{t("createdAt")}</TableHead>
+              <TableHead>{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -358,7 +360,7 @@ export function NotificationManagement() {
             ) : filteredNotifications.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  Không có thông báo nào
+                  {t("noNotifications")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -366,15 +368,15 @@ export function NotificationManagement() {
                 <TableRow key={notification.id}>
                   <TableCell className="font-medium">{notification.title}</TableCell>
                   <TableCell>{getTypeBadge(notification.type)}</TableCell>
-                  <TableCell>{notification.createdByName || "N/A"}</TableCell>
+                  <TableCell>{notification.createdByName || t("na")}</TableCell>
                   <TableCell>
                     {getRoleBadges(notification.targetRoles)}
                   </TableCell>
                   <TableCell>
                     {notification.isRead ? (
-                      <Badge className="bg-green-500">Đã đọc</Badge>
+                      <Badge className="bg-green-500">{t("read")}</Badge>
                     ) : (
-                      <Badge variant="outline">Chưa đọc</Badge>
+                      <Badge variant="outline">{t("unread")}</Badge>
                     )}
                   </TableCell>
                   <TableCell>{formatDate(notification.createdAt)}</TableCell>
@@ -415,28 +417,28 @@ export function NotificationManagement() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Tạo thông báo mới</DialogTitle>
+            <DialogTitle>{t("createNotification")}</DialogTitle>
             <DialogDescription>
-              Điền thông tin để tạo thông báo mới
+              {t("createNotificationDesc", "Fill in the information to create a new notification")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="create-title">
-                Tiêu đề thông báo <span className="text-red-500">*</span>
+                {t("notificationTitle")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="create-title"
-                placeholder="Nhập tiêu đề thông báo"
+                placeholder={t("enterNotificationTitle", "Enter notification title")}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-content">Nội dung thông báo</Label>
+              <Label htmlFor="create-content">{t("content")}</Label>
               <Textarea
                 id="create-content"
-                placeholder="Nhập nội dung thông báo"
+                placeholder={t("enterNotificationContent", "Enter notification content")}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={5}
@@ -444,7 +446,7 @@ export function NotificationManagement() {
             </div>
             <div className="space-y-3">
               <Label className="text-base font-semibold">
-                Đối tượng nhận thông báo <span className="text-red-500">*</span>
+                {t("recipients")} <span className="text-red-500">*</span>
               </Label>
               
               {/* Option: Send to All */}
@@ -464,14 +466,14 @@ export function NotificationManagement() {
                   className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                 />
                 <Label htmlFor="create-send-all" className="ml-3 font-medium cursor-pointer text-sm">
-                  🌐 Gửi cho tất cả người dùng
+                  🌐 {t("sendToAll")}
                 </Label>
               </div>
 
               {/* Specific Roles */}
               {!formData.sendToAll && (
                 <>
-                  <div className="text-xs text-gray-600 font-medium">Hoặc chọn role cụ thể:</div>
+                  <div className="text-xs text-gray-600 font-medium">{t("orSelectSpecificRole", "Or select specific roles:")}</div>
                   <div className="grid grid-cols-2 gap-3">
                     <div 
                       className={`relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
@@ -489,7 +491,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="create-doctor" className="ml-3 font-medium cursor-pointer text-sm">
-                        👨‍⚕️ Bác sĩ
+                        👨‍⚕️ {t("doctor")}
                       </Label>
                     </div>
                     
@@ -509,7 +511,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="create-patient" className="ml-3 font-medium cursor-pointer text-sm">
-                        🧑‍🤝‍🧑 Bệnh nhân
+                        🧑‍🤝‍🧑 {t("patient")}
                       </Label>
                     </div>
                     
@@ -529,7 +531,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="create-admin" className="ml-3 font-medium cursor-pointer text-sm">
-                        👑 Quản trị viên
+                        👑 {t("admin")}
                       </Label>
                     </div>
                   </div>
@@ -542,25 +544,25 @@ export function NotificationManagement() {
                   : "text-gray-500"
               }`}>
                 {formData.sendToAll 
-                  ? "Thông báo sẽ được gửi đến tất cả người dùng trong hệ thống"
+                  ? t("sendToAllHint", "The notification will be sent to all users in the system")
                   : formData.targetRoles.length === 0
-                  ? "⚠️ Vui lòng chọn ít nhất một đối tượng nhận thông báo"
-                  : `Đã chọn ${formData.targetRoles.length} role(s)`}
+                  ? `⚠️ ${t("selectAtLeastOneRecipient", "Please select at least one recipient")}`
+                  : `${t("selectedLabel", "Selected")} ${formData.targetRoles.length} role(s)`}
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-              Hủy
+              {t("cancel")}
             </Button>
             <Button onClick={handleSaveCreate} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang gửi...
+                  {t("sending", "Sending...")}
                 </>
               ) : (
-                "Gửi"
+                t("send")
               )}
             </Button>
           </DialogFooter>
@@ -571,28 +573,28 @@ export function NotificationManagement() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Chỉnh sửa thông báo</DialogTitle>
+            <DialogTitle>{t("editNotification", "Edit notification")}</DialogTitle>
             <DialogDescription>
-              Cập nhật thông tin thông báo
+              {t("editNotificationDesc", "Update notification information")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-title">
-                Tiêu đề thông báo <span className="text-red-500">*</span>
+                {t("notificationTitle")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="edit-title"
-                placeholder="Nhập tiêu đề thông báo"
+                placeholder={t("enterNotificationTitle", "Enter notification title")}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-content">Nội dung thông báo</Label>
+              <Label htmlFor="edit-content">{t("content")}</Label>
               <Textarea
                 id="edit-content"
-                placeholder="Nhập nội dung thông báo"
+                placeholder={t("enterNotificationContent", "Enter notification content")}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={5}
@@ -600,7 +602,7 @@ export function NotificationManagement() {
             </div>
             <div className="space-y-3">
               <Label className="text-base font-semibold">
-                Đối tượng nhận thông báo <span className="text-red-500">*</span>
+                {t("recipients")} <span className="text-red-500">*</span>
               </Label>
               
               {/* Option: Send to All */}
@@ -620,14 +622,14 @@ export function NotificationManagement() {
                   className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                 />
                 <Label htmlFor="edit-send-all" className="ml-3 font-medium cursor-pointer text-sm">
-                  🌐 Gửi cho tất cả người dùng
+                  🌐 {t("sendToAll")}
                 </Label>
               </div>
 
               {/* Specific Roles */}
               {!formData.sendToAll && (
                 <>
-                  <div className="text-xs text-gray-600 font-medium">Hoặc chọn role cụ thể:</div>
+                  <div className="text-xs text-gray-600 font-medium">{t("orSelectSpecificRole", "Or select specific roles:")}</div>
                   <div className="grid grid-cols-2 gap-3">
                     <div 
                       className={`relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
@@ -645,7 +647,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="edit-doctor" className="ml-3 font-medium cursor-pointer text-sm">
-                        👨‍⚕️ Bác sĩ
+                        👨‍⚕️ {t("doctor")}
                       </Label>
                     </div>
                     
@@ -665,7 +667,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="edit-patient" className="ml-3 font-medium cursor-pointer text-sm">
-                        🧑‍🤝‍🧑 Bệnh nhân
+                        🧑‍🤝‍🧑 {t("patient")}
                       </Label>
                     </div>
                     
@@ -685,7 +687,7 @@ export function NotificationManagement() {
                         className="w-5 h-5 text-blue-600 focus:ring-blue-500 rounded"
                       />
                       <Label htmlFor="edit-admin" className="ml-3 font-medium cursor-pointer text-sm">
-                        👑 Quản trị viên
+                        👑 {t("admin")}
                       </Label>
                     </div>
                   </div>
@@ -698,25 +700,25 @@ export function NotificationManagement() {
                   : "text-gray-500"
               }`}>
                 {formData.sendToAll 
-                  ? "Thông báo sẽ được gửi đến tất cả người dùng trong hệ thống"
+                  ? t("sendToAllHint", "The notification will be sent to all users in the system")
                   : formData.targetRoles.length === 0
-                  ? "⚠️ Vui lòng chọn ít nhất một đối tượng nhận thông báo"
-                  : `Đã chọn ${formData.targetRoles.length} role(s)`}
+                  ? `⚠️ ${t("selectAtLeastOneRecipient", "Please select at least one recipient")}`
+                  : `${t("selectedLabel", "Selected")} ${formData.targetRoles.length} role(s)`}
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Hủy
+              {t("cancel")}
             </Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang lưu...
+                  {t("saving")}
                 </>
               ) : (
-                "Lưu"
+                t("update")
               )}
             </Button>
           </DialogFooter>
@@ -727,52 +729,52 @@ export function NotificationManagement() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Chi tiết thông báo</DialogTitle>
+            <DialogTitle>{t("notificationDetails", "Notification details")}</DialogTitle>
           </DialogHeader>
           {selectedNotification && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Tiêu đề</Label>
+                <Label>{t("notificationTitle")}</Label>
                 <p className="text-sm font-medium">{selectedNotification.title}</p>
               </div>
               <div className="space-y-2">
-                <Label>Nội dung</Label>
+                <Label>{t("content")}</Label>
                 <p className="text-sm whitespace-pre-wrap">
-                  {selectedNotification.content || "Không có nội dung"}
+                  {selectedNotification.content || t("noContent", "No content")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Loại</Label>
+                <Label>{t("type")}</Label>
                 <div>{getTypeBadge(selectedNotification.type)}</div>
               </div>
               <div className="space-y-2">
-                <Label>Người tạo</Label>
-                <p className="text-sm">{selectedNotification.createdByName || "N/A"}</p>
+                <Label>{t("sender")}</Label>
+                <p className="text-sm">{selectedNotification.createdByName || t("na")}</p>
               </div>
               <div className="space-y-2">
-                <Label>Đối tượng nhận</Label>
+                <Label>{t("recipients")}</Label>
                 <div className="text-sm">
                   {getRoleBadges(selectedNotification.targetRoles)}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Đã đọc</Label>
+                <Label>{t("read")}</Label>
                 <div>
                   {selectedNotification.isRead ? (
-                    <Badge className="bg-green-500">Đã đọc</Badge>
+                    <Badge className="bg-green-500">{t("read")}</Badge>
                   ) : (
-                    <Badge variant="outline">Chưa đọc</Badge>
+                    <Badge variant="outline">{t("unread")}</Badge>
                   )}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Thời gian tạo</Label>
+                <Label>{t("createdAt")}</Label>
                 <p className="text-sm">{formatDate(selectedNotification.createdAt)}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setViewDialogOpen(false)}>Đóng</Button>
+            <Button onClick={() => setViewDialogOpen(false)}>{t("close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -781,15 +783,14 @@ export function NotificationManagement() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogTitle>{t("confirmDelete", "Confirm delete")}</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa thông báo "{selectedNotification?.title}"? Thao tác này
-              không thể hoàn tác.
+              {t("confirmDeleteNotification", "Are you sure you want to delete this notification? This action cannot be undone.")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Hủy
+              {t("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -799,10 +800,10 @@ export function NotificationManagement() {
               {deleting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang xóa...
+                  {t("deleting", "Deleting...")}
                 </>
               ) : (
-                "Xác nhận"
+                t("confirm")
               )}
             </Button>
           </DialogFooter>

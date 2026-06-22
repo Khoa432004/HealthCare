@@ -357,7 +357,7 @@ export function VideoCallRoom({ callData, isDoctor, onLeave }: Props) {
 
           {/* Khung nhỏ (PiP): video của chính mình */}
           <div className="pointer-events-none absolute bottom-4 right-4 z-30">
-            <div className="pointer-events-auto relative h-40 w-40 overflow-hidden rounded-xl bg-slate-900 shadow-2xl ring-2 ring-[#16a1bd]/40 md:h-52 md:w-52">
+            <div className="pointer-events-auto relative h-40 w-40 overflow-hidden rounded-xl bg-slate-900 shadow-2xl ring-2 ring-[#007A94]/40 md:h-52 md:w-52">
               <div ref={pipVideoRef} className="h-full w-full" />
               {isDeviceReady && !cameraOn && (
                 <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-1 bg-slate-800 px-2 text-center">
@@ -383,7 +383,7 @@ export function VideoCallRoom({ callData, isDoctor, onLeave }: Props) {
         )}
       </div>
 
-      <footer className="grid gap-4 bg-gradient-to-br from-[#01D2D5] via-[#16a1bd] to-[#0d6171] p-4 text-white md:grid-cols-3 md:gap-8 md:p-6">
+      <footer className="grid gap-4 bg-gradient-to-br from-[#01D2D5] via-[#007A94] to-[#005566] p-4 text-white md:grid-cols-3 md:gap-8 md:p-6">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10">
             <svg className="size-6 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -417,7 +417,7 @@ export function VideoCallRoom({ callData, isDoctor, onLeave }: Props) {
                 size="icon"
                 className={`size-12 shrink-0 rounded-2xl border-0 ${
                   micOn
-                    ? 'bg-white/95 text-[#0d6171] hover:bg-white'
+                    ? 'bg-white/95 text-[#005566] hover:bg-white'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
                 onClick={() => void handleToggleMic()}
@@ -433,7 +433,7 @@ export function VideoCallRoom({ callData, isDoctor, onLeave }: Props) {
                 size="icon"
                 className={`size-12 shrink-0 rounded-2xl border-0 ${
                   cameraOn
-                    ? 'bg-white/95 text-[#0d6171] hover:bg-white'
+                    ? 'bg-white/95 text-[#005566] hover:bg-white'
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
                 onClick={() => void handleToggleCamera()}
@@ -449,7 +449,7 @@ export function VideoCallRoom({ callData, isDoctor, onLeave }: Props) {
                   variant="secondary"
                   size="icon"
                   className={`size-12 shrink-0 rounded-2xl border-0 ${
-                    medicalReportOpen ? 'bg-white text-[#0d6171] ring-2 ring-white' : 'bg-white/20 text-white hover:bg-white/30'
+                    medicalReportOpen ? 'bg-white text-[#005566] ring-2 ring-white' : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                   onClick={handleToggleMedicalReport}
                   title="Medical Report"

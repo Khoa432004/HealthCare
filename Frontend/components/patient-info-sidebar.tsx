@@ -31,7 +31,7 @@ export function PatientInfoSidebar() {
         </div>
 
         {/* Current Appointment */}
-        <Card className="bg-[#16a1bd] text-white">
+        <Card className="bg-[#007A94] text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm opacity-90">Appointment</span>
@@ -52,7 +52,7 @@ export function PatientInfoSidebar() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">3 months</span>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="text-[#16a1bd] border-[#16a1bd] bg-transparent">
+                <Button variant="outline" size="sm" className="text-[#007A94] border-[#007A94] bg-transparent">
                   Prolong
                 </Button>
                 <Button variant="outline" size="sm" className="text-red-500 border-red-500 bg-transparent">
@@ -61,7 +61,7 @@ export function PatientInfoSidebar() {
               </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-[#16a1bd] h-2 rounded-full" style={{ width: "60%" }}></div>
+              <div className="bg-[#007A94] h-2 rounded-full" style={{ width: "60%" }}></div>
             </div>
           </div>
         </div>

@@ -202,14 +202,37 @@ class ApiClient {
       if (!text || !text.trim()) {
         return null as T
       }
-      try {
-        const jsonData = JSON.parse(text) as T
-        console.log('API Response Data:', jsonData)
-        return jsonData
-      } catch (parseError) {
-        console.warn('API Response parse error', parseError)
+
+      // Tolerant JSON parsing: try normal parse, then attempt to recover
+      const tryParseJson = (raw: string): any | null => {
+        try {
+          return JSON.parse(raw)
+        } catch (e) {
+          // Attempt to extract the first JSON object in the string (common when server appends extra chars)
+          const firstBrace = raw.indexOf('{')
+          const lastBrace = raw.lastIndexOf('}')
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const candidate = raw.substring(firstBrace, lastBrace + 1)
+            try {
+              return JSON.parse(candidate)
+            } catch (e2) {
+              // fallthrough
+            }
+          }
+          // No recoverable JSON
+          return null
+        }
+      }
+
+      const jsonData = tryParseJson(text)
+      if (jsonData === null) {
+        console.warn('API Response parse error. Raw response:', text)
+        // Keep error message user-friendly while logging raw response for debugging
         throw new Error('Phản hồi không hợp lệ từ máy chủ.')
       }
+
+      console.log('API Response Data:', jsonData)
+      return jsonData as T
     } catch (error: any) {
       // Don't log conflict errors (they are expected and handled)
       if (!error.isConflict) {

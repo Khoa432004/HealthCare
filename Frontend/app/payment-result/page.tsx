@@ -1,30 +1,59 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/api-config"
+import { AuthLanguageBar } from "@/components/auth-language-bar"
 
-export default function PaymentResultPage() {
+/** Safely parse JSON from a Response; returns null if body is empty or not JSON. */
+async function safeJsonParse(response: Response): Promise<any> {
+  const text = await response.text()
+  if (!text || text.trim() === "") return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+function PaymentResultContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { t } = useTranslation()
   const [isCreatingAppointment, setIsCreatingAppointment] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const payment = searchParams?.get("payment")
   const orderInfo = searchParams?.get("orderInfo")
 
   useEffect(() => {
-    // If no payment param, redirect to dashboard
     if (!payment) {
       router.replace("/patient-dashboard")
       return
     }
 
-    // If payment was successful, create the appointment
     if (payment === "success") {
-      createAppointment()
+      // If pendingPackagePurchase exists → forward all params to package-payment-result page
+      const packageData = localStorage.getItem("pendingPackagePurchase")
+      if (packageData) {
+        // Build the same query string and redirect to the dedicated package result page
+        const qs = window.location.search
+        router.replace(`/package-payment-result${qs}`)
+        return
+      }
+
+      const appointmentData = localStorage.getItem("pendingAppointment")
+      if (appointmentData) {
+        createAppointment()
+      } else {
+        // Nothing pending — user may have refreshed; just show success state
+        setSuccess(true)
+      }
     }
+    // If payment === "fail", just show the failure message (no action needed)
   }, [payment, router])
 
   const createAppointment = async () => {
@@ -32,31 +61,23 @@ export default function PaymentResultPage() {
       setIsCreatingAppointment(true)
       setError(null)
 
-      // Retrieve appointment details from localStorage
       const appointmentData = localStorage.getItem("pendingAppointment")
       if (!appointmentData) {
-        setError("Appointment data not found. Please try booking again.")
+        setError(t("appointmentDataNotFound"))
         setIsCreatingAppointment(false)
         return
       }
 
       const data = JSON.parse(appointmentData)
-
-      // Extract VNPay params (if any) and include them in booking request so backend can persist Payment atomically
       const vnpTransactionNo = searchParams?.get("vnp_TransactionNo")
       const vnpTxnRef = searchParams?.get("vnp_TxnRef")
       const vnpPayDate = searchParams?.get("vnp_PayDate")
       const vnpAmount = searchParams?.get("vnp_Amount")
-
-      // VNPay amount is multiplied by 100 in the VNPay request
-      // Fallback to stored appointment totalAmount if VNPay didn't provide amount
       const totalAmount = vnpAmount ? Number(vnpAmount) / 100 : (data.totalAmount ?? null)
 
-      // Try to parse VNPay pay date to an ISO datetime if possible; otherwise leave null
       let paymentTime = null
       if (vnpPayDate) {
         try {
-          // VNPay typically returns vnp_PayDate in format yyyyMMddHHmmss
           const s = vnpPayDate
           if (/^\d{14}$/.test(s)) {
             const y = s.substring(0, 4)
@@ -72,7 +93,6 @@ export default function PaymentResultPage() {
         }
       }
 
-      // Call the backend API to create appointment (and optionally persist payment)
       const response = await fetch(`${API_BASE_URL}/api/v1/appointments/book-from-payment`, {
         method: "POST",
         headers: {
@@ -87,7 +107,7 @@ export default function PaymentResultPage() {
           symptomsOns: data.symptomsOns,
           symptomsSever: data.symptomsSever,
           currentMedication: data.currentMedication,
-          // payment fields
+          formatType: data.formatType,
           totalAmount,
           method: vnpTransactionNo ? "vnpay" : undefined,
           status: vnpTransactionNo ? "paid" : undefined,
@@ -98,45 +118,43 @@ export default function PaymentResultPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to create appointment")
+        // Safe parse — body may be empty (e.g. 401 from middleware)
+        const errorData = await safeJsonParse(response)
+        throw new Error(
+          (errorData?.message) ||
+          (response.status === 401 ? t("sessionExpiredPleaseLogin") : t("appointmentCreateFailed"))
+        )
       }
 
-      // Parse created appointment to get its id
-      const respBody = await response.json()
-      const appointment = respBody?.data
-      const appointmentId = appointment?.id
-
-      // previously we used a separate /payments endpoint; now payment info is included in booking request
-
-      // Clear the stored appointment data
       localStorage.removeItem("pendingAppointment")
-
-      // Show success and allow redirect
-      setError(null)
+      setSuccess(true)
+      setTimeout(() => {
+        router.push("/patient-calendar")
+      }, 2000)
     } catch (err: any) {
       console.error("Error creating appointment:", err)
-      setError(err.message || "Failed to create appointment. Please contact support.")
+      setError(err.message || t("appointmentCreateFailed"))
     } finally {
       setIsCreatingAppointment(false)
     }
   }
 
   const message = payment === "success"
-    ? `Thanh toán thành công${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`
-    : `Thanh toán thất bại${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`
+    ? `${t("paymentSuccess")}${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`
+    : `${t("paymentFailed")}${orderInfo ? ` — ${decodeURIComponent(orderInfo)}` : ''}`
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 py-10">
+    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 py-10 relative">
+      <AuthLanguageBar />
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-md p-6">
-        <h2 className="text-lg font-semibold mb-2">Kết quả thanh toán</h2>
+        <h2 className="text-lg font-semibold mb-2">{t("paymentResult")}</h2>
         <div className={`p-4 rounded-md mb-4 ${payment === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
           {message}
         </div>
 
         {isCreatingAppointment && (
           <div className="p-4 rounded-md mb-4 bg-blue-50 border border-blue-200 text-blue-800">
-            Creating appointment... please wait.
+            {t("processingOrder")}
           </div>
         )}
 
@@ -146,21 +164,29 @@ export default function PaymentResultPage() {
           </div>
         )}
 
-        {!isCreatingAppointment && payment === "success" && !error && (
+        {success && !isCreatingAppointment && !error && (
           <div className="p-4 rounded-md mb-4 bg-green-50 border border-green-200 text-green-800">
-            Appointment created successfully! Redirecting to dashboard...
+            {t("appointmentCreatedSuccess")}
           </div>
         )}
 
         <div className="flex gap-3">
-          <Button onClick={() => router.push('/patient-dashboard')} disabled={isCreatingAppointment}>
-            Go to Dashboard
+          <Button onClick={() => router.push('/patient-calendar')} disabled={isCreatingAppointment}>
+            {t("viewMyCalendar") || "Xem lịch hẹn"}
           </Button>
-          <Button variant="outline" onClick={() => router.push('/login?redirect=%2Fpatient-dashboard')} disabled={isCreatingAppointment}>
-            Login
+          <Button variant="outline" onClick={() => router.push('/patient-dashboard')} disabled={isCreatingAppointment}>
+            {t("goToDashboard")}
           </Button>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentResultPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">{" "}</div>}>
+      <PaymentResultContent />
+    </Suspense>
   )
 }

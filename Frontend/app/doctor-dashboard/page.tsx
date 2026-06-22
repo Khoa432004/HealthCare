@@ -7,14 +7,9 @@ import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DoctorUserMenu } from "@/components/doctor-user-menu"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import DoctorMetricsCards from "@/components/doctor-metrics-cards"
 import AppointmentStatusChart from "@/components/appointment-status-chart"
 import AppointmentTrendChart from "@/components/appointment-trend-chart"
@@ -24,11 +19,13 @@ import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
 import { doctorStatisticsService, type DoctorStatistics } from "@/services/doctor-statistics.service"
 import { appointmentService, type Appointment } from "@/services/appointment.service"
+import { useTranslation } from "react-i18next"
 
 type DashboardPeriod = "today" | "last7days" | "thisMonth"
 
 function DoctorDashboardContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
   const [statistics, setStatistics] = useState<DoctorStatistics | null>(null)
   const [yesterdayStatistics, setYesterdayStatistics] = useState<DoctorStatistics | null>(null)
@@ -199,33 +196,33 @@ function DoctorDashboardContent() {
       ? percentageChange(totalPatientsToday, totalPatientsYesterday)
       : percentageChange(uniquePatientsCurrentPeriod, uniquePatientsPreviousPeriod)
   const comparisonText =
-    selectedPeriod === "today" ? "vs yesterday" : selectedPeriod === "last7days" ? "vs previous 7 days" : "vs last month"
+    selectedPeriod === "today" ? t("vsYesterday") : selectedPeriod === "last7days" ? t("vsPrevious7Days") : t("vsLastMonth")
 
   const dashboardMetrics = [
     {
-      title: "Total Appointments",
+      title: t("totalAppointments"),
       value: String(totalMonthAppointments),
-      unit: "visits",
+      unit: t("visits"),
       change: `${Math.abs(appointmentsChange).toFixed(1)}%`,
       changeText: comparisonText,
       trend: appointmentsChange >= 0 ? ("up" as const) : ("down" as const),
       chartData: [totalPreviousMonthAppointments, 0, 0, totalMonthAppointments],
     },
     {
-      title: "Consultation Time",
+      title: t("consultationTime"),
       value: String(averageConsultationMinutes),
-      unit: "min",
+      unit: t("min", "min"),
       change: `${Math.abs(consultationChange).toFixed(1)}%`,
       changeText: comparisonText,
       trend: consultationChange >= 0 ? ("up" as const) : ("down" as const),
       chartData: [previousAverageConsultationMinutes, 0, 0, averageConsultationMinutes],
     },
     {
-      title: selectedPeriod === "today" ? "Total Patients Today" : "Total Patients",
+      title: selectedPeriod === "today" ? t("totalPatientsToday") : t("totalPatients"),
       value: String(selectedPeriod === "today" ? totalPatientsToday : uniquePatientsCurrentPeriod),
-      unit: "patients",
+      unit: t("patients"),
       change: `${Math.abs(patientsTodayChange).toFixed(1)}%`,
-      changeText: selectedPeriod === "today" ? "vs yesterday" : comparisonText,
+      changeText: selectedPeriod === "today" ? t("vsYesterday") : comparisonText,
       trend: patientsTodayChange >= 0 ? ("up" as const) : ("down" as const),
       chartData:
         selectedPeriod === "today"
@@ -297,53 +294,32 @@ function DoctorDashboardContent() {
       : 0
 
   return (
-    <div className="flex h-screen bg-[#e5f5f8]">
+    <div className="flex h-screen bg-[#E8F5F1]">
       <DoctorSidebar />
       <div className="flex-1 flex flex-col overflow-y-auto pt-3 px-3 pb-3">
         <header className="bg-white py-3 px-6 rounded-2xl mb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 text-gray-700" />
-              <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+            <PageHeaderTitleRow
+              role="doctor"
+              icon={LayoutDashboard}
+              title="Dashboard"
+              titleClassName="text-lg"
+            >
               <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as DashboardPeriod)}>
                 <SelectTrigger className="h-8 w-40 ml-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="last7days">Last 7 days</SelectItem>
-                  <SelectItem value="thisMonth">This month</SelectItem>
+                  <SelectItem value="today">{t("todayPeriod", "Today")}</SelectItem>
+                  <SelectItem value="last7days">{t("last7Days")}</SelectItem>
+                  <SelectItem value="thisMonth">{t("thisMonth")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </PageHeaderTitleRow>
 
             <div className="flex items-center gap-3">
               <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="text-xs">{userInfo ? getInitials(userInfo.fullName) : 'DR'}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-xs font-medium">{userInfo?.fullName || 'Doctor'}</p>
-                      <p className="text-[10px] text-gray-500">Bác sĩ</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push('/my-profile')}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                    </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DoctorUserMenu userInfo={userInfo} />
             </div>
           </div>
         </header>

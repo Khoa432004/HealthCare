@@ -7,6 +7,7 @@ import { MoreHorizontal, ChevronRight, FileText, MessageSquare, Activity } from 
 import type { Appointment } from "@/services/appointment.service"
 import type { CriticalCase } from "@/services/doctor-statistics.service"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ interface CriticalCasesTableProps {
 }
 
 export default function CriticalCasesTable({ inProcessAppointments = [], criticalCases = [] }: CriticalCasesTableProps) {
+  const { t } = useTranslation()
   const router = useRouter()
 
   const getInitials = (name: string) =>
@@ -37,7 +39,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase())
 
-  const formatStatus = (status: string) => status.toLowerCase() === "high" ? "High" : "Low"
+  const formatStatus = (status: string) => status.toLowerCase() === "high" ? t("high") : t("low")
 
   const handleOpenChat = (criticalCase: CriticalCase) => {
     const params = new URLSearchParams({
@@ -58,18 +60,18 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
     <div className="space-y-6">
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Top Critical Cases</h3>
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">{t("topCriticalCases")}</h3>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/50 glass rounded-t-xl">
-                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">ID Account</th>
-                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">Patient</th>
-                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">Chronic conditions</th>
-                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">Result</th>
-                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">Status</th>
+                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">{t("idAccount")}</th>
+                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">{t("patient")}</th>
+                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">{t("chronicConditions")}</th>
+                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">{t("result")}</th>
+                <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm">{t("status")}</th>
                 <th className="text-left py-4 px-4 font-semibold text-gray-600 text-sm"></th>
               </tr>
             </thead>
@@ -109,11 +111,11 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleOpenChat(case_)}>
                           <MessageSquare className="mr-2 h-4 w-4" />
-                          Open Chat
+                          {t("chat")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleOpenMetricsDetails(case_)}>
                           <Activity className="mr-2 h-4 w-4" />
-                          Metrics Details
+                          {t("viewMetrics")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -123,7 +125,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
               {criticalCases.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-sm text-gray-500">
-                    No abnormal vital measurements found.
+                    {t("noAbnormalVitals", "No abnormal vital measurements found.")}
                   </td>
                 </tr>
               )}
@@ -134,9 +136,9 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
 
       <div className="glass rounded-3xl shadow-soft-lg border-white/50 p-6 hover-lift">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#16a1bd] to-[#0d6171] bg-clip-text text-transparent">Pending Medical Report</h3>
-          <Button variant="ghost" size="sm" className="text-[#16a1bd] hover:bg-white/50 transition-smooth">
-            See details <ChevronRight className="w-4 h-4 ml-1" />
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-[#007A94] to-[#005566] bg-clip-text text-transparent">{t("pendingMedicalReport")}</h3>
+          <Button variant="ghost" size="sm" className="text-[#007A94] hover:bg-white/50 transition-smooth">
+            {t("seeDetails")} <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
 
@@ -144,12 +146,12 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Appointment ID</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Patient</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Schedule</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Reason</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm text-right">Action</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{t("appointmentIdLabel", "Appointment ID")}</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{t("patient")}</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{t("schedule", "Schedule")}</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{t("reason")}</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">{t("status")}</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm text-right">{t("action")}</th>
               </tr>
             </thead>
             <tbody>
@@ -169,7 +171,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm font-semibold text-gray-900">
-                        {appointment.patientFullName || appointment.patientName || "Patient"}
+                        {appointment.patientFullName || appointment.patientName || t("patient")}
                       </span>
                     </div>
                   </td>
@@ -182,12 +184,12 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-600">{appointment.reason || "--"}</td>
                   <td className="py-4 px-4">
-                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">In-process</Badge>
+                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">{t("inProcessLabel")}</Badge>
                   </td>
                   <td className="py-4 px-4 text-right">
                     <Link href={`/calendar/appointment/${appointment.id}?tab=medical-report`}>
-                      <Button size="sm" className="bg-[#16a1bd] hover:bg-[#0d6171] text-white">
-                        Complete report
+                      <Button size="sm" className="bg-[#007A94] hover:bg-[#005566] text-white">
+                        {t("completeReport")}
                       </Button>
                     </Link>
                   </td>
@@ -198,7 +200,7 @@ export default function CriticalCasesTable({ inProcessAppointments = [], critica
           {inProcessAppointments.length === 0 && (
             <div className="py-16 flex flex-col items-center justify-center text-gray-400">
               <FileText className="w-12 h-12 mb-3" />
-              <span className="text-sm">No data available</span>
+              <span className="text-sm">{t("noDataAvailable")}</span>
             </div>
           )}
         </div>

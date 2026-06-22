@@ -29,5 +29,6 @@ public class CreateAppointmentRequest {
     private String symptomsSever;
     private String currentMedication;
     private String notes;
+    private String formatType;
 }
 

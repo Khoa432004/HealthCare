@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Calendar, Loader2 } from 'lucide-react'
 import { dashboardService, type DashboardStats, type DashboardFilter } from '@/services/dashboard.service'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from 'react-i18next'
 
 export function AdminOverview() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<DashboardFilter['period']>('week')
@@ -32,8 +34,8 @@ export function AdminOverview() {
       setStats(data)
     } catch (error: any) {
       toast({
-        title: 'Lỗi',
-        description: error.message || 'Không thể tải dữ liệu dashboard',
+        title: t('error'),
+        description: error.message || t('dashboardLoadFailed'),
         variant: 'destructive',
       })
     } finally {
@@ -72,17 +74,17 @@ export function AdminOverview() {
   const getPeriodLabel = () => {
     switch (period) {
       case 'today':
-        return 'Hôm nay'
+        return t('todayPeriod')
       case 'week':
-        return 'Tuần này'
+        return t('thisWeek')
       case 'month':
-        return 'Tháng này'
+        return t('thisMonth')
       case 'year':
-        return 'Năm này'
+        return t('thisYear')
       case 'custom':
-        return 'Tùy chỉnh'
+        return t('custom')
       default:
-        return 'Tuần này'
+        return t('thisWeek')
     }
   }
 
@@ -99,21 +101,21 @@ export function AdminOverview() {
       {/* Filter Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Tổng quan hệ thống</h2>
-          <p className="text-muted-foreground">Dashboard thống kê</p>
+          <h2 className="text-2xl font-bold">{t('systemOverview')}</h2>
+          <p className="text-muted-foreground">{t('statisticsDashboard')}</p>
         </div>
         
         <div className="flex items-center gap-4">
           <Select value={period} onValueChange={handlePeriodChange}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Chọn thời gian" />
+              <SelectValue placeholder={t('selectTime')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Hôm nay</SelectItem>
-              <SelectItem value="week">Tuần này</SelectItem>
-              <SelectItem value="month">Tháng này</SelectItem>
-              <SelectItem value="year">Năm này</SelectItem>
-              <SelectItem value="custom">Tùy chỉnh</SelectItem>
+              <SelectItem value="today">{t('todayPeriod')}</SelectItem>
+              <SelectItem value="week">{t('thisWeek')}</SelectItem>
+              <SelectItem value="month">{t('thisMonth')}</SelectItem>
+              <SelectItem value="year">{t('thisYear')}</SelectItem>
+              <SelectItem value="custom">{t('custom')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -121,7 +123,7 @@ export function AdminOverview() {
             <>
               <div className="flex items-center gap-2">
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="fromDate" className="text-xs">Từ ngày</Label>
+                  <Label htmlFor="fromDate" className="text-xs">{t('fromDate')}</Label>
                   <Input
                     id="fromDate"
                     type="date"
@@ -131,7 +133,7 @@ export function AdminOverview() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="toDate" className="text-xs">Đến ngày</Label>
+                  <Label htmlFor="toDate" className="text-xs">{t('toDate')}</Label>
                   <Input
                     id="toDate"
                     type="date"
@@ -142,7 +144,7 @@ export function AdminOverview() {
                 </div>
                 <Button onClick={handleApplyCustomDate} className="mt-5">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Áp dụng
+                  {t('apply')}
                 </Button>
               </div>
             </>
@@ -150,7 +152,7 @@ export function AdminOverview() {
 
           {period !== 'custom' && (
             <Button onClick={loadDashboardStats} variant="outline">
-              Làm mới
+              {t('refresh')}
             </Button>
           )}
         </div>
@@ -161,7 +163,7 @@ export function AdminOverview() {
         {/* Total Users */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng số Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('totalUsersCard', 'Total Users')}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -179,14 +181,14 @@ export function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">Tổng số người dùng</p>
+            <p className="text-xs text-muted-foreground">{t('totalUsersDesc', 'Total users')}</p>
           </CardContent>
         </Card>
 
         {/* Pending Doctors */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bác sĩ chờ duyệt</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('pendingDoctorsCard', 'Pending Doctors')}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -202,14 +204,14 @@ export function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{stats?.pendingDoctors || 0}</div>
-            <p className="text-xs text-muted-foreground">Đang chờ phê duyệt</p>
+            <p className="text-xs text-muted-foreground">{t('awaitingApproval', 'Awaiting approval')}</p>
           </CardContent>
         </Card>
 
         {/* Total Appointments */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng lịch khám - {getPeriodLabel()}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('totalAppointmentsCard', 'Total Appointments')} - {getPeriodLabel()}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -228,7 +230,7 @@ export function AdminOverview() {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalAppointments || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Hoàn thành: {stats?.completedAppointments || 0} | Hủy: {stats?.canceledAppointments || 0}
+              {t('completed')}: {stats?.completedAppointments || 0} | {t('cancelled')}: {stats?.canceledAppointments || 0}
             </p>
           </CardContent>
         </Card>
@@ -236,7 +238,7 @@ export function AdminOverview() {
         {/* Revenue */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Doanh thu - {getPeriodLabel()}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('revenue')} - {getPeriodLabel()}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -254,14 +256,14 @@ export function AdminOverview() {
             <div className="text-2xl font-bold text-green-600">
               {formatCurrency(stats?.revenue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">Từ lịch hẹn đã thanh toán</p>
+            <p className="text-xs text-muted-foreground">{t('fromPaidAppointments', 'From paid appointments')}</p>
           </CardContent>
         </Card>
 
         {/* Doctor Salaries */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lương bác sĩ - {getPeriodLabel()}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('doctorSalariesCard', 'Doctor Salaries')} - {getPeriodLabel()}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -280,14 +282,14 @@ export function AdminOverview() {
             <div className="text-2xl font-bold text-blue-600">
               {formatCurrency(stats?.doctorSalaries || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">85% doanh thu</p>
+            <p className="text-xs text-muted-foreground">{t('percentOfRevenue85', '85% of revenue')}</p>
           </CardContent>
         </Card>
 
         {/* Platform Profit */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lợi nhuận nền tảng - {getPeriodLabel()}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('platformProfitCard', 'Platform Profit')} - {getPeriodLabel()}</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -305,7 +307,7 @@ export function AdminOverview() {
             <div className="text-2xl font-bold text-purple-600">
               {formatCurrency(stats?.platformProfit || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">15% doanh thu</p>
+            <p className="text-xs text-muted-foreground">{t('percentOfRevenue15', '15% of revenue')}</p>
           </CardContent>
         </Card>
       </div>
@@ -313,21 +315,21 @@ export function AdminOverview() {
       {/* Appointment Status Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle>Phân tích lịch khám - {getPeriodLabel()}</CardTitle>
-          <CardDescription>Tổng quan trạng thái các lịch hẹn</CardDescription>
+          <CardTitle>{t('appointmentAnalysis')} - {getPeriodLabel()}</CardTitle>
+          <CardDescription>{t('appointmentStatusOverview', 'Overview of appointment statuses')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Đã lên lịch</span>
+              <span className="text-sm text-muted-foreground">{t('scheduled')}</span>
               <span className="text-2xl font-bold text-blue-600">{stats?.scheduledAppointments || 0}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Hoàn thành</span>
+              <span className="text-sm text-muted-foreground">{t('completed')}</span>
               <span className="text-2xl font-bold text-green-600">{stats?.completedAppointments || 0}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Đã hủy</span>
+              <span className="text-sm text-muted-foreground">{t('cancelled')}</span>
               <span className="text-2xl font-bold text-red-600">{stats?.canceledAppointments || 0}</span>
             </div>
           </div>

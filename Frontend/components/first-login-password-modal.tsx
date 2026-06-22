@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,6 +31,7 @@ export function FirstLoginPasswordModal({
   onSuccess,
   onError,
 }: FirstLoginPasswordModalProps) {
+  const { t } = useTranslation()
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [newPassword, setNewPassword] = useState("")
@@ -43,17 +45,17 @@ export function FirstLoginPasswordModal({
 
     // Client-side validation
     if (!newPassword || !confirmPassword) {
-      setError("Vui lòng điền đầy đủ thông tin")
+      setError(t("fillAllFields", "Vui lòng điền đầy đủ thông tin"))
       return
     }
 
     if (newPassword.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự")
+      setError(t("passwordMin6"))
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu mới và xác nhận mật khẩu không khớp")
+      setError(t("passwordsNoMatch"))
       return
     }
 
@@ -63,7 +65,7 @@ export function FirstLoginPasswordModal({
       await authService.changePasswordOnFirstLogin(email, newPassword, confirmPassword)
       onSuccess()
     } catch (err: any) {
-      const errorMessage = err.message || "Đổi mật khẩu thất bại. Vui lòng thử lại."
+      const errorMessage = err.message || t("changePasswordFailed", "Đổi mật khẩu thất bại. Vui lòng thử lại.")
       setError(errorMessage)
       onError(errorMessage)
     } finally {
@@ -94,10 +96,10 @@ export function FirstLoginPasswordModal({
             </div>
           </div>
           <DialogTitle className="text-2xl font-bold text-center text-slate-800">
-            Đổi mật khẩu lần đầu
+            {t("firstLoginChangePassword", "Đổi mật khẩu lần đầu")}
           </DialogTitle>
           <DialogDescription className="text-center text-slate-600">
-            Để bảo mật tài khoản của bạn, vui lòng tạo một mật khẩu mới
+            {t("firstLoginChangePasswordDesc", "Để bảo mật tài khoản của bạn, vui lòng tạo một mật khẩu mới")}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,7 +115,7 @@ export function FirstLoginPasswordModal({
           {/* New Password Field */}
           <div className="space-y-2">
             <Label htmlFor="newPassword" className="text-slate-700 font-semibold text-sm">
-              Mật khẩu mới
+              {t("newPassword")}
             </Label>
             <div className="relative">
               <Input
@@ -122,7 +124,7 @@ export function FirstLoginPasswordModal({
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="bg-white/70 backdrop-blur-sm border-white/50 pr-12 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-11 text-base"
-                placeholder="Nhập mật khẩu mới"
+                placeholder={t("enterNewPassword", "Nhập mật khẩu mới")}
                 required
                 disabled={isLoading}
               />
@@ -135,13 +137,13 @@ export function FirstLoginPasswordModal({
                 {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
             </div>
-            <p className="text-xs text-slate-500">Mật khẩu phải có ít nhất 6 ký tự</p>
+            <p className="text-xs text-slate-500">{t("passwordMin6")}</p>
           </div>
 
           {/* Confirm Password Field */}
           <div className="space-y-2">
             <Label htmlFor="confirmPassword" className="text-slate-700 font-semibold text-sm">
-              Xác nhận mật khẩu
+              {t("confirmNewPassword")}
             </Label>
             <div className="relative">
               <Input
@@ -150,7 +152,7 @@ export function FirstLoginPasswordModal({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="bg-white/70 backdrop-blur-sm border-white/50 pr-12 text-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-11 text-base"
-                placeholder="Nhập lại mật khẩu mới"
+                placeholder={t("enterConfirmPassword", "Nhập lại mật khẩu mới")}
                 required
                 disabled={isLoading}
               />
@@ -170,15 +172,15 @@ export function FirstLoginPasswordModal({
             type="submit"
             size="lg"
             disabled={isLoading}
-            className="w-full bg-[#16a1bd] hover:bg-[#0d6171] text-white font-bold text-base h-11 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#007A94] hover:bg-[#005566] text-white font-bold text-base h-11 shadow-soft-lg hover:shadow-soft-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <div className="flex items-center space-x-2">
                 <LoadingSpinner size="sm" className="text-white" />
-                <span>Đang xử lý...</span>
+                <span>{t("processing")}</span>
               </div>
             ) : (
-              "Xác nhận đổi mật khẩu"
+              t("confirmChangePassword", "Xác nhận đổi mật khẩu")
             )}
           </Button>
         </form>

@@ -37,8 +37,8 @@ export interface PatientDashboardCurrentPlan {
   progressPercent: number
   daysLeft: number
   appointmentSummary: string
-  startDate: string
-  endDate: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface PatientDashboardMedicineItem {

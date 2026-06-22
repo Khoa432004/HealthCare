@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminOverview } from "@/components/admin-overview"
 import { UserManagementTable } from "@/components/user-management-table"
@@ -10,22 +9,14 @@ import { DoctorPayrollTable } from "@/components/doctor-payroll-table"
 import { NotificationManagement } from "@/components/notification-management"
 import { ExamPackageRequestsTable } from "@/components/exam-package-requests-table"
 import { Input } from "@/components/ui/input"
-import { Search, Bell, User, LogOut } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Search } from "lucide-react"
 import { NotificationBell } from "@/components/notification-bell"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { AdminUserMenu } from "@/components/admin-user-menu"
 import { authService } from "@/services/auth.service"
 import { AuthGuard } from "@/components/auth-guard"
 import { ChatLayout } from "@/components/chat"
 import { useAiFloatingChatContext } from "@/components/ai-floating-chat-context"
+import { useTranslation } from "react-i18next"
 
 type TabType =
   | "overview"
@@ -40,8 +31,8 @@ type TabType =
   | "exam-packages"
 
 function AdminDashboardContent() {
-  const router = useRouter()
   const { setSuppressed } = useAiFloatingChatContext()
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
 
@@ -60,16 +51,6 @@ function AdminDashboardContent() {
     return () => setSuppressed(false)
   }, [activeTab, setSuppressed])
 
-  // Helper function to get initials from fullName
-  const getInitials = (name: string): string => {
-    if (!name) return 'AD'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
   // Helper function to get role display name
   const getRoleDisplayName = (role: string): string => {
     const roleMap: Record<string, string> = {
@@ -81,18 +62,6 @@ function AdminDashboardContent() {
     return roleMap[role.toUpperCase()] || 'Người dùng'
   }
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Clear local data and redirect anyway
-      authService.clearAuthData()
-      router.push('/login')
-    }
-  }
-
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
@@ -102,17 +71,17 @@ function AdminDashboardContent() {
       case "exam-packages":
         return <ExamPackageRequestsTable />
       case "statistics":
-        return <div className="p-4">Statistics - Coming soon</div>
+        return <div className="p-4">{t("statisticsComingSoon")}</div>
       case "notifications":
         return <NotificationManagement />
       case "refunds":
-        return <div className="p-4">Refunds - Coming soon</div>
+        return <div className="p-4">{t("refundsComingSoon")}</div>
       case "cancellations":
         return <CanceledAppointmentsTable />
       case "revenue":
         return <DoctorPayrollTable />
       case "doctors":
-        return <div className="p-4">Doctors - Coming soon</div>
+        return <div className="p-4">{t("doctorsComingSoon")}</div>
       case "chats":
         return (
           <div className="h-[calc(100vh-120px)] min-h-[500px]">
@@ -125,7 +94,7 @@ function AdminDashboardContent() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#e5f5f8' }}>
+    <div className="flex h-screen" style={{ backgroundColor: '#E8F5F1' }}>
       {/* Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -140,7 +109,7 @@ function AdminDashboardContent() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="search"
-                  placeholder="Tìm kiếm..."
+                  placeholder={t("searchLabel")}
                   className="pl-10 bg-gray-50 border-gray-200"
                 />
               </div>
@@ -152,34 +121,10 @@ function AdminDashboardContent() {
               <NotificationBell />
               
               {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">
-                        {userInfo ? getInitials(userInfo.fullName) : 'AD'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="text-sm font-medium">{userInfo?.fullName || 'Admin'}</p>
-                      <p className="text-xs text-gray-500">{userInfo ? getRoleDisplayName(userInfo.role) : 'Quản trị viên'}</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Hồ sơ</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Đăng xuất</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AdminUserMenu
+                userInfo={userInfo}
+                roleLabel={userInfo ? getRoleDisplayName(userInfo.role) : undefined}
+              />
             </div>
           </div>
         </header>

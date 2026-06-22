@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { X, Calendar, Clock, MapPin, User, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -14,6 +15,7 @@ interface CancelAppointmentModalProps {
 }
 
 export function CancelAppointmentModal({ appointment, onClose, onSuccess }: CancelAppointmentModalProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [isCanceling, setIsCanceling] = useState(false)
   const [cancellationReason, setCancellationReason] = useState("")
@@ -27,8 +29,8 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
       )
 
       toast({
-        title: "Thành công",
-        description: "Hủy lịch khám thành công",
+        title: t("success"),
+        description: t("cancelAppointmentSuccess"),
       })
 
       if (onSuccess) {
@@ -38,8 +40,8 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
     } catch (error: any) {
       console.error("Error canceling appointment:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể hủy lịch khám. Vui lòng thử lại.",
+        title: t("error"),
+        description: error.message || t("cancelAppointmentFailed", "Không thể hủy lịch khám. Vui lòng thử lại."),
         variant: "destructive",
       })
     } finally {
@@ -84,7 +86,7 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-            <h2 className="text-2xl font-bold text-red-900">Xác nhận hủy lịch khám</h2>
+            <h2 className="text-2xl font-bold text-red-900">{t("confirmCancelTitle")}</h2>
           </div>
           <button
             onClick={onClose}
@@ -99,19 +101,19 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
           {/* Warning Message */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
-              Bạn có chắc chắn muốn hủy lịch khám này? Hành động này không thể hoàn tác.
+              {t("cancelWarning")}
             </p>
           </div>
 
           {/* Appointment Summary */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 text-lg">Thông tin lịch khám</h3>
+            <h3 className="font-semibold text-gray-900 text-lg">{t("appointmentInfo")}</h3>
             
             {/* Doctor Info */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <User className="w-4 h-4 text-teal-600" />
-                Bác sĩ
+                {t("doctor")}
               </div>
               <p className="text-gray-900 ml-6">{appointment.doctorFullName || appointment.doctorName || 'Unknown'}</p>
               {appointment.doctorTitle && (
@@ -124,7 +126,7 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <MapPin className="w-4 h-4 text-teal-600" />
-                  Cơ sở khám
+                  {t("facility")}
                 </div>
                 <p className="text-gray-900 ml-6">{appointment.doctorWorkplace}</p>
               </div>
@@ -134,7 +136,7 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <Calendar className="w-4 h-4 text-teal-600" />
-                Ngày khám
+                {t("examDate")}
               </div>
               <p className="text-gray-900 ml-6">{appointmentDate}</p>
             </div>
@@ -142,7 +144,7 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <Clock className="w-4 h-4 text-teal-600" />
-                Giờ khám
+                {t("examTime")}
               </div>
               <p className="text-gray-900 ml-6">{appointmentTime} - {endTime}</p>
             </div>
@@ -151,12 +153,12 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
           {/* Cancellation Reason (Optional) */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900">
-              Lý do hủy (tùy chọn)
+              {t("cancelReasonOptional")}
             </label>
             <textarea
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
-              placeholder="Nhập lý do hủy lịch khám..."
+              placeholder={t("cancelReasonPlaceholder")}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 resize-none"
               rows={3}
             />
@@ -170,14 +172,14 @@ export function CancelAppointmentModal({ appointment, onClose, onSuccess }: Canc
             onClick={onClose}
             disabled={isCanceling}
           >
-            Đóng
+            {t("close")}
           </Button>
           <Button
             onClick={handleCancel}
             disabled={isCanceling}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            {isCanceling ? "Đang xử lý..." : "Xác nhận hủy"}
+            {isCanceling ? t("processing") : t("confirmCancel")}
           </Button>
         </div>
       </div>

@@ -26,8 +26,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { canceledAppointmentService, CanceledAppointment } from "@/services/canceled-appointment.service"
+import { useTranslation } from "react-i18next"
 
 export function CanceledAppointmentsTable() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<CanceledAppointment[]>([])
   const [loading, setLoading] = useState(false)
@@ -54,8 +56,8 @@ export function CanceledAppointmentsTable() {
     } catch (error: any) {
       console.error("Error loading canceled appointments:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể tải danh sách cuộc hẹn đã hủy",
+        title: t("error"),
+        description: error.message || t("loadAppointmentsFailed", "Unable to load appointments"),
         variant: "destructive",
       })
       // Set empty state on error
@@ -82,8 +84,8 @@ export function CanceledAppointmentsTable() {
     // Validate lý do hoàn tiền
     if (!refundReason.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập lý do hoàn tiền",
+        title: t("error"),
+        description: t("refundReasonRequired", "Please enter a refund reason"),
         variant: "destructive",
       })
       return
@@ -98,10 +100,10 @@ export function CanceledAppointmentsTable() {
       })
 
       toast({
-        title: "Thành công",
+        title: t("success"),
         description: sendNotification 
-          ? "Hoàn tiền thành công. Thông báo đã được gửi đến bệnh nhân."
-          : "Hoàn tiền thành công",
+          ? t("refundSuccessNotified", "Refund successful. Notification sent to patient.")
+          : t("refundSuccess", "Refund successful"),
       })
 
       setRefundDialog({ open: false, appointment: null })
@@ -111,8 +113,8 @@ export function CanceledAppointmentsTable() {
     } catch (error: any) {
       console.error("Error processing refund:", error)
       toast({
-        title: "Lỗi",
-        description: error.message || "Không thể xử lý hoàn tiền",
+        title: t("error"),
+        description: error.message || t("refundFailed", "Unable to process refund"),
         variant: "destructive",
       })
     } finally {
@@ -148,11 +150,11 @@ export function CanceledAppointmentsTable() {
   const getPaymentStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "paid":
-        return <Badge className="bg-green-500">Đã thanh toán</Badge>
+        return <Badge className="bg-green-500">{t("paid")}</Badge>
       case "refunded":
-        return <Badge className="bg-blue-500">Đã hoàn tiền</Badge>
+        return <Badge className="bg-blue-500">{t("refunded", "Refunded")}</Badge>
       case "pending":
-        return <Badge variant="outline">Chờ thanh toán</Badge>
+        return <Badge variant="outline">{t("pending")}</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -162,13 +164,13 @@ export function CanceledAppointmentsTable() {
     const statusLower = status.toLowerCase()
     switch (statusLower) {
       case "scheduled":
-        return <Badge className="bg-blue-500">Đã lên lịch</Badge>
+        return <Badge className="bg-blue-500">{t("scheduled")}</Badge>
       case "completed":
-        return <Badge className="bg-green-500">Hoàn thành</Badge>
+        return <Badge className="bg-green-500">{t("completed")}</Badge>
       case "canceled":
-        return <Badge variant="destructive">Đã hủy</Badge>
+        return <Badge variant="destructive">{t("cancelled")}</Badge>
       case "in_process":
-        return <Badge className="bg-yellow-500">Đang diễn ra</Badge>
+        return <Badge className="bg-yellow-500">{t("inProgress")}</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -184,9 +186,9 @@ export function CanceledAppointmentsTable() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý cuộc hẹn</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("appointmentManagement")}</h2>
           <p className="text-sm text-gray-500">
-            Xem và quản lý tất cả các cuộc hẹn trong hệ thống ({totalElements} tổng số)
+            {t("appointmentManagementDesc", "Manage all appointments in the system")} ({totalElements})
           </p>
         </div>
       </div>
@@ -198,35 +200,35 @@ export function CanceledAppointmentsTable() {
           size="sm"
           onClick={() => setStatusFilter("all")}
         >
-          Tất cả
+          {t("all")}
         </Button>
         <Button 
           variant={statusFilter === "scheduled" ? "default" : "outline"}
           size="sm"
           onClick={() => setStatusFilter("scheduled")}
         >
-          Đã lên lịch
+          {t("scheduledTab")}
         </Button>
         <Button 
           variant={statusFilter === "in_process" ? "default" : "outline"}
           size="sm"
           onClick={() => setStatusFilter("in_process")}
         >
-          Đang diễn ra
+          {t("inProgressTab")}
         </Button>
         <Button 
           variant={statusFilter === "completed" ? "default" : "outline"}
           size="sm"
           onClick={() => setStatusFilter("completed")}
         >
-          Hoàn thành
+          {t("completed")}
         </Button>
         <Button 
           variant={statusFilter === "canceled" ? "default" : "outline"}
           size="sm"
           onClick={() => setStatusFilter("canceled")}
         >
-          Đã hủy
+          {t("cancelled")}
         </Button>
       </div>
 
@@ -235,7 +237,7 @@ export function CanceledAppointmentsTable() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Tìm kiếm theo mã, bác sĩ, bệnh nhân, SĐT, trạng thái..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -243,7 +245,7 @@ export function CanceledAppointmentsTable() {
           />
         </div>
         <Button onClick={handleSearch} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tìm kiếm"}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t("search")}
         </Button>
       </div>
 
@@ -252,15 +254,15 @@ export function CanceledAppointmentsTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mã cuộc hẹn</TableHead>
-              <TableHead>Thời gian khám</TableHead>
-              <TableHead>Bác sĩ</TableHead>
-              <TableHead>Bệnh nhân</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Lý do</TableHead>
-              <TableHead>Thanh toán</TableHead>
-              <TableHead>Số tiền</TableHead>
-              <TableHead>Thao tác</TableHead>
+              <TableHead>{t("appointmentId")}</TableHead>
+              <TableHead>{t("examTime")}</TableHead>
+              <TableHead>{t("doctor")}</TableHead>
+              <TableHead>{t("patient")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
+              <TableHead>{t("reason")}</TableHead>
+              <TableHead>{t("payment", "Payment")}</TableHead>
+              <TableHead>{t("amount", "Amount")}</TableHead>
+              <TableHead>{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -273,7 +275,7 @@ export function CanceledAppointmentsTable() {
             ) : filteredAppointments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                  Không có cuộc hẹn nào
+                  {t("noAppointments", "No appointments")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -286,7 +288,7 @@ export function CanceledAppointmentsTable() {
                     <div className="text-sm">
                       <div>{formatDate(appointment.scheduledStart)}</div>
                       <div className="text-gray-500 text-xs">
-                        đến {formatTime(appointment.scheduledEnd)}
+                        {t("toLabel", "to")} {formatTime(appointment.scheduledEnd)}
                       </div>
                     </div>
                   </TableCell>
@@ -307,9 +309,9 @@ export function CanceledAppointmentsTable() {
                           {appointment.cancellationReason}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {appointment.canceledBy === "DOCTOR" && "Bởi: Bác sĩ"}
-                          {appointment.canceledBy === "PATIENT" && "Bởi: Bệnh nhân"}
-                          {!["DOCTOR", "PATIENT"].includes(appointment.canceledBy) && appointment.canceledBy !== "Không rõ" && `Bởi: ${appointment.canceledBy}`}
+                          {appointment.canceledBy === "DOCTOR" && `${t("by", "By")}: ${t("doctor")}`}
+                          {appointment.canceledBy === "PATIENT" && `${t("by", "By")}: ${t("patient")}`}
+                          {!["DOCTOR", "PATIENT"].includes(appointment.canceledBy) && appointment.canceledBy !== "Không rõ" && `${t("by", "By")}: ${appointment.canceledBy}`}
                         </div>
                       </>
                     )}
@@ -331,16 +333,16 @@ export function CanceledAppointmentsTable() {
                         className="text-blue-600 hover:text-blue-700"
                       >
                         <DollarSign className="w-4 h-4 mr-1" />
-                        Hoàn tiền
+                        {t("refund")}
                       </Button>
                     )}
                     {/* Đã hoàn tiền xong */}
                     {appointment.paymentStatus.toLowerCase() === "refunded" && (
-                      <span className="text-xs text-green-600 font-medium">✓ Đã hoàn tiền</span>
+                      <span className="text-xs text-green-600 font-medium">✓ {t("refunded", "Refunded")}</span>
                     )}
                     {/* Đã thanh toán */}
                     {appointment.paymentStatus.toLowerCase() === "paid" && (
-                      <span className="text-xs text-gray-600">Đã thanh toán</span>
+                      <span className="text-xs text-gray-600">{t("paid")}</span>
                     )}
                     {/* Không có thanh toán */}
                     {appointment.paymentStatus === "No payment" && (
@@ -358,7 +360,7 @@ export function CanceledAppointmentsTable() {
       {totalPages > 0 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-500">
-            Trang {page + 1} / {totalPages}
+            {t("page", "Page")} {page + 1} / {totalPages}
           </div>
           <div className="flex gap-2">
             <Button
@@ -367,7 +369,7 @@ export function CanceledAppointmentsTable() {
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0 || loading}
             >
-              Trước
+              {t("previous", "Previous")}
             </Button>
             <Button
               variant="outline"
@@ -375,7 +377,7 @@ export function CanceledAppointmentsTable() {
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page >= totalPages - 1 || loading}
             >
-              Sau
+              {t("next")}
             </Button>
           </div>
         </div>
@@ -394,9 +396,9 @@ export function CanceledAppointmentsTable() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Xác nhận hoàn tiền</DialogTitle>
+            <DialogTitle>{t("confirmRefund")}</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn hoàn tiền cho cuộc hẹn này không?
+              {t("confirmRefundDesc", "Are you sure you want to refund this appointment?")}
             </DialogDescription>
           </DialogHeader>
           {refundDialog.appointment && (
@@ -405,7 +407,7 @@ export function CanceledAppointmentsTable() {
               <div className="flex items-start gap-2">
                 <User className="w-4 h-4 text-gray-500 mt-1" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Bệnh nhân</div>
+                  <div className="text-sm font-medium">{t("patient")}</div>
                   <div className="text-sm text-gray-600">{refundDialog.appointment.patientName}</div>
                   <div className="text-xs text-gray-500">{refundDialog.appointment.patientPhone}</div>
                 </div>
@@ -415,7 +417,7 @@ export function CanceledAppointmentsTable() {
               <div className="flex items-start gap-2">
                 <DollarSign className="w-4 h-4 text-gray-500 mt-1" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Số tiền hoàn</div>
+                  <div className="text-sm font-medium">{t("refundAmount", "Refund amount")}</div>
                   <div className="text-lg text-red-600 font-bold">
                     {formatCurrency(refundDialog.appointment.totalAmount)}
                   </div>
@@ -426,19 +428,19 @@ export function CanceledAppointmentsTable() {
               <div className="flex items-start gap-2">
                 <FileText className="w-4 h-4 text-gray-500 mt-1" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Lý do hủy cuộc hẹn</div>
-                  <div className="text-sm text-gray-600">{refundDialog.appointment.cancellationReason || "Không có lý do"}</div>
+                  <div className="text-sm font-medium">{t("cancelReason")}</div>
+                  <div className="text-sm text-gray-600">{refundDialog.appointment.cancellationReason || t("noReason", "No reason")}</div>
                 </div>
               </div>
 
               {/* Lý do hoàn tiền (input) */}
               <div className="space-y-2">
                 <Label htmlFor="refundReason" className="text-sm font-medium">
-                  Lý do hoàn tiền <span className="text-red-500">*</span>
+                  {t("refundReason")} <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
                   id="refundReason"
-                  placeholder="Nhập lý do hoàn tiền..."
+                  placeholder={t("enterRefundReason", "Enter refund reason...")}
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
                   rows={3}
@@ -457,23 +459,23 @@ export function CanceledAppointmentsTable() {
                   htmlFor="sendNotification"
                   className="text-sm font-normal cursor-pointer"
                 >
-                  Gửi thông báo đến bệnh nhân: "Lịch hẹn đã được hoàn tiền thành công"
+                  {t("notifyPatient")}
                 </Label>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setRefundDialog({ open: false, appointment: null })}>
-              Hủy
+              {t("cancel")}
             </Button>
             <Button onClick={handleRefund} disabled={refunding}>
               {refunding ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang xử lý...
+                  {t("processing")}
                 </>
               ) : (
-                "Xác nhận hoàn tiền"
+                t("confirmRefund")
               )}
             </Button>
           </DialogFooter>

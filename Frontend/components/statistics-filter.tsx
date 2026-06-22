@@ -63,7 +63,7 @@ export default function StatisticsFilter({ currentFilter, onFilterChange }: Stat
               variant={selectedPeriod === option.value ? "default" : "outline"}
               size="sm"
               onClick={() => handlePeriodChange(option.value)}
-              className={selectedPeriod === option.value ? "bg-[#16a1bd] text-white" : ""}
+              className={selectedPeriod === option.value ? "bg-[#007A94] text-white" : ""}
             >
               {option.label}
             </Button>
@@ -123,7 +123,7 @@ export default function StatisticsFilter({ currentFilter, onFilterChange }: Stat
       {selectedPeriod === 'custom' && (
         <Button
           onClick={handleApplyCustom}
-          className="w-full bg-[#16a1bd] text-white"
+          className="w-full bg-[#007A94] text-white"
           disabled={!fromDate || !toDate}
         >
           Áp dụng

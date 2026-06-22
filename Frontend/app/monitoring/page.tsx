@@ -2,24 +2,37 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight, LogOut, MoreVertical, Search, User } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { ChevronLeft, ChevronRight, MoreVertical, Search } from "lucide-react"
 import DoctorSidebar from "@/components/doctor-sidebar"
+import { PageHeaderTitleRow } from "@/components/page-header-title-row"
 import { AuthGuard } from "@/components/auth-guard"
 import { NotificationBell } from "@/components/notification-bell"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DoctorUserMenu } from "@/components/doctor-user-menu"
 import { Input } from "@/components/ui/input"
 import { authService } from "@/services/auth.service"
-import { userService, type User } from "@/services/user.service"
+import { patientExamPackageService } from "@/services/patient-exam-package.service"
 
 type MonitoringStatus = "active" | "upcoming" | "pending" | "inactive"
+
+type ActivePackagePatient = {
+  purchaseId: string
+  patientId: string
+  patientName: string
+  patientEmail: string
+  patientPhone: string
+  packageId: string
+  packageName: string
+  durationDays: number
+  priceVnd: number
+  purchaseDate: string
+  expirationDate: string
+  status: string
+  remainingMessages: number
+  remainingSessions: number
+}
 
 type MonitoringPatientRow = {
   patientId: string
@@ -29,21 +42,34 @@ type MonitoringPatientRow = {
   remainingDays: string
   startDate: string
   endDate: string
+  progressPercent: number
 }
 
 const STATUS_TABS = [{ key: "all", label: "All Patients" }] as const
-
 const PAGE_SIZE = 10
-const PACKAGE_PRESETS = ["7 Days Trial", "6 Months", "1 Month", "1 Month", "6 Months", "1 Month", "6 Months", "3 Months", "14 Days", "6 Months"]
-const STATUS_PRESETS: MonitoringStatus[] = ["upcoming", "active", "active", "active", "active", "active", "active", "active", "active", "inactive"]
-const REMAINING_DAY_PRESETS = ["23", "5", "31", "8", "3", "12", "43", "28", "2", "0"]
-const START_DATE_PRESETS = ["16-04-2026", "27-08-2026", "13-02-2026", "24-02-2026", "26-08-2026", "16-02-2026", "15-02-2026", "14-02-2026", "15-02-2026", "03-08-2025"]
-const END_DATE_PRESETS = ["23-05-2026", "26-02-2026", "12-03-2026", "23-03-2026", "25-02-2026", "15-03-2026", "14-08-2026", "13-05-2026", "05-03-2026", "02-02-2026"]
+
+function formatDateShort(date: string): string {
+  if (!date) return "N/A"
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return "N/A"
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const year = d.getFullYear()
+  return `${day}-${month}-${year}`
+}
+
+function calcRemainingDays(expirationDate: string): number {
+  if (!expirationDate) return 0
+  const diff = new Date(expirationDate).getTime() - Date.now()
+  if (Number.isNaN(diff)) return 0
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+}
 
 function DoctorMonitoringContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [userInfo, setUserInfo] = useState<{ fullName: string; role: string } | null>(null)
-  const [patients, setPatients] = useState<User[]>([])
+  const [patientPackages, setPatientPackages] = useState<ActivePackagePatient[]>([])
   const [search, setSearch] = useState("")
   const [activeTab, setActiveTab] = useState<"all">("all")
   const [page, setPage] = useState(1)
@@ -60,34 +86,19 @@ function DoctorMonitoringContent() {
   }, [])
 
   useEffect(() => {
-    const loadPatients = async () => {
+    const loadActivePatients = async () => {
       setLoading(true)
       try {
-        const size = 100
-        let currentPage = 1
-        let totalPages = 1
-        const collected: User[] = []
-
-        do {
-          const response = await userService.getAllUsers({
-            page: currentPage,
-            size,
-            roleName: "PATIENT",
-          })
-          const patientOnly = (response.content ?? []).filter(
-            (user) => String(user.role || "").toUpperCase() === "PATIENT",
-          )
-          collected.push(...patientOnly)
-          totalPages = response.totalPages || 1
-          currentPage += 1
-        } while (currentPage <= totalPages)
-
-        setPatients(collected)
+        const data = await patientExamPackageService.getMyActivePatients()
+        setPatientPackages(data || [])
+      } catch (err) {
+        console.error("Error loading active patient packages:", err)
+        setPatientPackages([])
       } finally {
         setLoading(false)
       }
     }
-    loadPatients()
+    loadActivePatients()
   }, [])
 
   useEffect(() => {
@@ -123,28 +134,35 @@ function DoctorMonitoringContent() {
   }
 
   const rows = useMemo<MonitoringPatientRow[]>(() => {
-    return patients
-      .map((patient, index) => {
-        const normalizedStatus = String(patient.status || "").toUpperCase()
-        const statusFromAccount: MonitoringStatus =
-          normalizedStatus === "ACTIVE"
+    return patientPackages
+      .map((pkg) => {
+        const remaining = calcRemainingDays(pkg.expirationDate)
+        const elapsed = Math.max(0, (pkg.durationDays || 0) - remaining)
+        const progressPercent = pkg.durationDays > 0
+          ? Math.min(100, Math.round((elapsed / pkg.durationDays) * 100))
+          : 0
+        const normalized = String(pkg.status || "").toLowerCase()
+        const status: MonitoringStatus =
+          normalized === "active"
             ? "active"
-            : normalizedStatus === "PENDING"
+            : normalized === "pending"
               ? "pending"
-              : "inactive"
-
+              : normalized === "upcoming"
+                ? "upcoming"
+                : "inactive"
         return {
-          patientId: patient.id || "N/A",
-          patientName: patient.fullName || "N/A",
-          packageType: PACKAGE_PRESETS[index % PACKAGE_PRESETS.length],
-          status: STATUS_PRESETS[index % STATUS_PRESETS.length] ?? statusFromAccount,
-          remainingDays: REMAINING_DAY_PRESETS[index % REMAINING_DAY_PRESETS.length],
-          startDate: START_DATE_PRESETS[index % START_DATE_PRESETS.length],
-          endDate: END_DATE_PRESETS[index % END_DATE_PRESETS.length],
+          patientId: pkg.patientId || "N/A",
+          patientName: pkg.patientName || "N/A",
+          packageType: pkg.packageName || `Gói ${pkg.durationDays} ngày`,
+          status,
+          remainingDays: String(remaining),
+          startDate: formatDateShort(pkg.purchaseDate),
+          endDate: formatDateShort(pkg.expirationDate),
+          progressPercent,
         }
       })
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
-  }, [patients])
+  }, [patientPackages])
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -158,10 +176,10 @@ function DoctorMonitoringContent() {
   const paginatedRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const statusLabel = (status: MonitoringStatus) => {
-    if (status === "active") return "ACTIVE"
-    if (status === "upcoming") return "UP COMING"
-    if (status === "pending") return "PENDING"
-    return "COMPLETED"
+    if (status === "active") return t("active")
+    if (status === "upcoming") return t("upcoming")
+    if (status === "pending") return t("pending")
+    return t("completed")
   }
 
   const statusTone = (status: MonitoringStatus) => {
@@ -174,19 +192,24 @@ function DoctorMonitoringContent() {
   const formatDate = (date: string) => date || "N/A"
 
   const getPackageProgress = (row: MonitoringPatientRow) => {
-    if (row.status === "active") return { width: "72%", color: "bg-[#24b36b]" }
-    if (row.status === "upcoming") return { width: "42%", color: "bg-[#36b9a2]" }
-    if (row.status === "pending") return { width: "56%", color: "bg-[#ef476f]" }
-    return { width: "0%", color: "bg-[#cfd6dc]" }
+    const width = `${row.progressPercent}%`
+    if (row.status === "active") return { width, color: "bg-[#24b36b]" }
+    if (row.status === "upcoming") return { width, color: "bg-[#36b9a2]" }
+    if (row.status === "pending") return { width, color: "bg-[#ef476f]" }
+    return { width, color: "bg-[#cfd6dc]" }
   }
 
   return (
-    <div className="flex h-screen bg-[#e5f5f8]">
+    <div className="flex h-screen bg-[#E8F5F1]">
       <DoctorSidebar />
       <div className="flex-1 flex flex-col overflow-y-auto pt-3 px-3 pb-3">
         <header className="bg-white py-3 px-6 rounded-2xl mb-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-lg font-semibold text-gray-900">Monitoring</h1>
+            <PageHeaderTitleRow
+              role="doctor"
+              title={t("monitoring")}
+              titleClassName="text-lg"
+            />
             <div className="flex items-center gap-3">
               <div className="relative w-[280px] hidden md:block">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -194,42 +217,21 @@ function DoctorMonitoringContent() {
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search"
+                  placeholder={t("searchPlaceholder")}
                   className="h-9 pl-9"
                 />
               </div>
               <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                    <Avatar className="w-7 h-7">
-                      <AvatarImage src="/clean-female-doctor.png" />
-                      <AvatarFallback className="text-xs">{userInfo ? getInitials(userInfo.fullName) : "DR"}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left hidden md:block">
-                      <p className="text-xs font-medium">{userInfo?.fullName || "Doctor"}</p>
-                      <p className="text-[10px] text-gray-500">Bác sĩ</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push("/my-profile")}>
-                    <User className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-3.5 w-3.5" />
-                    <span className="text-sm">Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DoctorUserMenu
+                userInfo={userInfo}
+                triggerClassName="flex items-center gap-2 h-9 px-2"
+              />
             </div>
           </div>
         </header>
 
-        <div className="bg-white rounded-2xl flex-1 min-h-0 overflow-hidden border border-[#d6e7ec]">
-          <div className="border-b border-[#d6e7ec] bg-[#edf6f9]">
+        <div className="bg-white rounded-2xl flex-1 min-h-0 flex flex-col overflow-hidden border border-[#d6e7ec]">
+          <div className="shrink-0 border-b border-[#d6e7ec] bg-[#edf6f9]">
             <div className="px-5 pt-2.5 flex flex-wrap gap-5 text-sm">
             {STATUS_TABS.map((tab) => (
               <button
@@ -237,11 +239,11 @@ function DoctorMonitoringContent() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`pb-2 border-b-2 transition-colors ${
                   activeTab === tab.key
-                    ? "border-[#0d8fae] text-[#0d8fae] font-semibold"
+                    ? "border-[#007A94] text-[#007A94] font-semibold"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {tab.label}
+                {t("allPatients")}
               </button>
             ))}
             </div>
@@ -252,12 +254,12 @@ function DoctorMonitoringContent() {
             <table className="w-full min-w-[980px]">
               <thead className="bg-[#0f6f84] text-white sticky top-0 z-[1]">
                 <tr className="text-[13px] font-semibold">
-                  <th className="text-left px-4 py-3.5">Patient Name</th>
-                  <th className="text-left px-4 py-3.5">Package Type</th>
-                  <th className="text-left px-4 py-3.5">Status</th>
-                  <th className="text-center px-4 py-3.5">Remaining Days</th>
-                  <th className="text-center px-4 py-3.5">Start Date</th>
-                  <th className="text-center px-4 py-3.5">End Date</th>
+                  <th className="text-left px-4 py-3.5">{t("patientName")}</th>
+                  <th className="text-left px-4 py-3.5">{t("packageType")}</th>
+                  <th className="text-left px-4 py-3.5">{t("status")}</th>
+                  <th className="text-center px-4 py-3.5">{t("remainingDays")}</th>
+                  <th className="text-center px-4 py-3.5">{t("startDate")}</th>
+                  <th className="text-center px-4 py-3.5">{t("endDate")}</th>
                   <th className="text-right px-4 py-3.5"></th>
                 </tr>
               </thead>
@@ -265,13 +267,13 @@ function DoctorMonitoringContent() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-sm text-gray-500">
-                      Loading monitoring data...
+                      {t("loadingMonitoring")}
                     </td>
                   </tr>
                 ) : paginatedRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16 text-sm text-gray-500">
-                      No patient data available
+                      {t("noMonitoringPatients")}
                     </td>
                   </tr>
                 ) : (
@@ -284,13 +286,12 @@ function DoctorMonitoringContent() {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-9 h-9">
-                            <AvatarFallback className="bg-[#e2f2f6] text-[#0d8fae] text-xs">
+                            <AvatarFallback className="bg-[#e2f2f6] text-[#007A94] text-xs">
                               {getInitials(row.patientName)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{row.patientName}</p>
-                            <p className="text-xs text-gray-500">ID1234 • Chronic Condition</p>
                           </div>
                         </div>
                       </td>
@@ -332,11 +333,11 @@ function DoctorMonitoringContent() {
             </div>
           </div>
 
-          <div className="px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
+          <div className="shrink-0 px-5 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-[#e6eef2] bg-[#fbfeff]">
             <p>
               {filteredRows.length > 0
-                ? `Showing ${(page - 1) * PAGE_SIZE + 1} - ${Math.min(page * PAGE_SIZE, filteredRows.length)} of ${filteredRows.length} items`
-                : "Showing 0 - 0 of 0 items"}
+                ? t("showingItems", { from: (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filteredRows.length), total: filteredRows.length })
+                : t("showingItems", { from: 0, to: 0, total: 0 })}
             </p>
             <div className="flex items-center gap-1.5">
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
@@ -351,7 +352,7 @@ function DoctorMonitoringContent() {
                     type="button"
                     onClick={() => setPage(value)}
                     className={`h-6 min-w-6 rounded-md px-1 text-xs ${
-                      isActive ? "bg-[#d9edf3] text-[#0d8fae] font-semibold" : "text-gray-500 hover:bg-[#eef6f9]"
+                      isActive ? "bg-[#d9edf3] text-[#007A94] font-semibold" : "text-gray-500 hover:bg-[#EDF7F4]"
                     }`}
                   >
                     {value}

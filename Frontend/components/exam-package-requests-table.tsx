@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "react-i18next"
 import {
   adminExamPackageRequestsService,
   type ExamPackageChangeRow,
@@ -33,7 +34,7 @@ import {
 
 function summarizePkg(p: ExamPackageRow | null | undefined): string {
   if (!p) return "—"
-  return `${p.packageName} · ${p.durationMinutes} min · ${Number(p.priceVnd).toLocaleString()} VND · ${p.applicable ? "Available" : "Hidden"}`
+  return `${p.packageName} · ${p.durationDays} days · ${Number(p.priceVnd).toLocaleString()} VND · ${p.applicable ? "Available" : "Hidden"}`
 }
 
 function changeBadgeVariant(t: ExamPackageChangeRow["changeType"]) {
@@ -48,6 +49,7 @@ function isStaleRequestError(message: string): boolean {
 }
 
 export function ExamPackageRequestsTable() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [items, setItems] = useState<PendingExamPackageRequestItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,9 +68,9 @@ export function ExamPackageRequestsTable() {
       const list = await adminExamPackageRequestsService.listPending()
       setItems(list)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not load pending requests."
+      const msg = e instanceof Error ? e.message : t("loadRequestsFailed", "Could not load pending requests.")
       toast({
-        title: "Error",
+        title: t("error"),
         description: msg,
         variant: "destructive",
       })
@@ -76,7 +78,7 @@ export function ExamPackageRequestsTable() {
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [toast, t])
 
   useEffect(() => {
     load()
@@ -95,8 +97,8 @@ export function ExamPackageRequestsTable() {
         unchangedPublishedCount: d.unchangedPublishedCount ?? 0,
       })
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Could not load proposal."
-      toast({ title: "Error", description: msg, variant: "destructive" })
+      const msg = e instanceof Error ? e.message : t("loadProposalFailed", "Could not load proposal.")
+      toast({ title: t("error"), description: msg, variant: "destructive" })
       setReviewOpen(false)
       setReviewId(null)
     } finally {
@@ -110,16 +112,16 @@ export function ExamPackageRequestsTable() {
     try {
       await adminExamPackageRequestsService.approve(reviewId)
       toast({
-        title: "Approved",
-        description: "These packages are now published for the doctor.",
+        title: t("approved"),
+        description: t("approveRequestSuccess", "These packages are now published for the doctor."),
       })
       setReviewOpen(false)
       setReviewId(null)
       setDetail(null)
       await load()
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Approve failed."
-      toast({ title: "Error", description: msg, variant: "destructive" })
+      const msg = e instanceof Error ? e.message : t("approveFailed", "Approve failed.")
+      toast({ title: t("error"), description: msg, variant: "destructive" })
       if (isStaleRequestError(msg)) {
         setReviewOpen(false)
         setReviewId(null)
@@ -137,15 +139,15 @@ export function ExamPackageRequestsTable() {
     try {
       await adminExamPackageRequestsService.reject(rejectRow.requestId, rejectNote)
       toast({
-        title: "Rejected",
-        description: "The doctor was notified in-app. Published packages were not changed.",
+        title: t("rejected"),
+        description: t("rejectRequestSuccess", "The doctor was notified in-app. Published packages were not changed."),
       })
       setRejectRow(null)
       setRejectNote("")
       await load()
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Reject failed."
-      toast({ title: "Error", description: msg, variant: "destructive" })
+      const msg = e instanceof Error ? e.message : t("rejectFailed", "Reject failed.")
+      toast({ title: t("error"), description: msg, variant: "destructive" })
       if (isStaleRequestError(msg)) {
         setRejectRow(null)
         setRejectNote("")
@@ -160,17 +162,17 @@ export function ExamPackageRequestsTable() {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <Package className="w-5 h-5 text-[#00a8cc]" />
+          <Package className="w-5 h-5 text-[#007A94]" />
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Exam package change requests</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("examPackageRequests")}</h2>
             <p className="text-sm text-muted-foreground">
-              Review the proposed package list before approving. Approving replaces the doctor&apos;s published packages.
+              {t("examPackageRequestsDesc", "Review the proposed package list before approving. Approving replaces the doctor's published packages.")}
             </p>
           </div>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => load()} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          {t("refresh")}
         </Button>
       </div>
 
@@ -180,16 +182,16 @@ export function ExamPackageRequestsTable() {
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-center py-12 text-muted-foreground text-sm">No pending exam package requests.</p>
+          <p className="text-center py-12 text-muted-foreground text-sm">{t("noPendingRequests")}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Doctor</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead className="text-center">Lines</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("doctor")}</TableHead>
+                <TableHead>{t("email")}</TableHead>
+                <TableHead>{t("submitted")}</TableHead>
+                <TableHead className="text-center">{t("lines")}</TableHead>
+                <TableHead className="text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,11 +206,11 @@ export function ExamPackageRequestsTable() {
                       type="button"
                       size="sm"
                       variant="default"
-                      className="bg-[#00a8cc] hover:bg-[#0096b8]"
+                      className="bg-[#007A94] hover:bg-[#006884]"
                       onClick={() => openReview(row.requestId)}
                     >
                       <Eye className="w-3.5 h-3.5 mr-1" />
-                      Review
+                      {t("review")}
                     </Button>
                     <Button
                       type="button"
@@ -221,7 +223,7 @@ export function ExamPackageRequestsTable() {
                       }}
                     >
                       <XCircle className="w-3.5 h-3.5 mr-1" />
-                      Reject
+                      {t("reject")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -234,11 +236,9 @@ export function ExamPackageRequestsTable() {
       <Dialog open={reviewOpen} onOpenChange={(open) => !open && (setReviewOpen(false), setDetail(null), setReviewId(null))}>
         <DialogContent className="w-[min(96vw,1400px)] max-w-[min(96vw,1400px)] sm:max-w-[min(96vw,1400px)] max-h-[92vh] overflow-y-auto overflow-x-hidden gap-4">
           <DialogHeader>
-            <DialogTitle>Review changes only</DialogTitle>
+            <DialogTitle>{t("reviewChangesOnly", "Review changes only")}</DialogTitle>
             <DialogDescription>
-              Compared with this doctor&apos;s <strong>currently published</strong> packages: new lines, edits to existing
-              ids, and published packages omitted from the proposal (removed). Packages kept as-is are not listed.
-              Approving still stores the doctor&apos;s full submitted list as the new catalog.
+              {t("reviewChangesDesc", "Compared with this doctor's currently published packages: new lines, edits to existing ids, and published packages omitted from the proposal (removed). Packages kept as-is are not listed. Approving still stores the doctor's full submitted list as the new catalog.")}
             </DialogDescription>
           </DialogHeader>
 
@@ -253,26 +253,25 @@ export function ExamPackageRequestsTable() {
                 <span className="text-muted-foreground"> · {detail.doctorEmail}</span>
               </div>
               <div className="text-xs text-muted-foreground">
-                Submitted {new Date(detail.submittedAt).toLocaleString()}
+                {t("submitted")} {new Date(detail.submittedAt).toLocaleString()}
               </div>
               {detail.unchangedPublishedCount > 0 && (
                 <p className="text-xs text-muted-foreground rounded-lg bg-muted/50 px-3 py-2">
-                  {detail.unchangedPublishedCount} published package(s) unchanged (same id and fields) — omitted here.
+                  {detail.unchangedPublishedCount} {t("packagesUnchangedOmitted", "published package(s) unchanged (same id and fields) — omitted here.")}
                 </p>
               )}
               {detail.changes.length === 0 ? (
                 <p className="text-sm text-muted-foreground rounded-lg border border-dashed p-4">
-                  No field differences vs published rows — only order may differ. You can still approve to apply the
-                  submitted ordering.
+                  {t("noFieldDifferences", "No field differences vs published rows — only order may differ. You can still approve to apply the submitted ordering.")}
                 </p>
               ) : (
                 <div className="w-full min-w-0 [&_[data-slot=table-container]]:overflow-x-visible">
                   <Table className="table-fixed w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[120px] align-top whitespace-normal">Type</TableHead>
-                        <TableHead className="w-[42%] align-top whitespace-normal">Before (published)</TableHead>
-                        <TableHead className="align-top whitespace-normal">After (proposal)</TableHead>
+                        <TableHead className="w-[120px] align-top whitespace-normal">{t("type")}</TableHead>
+                        <TableHead className="w-[42%] align-top whitespace-normal">{t("beforePublished")}</TableHead>
+                        <TableHead className="align-top whitespace-normal">{t("afterProposal")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -318,17 +317,17 @@ export function ExamPackageRequestsTable() {
 
           <DialogFooter className="gap-2 sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="button"
               className="bg-emerald-600 hover:bg-emerald-700"
               disabled={approving || detailLoading || !detail}
-              title={detail && detail.changes.length === 0 ? "No row-level diff; approval still applies full list" : undefined}
+              title={detail && detail.changes.length === 0 ? t("noRowLevelDiff", "No row-level diff; approval still applies full list") : undefined}
               onClick={() => void handleApprove()}
             >
               {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-              Approve &amp; publish
+              {t("approve")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -337,27 +336,27 @@ export function ExamPackageRequestsTable() {
       <Dialog open={!!rejectRow} onOpenChange={(open) => !open && setRejectRow(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject request</DialogTitle>
+            <DialogTitle>{t("rejectRequest", "Reject request")}</DialogTitle>
             <DialogDescription>
-              Optional note. The doctor&apos;s published packages stay unchanged.
+              {t("rejectRequestNote", "Optional note. The doctor's published packages stay unchanged.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="reject-note">Note</Label>
+            <Label htmlFor="reject-note">{t("note")}</Label>
             <Textarea
               id="reject-note"
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="Reason (optional)"
+              placeholder={t("reasonOptional")}
               rows={3}
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => setRejectRow(null)} disabled={rejecting}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleReject} disabled={rejecting}>
-              {rejecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reject"}
+              {rejecting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
