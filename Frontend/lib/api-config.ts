@@ -1,4 +1,4 @@
-const HOSTED_API_URL = 'https://p01--be-healthcare--pycvnbgpdxqq.code.run'
+const HOSTED_API_URL = 'https://healthcare-spdk.onrender.com'
 const LOCAL_API_URL = 'http://localhost:8080'
 
 export const API_BASE_URL =
