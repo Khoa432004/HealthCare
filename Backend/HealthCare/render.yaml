@@ -96,8 +96,12 @@ services:
         sync: false
       - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
         value: "true"
-      - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+      - key: SPRING_MAIL_STARTTLS_ENABLE
         value: "true"
+      - key: SPRING_MAIL_STARTTLS_REQUIRED
+        value: "true"
+      - key: SPRING_MAIL_SSL_ENABLE
+        value: "false"
 
       # ---- Agora Video SDK ----
       - key: AGORA_APP_ID
