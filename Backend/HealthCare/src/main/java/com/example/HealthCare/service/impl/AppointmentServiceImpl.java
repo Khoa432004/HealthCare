@@ -31,6 +31,9 @@ import com.example.HealthCare.repository.DoctorProfileRepository;
 import com.example.HealthCare.repository.DoctorScheduleRuleRepository;
 import com.example.HealthCare.repository.PatientProfileRepository;
 import com.example.HealthCare.repository.UserAccountRepository;
+import com.example.HealthCare.repository.PaymentRepository;
+import com.example.HealthCare.model.Payment;
+import com.example.HealthCare.enums.PaymentStatus;
 import com.example.HealthCare.service.AppointmentService;
 
 import lombok.RequiredArgsConstructor;
@@ -47,6 +50,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final DoctorScheduleRuleRepository doctorScheduleRuleRepository;
+    private final PaymentRepository paymentRepository;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -619,6 +623,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         
         appointment = appointmentRepository.save(appointment);
         log.info("Appointment {} canceled successfully by patient {}", appointmentId, patientId);
+        
+        // Update payment status if it exists and is paid
+        paymentRepository.findByAppointmentId(appointmentId).ifPresent(payment -> {
+            if (payment.getStatus() == PaymentStatus.PAID) {
+                payment.setStatus(PaymentStatus.PENDING_REFUND);
+                paymentRepository.save(payment);
+                log.info("Payment {} status updated to PENDING_REFUND for canceled appointment {}", payment.getId(), appointmentId);
+            }
+        });
         
         // Save status history
         AppointmentStatusHistory statusHistory = AppointmentStatusHistory.builder()

@@ -91,11 +91,13 @@ public class CanceledAppointmentServiceImpl implements CanceledAppointmentServic
             throw new IllegalStateException("Payment already refunded");
         }
 
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException("Payment must be in PENDING status to refund");
+        if (payment.getStatus() != PaymentStatus.PENDING_REFUND && payment.getStatus() != PaymentStatus.PAID) {
+            throw new IllegalStateException("Payment must be in PENDING_REFUND or PAID status to refund");
         }
 
         payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setRefundedAt(java.time.OffsetDateTime.now());
+        payment.setRefundReason(request.getRefundReason());
         paymentRepository.save(payment);
 
         if (appointment.getPatient() != null && appointment.getPatient().getEmail() != null) {

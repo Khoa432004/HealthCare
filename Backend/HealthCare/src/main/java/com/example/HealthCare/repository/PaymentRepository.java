@@ -48,5 +48,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
             @Param("startDate") OffsetDateTime startDate,
             @Param("endDate") OffsetDateTime endDate
     );
+
+    java.util.Optional<Payment> findByAppointmentId(UUID appointmentId);
 }
 
