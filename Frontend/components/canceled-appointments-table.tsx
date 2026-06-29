@@ -155,6 +155,8 @@ export function CanceledAppointmentsTable() {
         return <Badge className="bg-blue-500">{t("refunded", "Refunded")}</Badge>
       case "pending":
         return <Badge variant="outline">{t("pending")}</Badge>
+      case "pending_refund":
+        return <Badge className="bg-yellow-500">{t("pendingRefund", "Chờ hoàn tiền")}</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -322,10 +324,10 @@ export function CanceledAppointmentsTable() {
                     {formatCurrency(appointment.totalAmount)}
                   </TableCell>
                   <TableCell>
-                    {/* Hiển thị nút Hoàn tiền khi: appointment canceled + payment pending */}
+                    {/* Hiển thị nút Hoàn tiền khi: appointment canceled + payment pending_refund */}
                     {appointment.paymentId && 
                      appointment.appointmentStatus?.toLowerCase() === "canceled" &&
-                     appointment.paymentStatus.toLowerCase() === "pending" && (
+                     appointment.paymentStatus.toLowerCase() === "pending_refund" && (
                       <Button
                         size="sm"
                         variant="outline"
