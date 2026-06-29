@@ -140,18 +140,35 @@ public class PayrollServiceImpl implements PayrollService {
         Optional<DoctorPayroll> existingPayrollOpt = doctorPayrollRepository.findByDoctorIdAndPeriodYearAndPeriodMonth(
                 request.getDoctorId(), request.getYear(), request.getMonth());
 
-        if (!existingPayrollOpt.isPresent()) {
-            throw new IllegalStateException("No payroll record found. Cannot settle.");
-        }
-
-        DoctorPayroll existingPayroll = existingPayrollOpt.get();
+        DoctorPayroll existingPayroll;
         
-        if (existingPayroll.getStatus() == PayrollStatus.SETTLED) {
-            throw new IllegalStateException("Payroll already settled for this period");
+        if (!existingPayrollOpt.isPresent()) {
+            // Tính toán và tạo mới nếu chưa tồn tại
+            List<Appointment> appointments = getCompletedAppointmentsForPeriod(request.getDoctorId(), request.getYear(), request.getMonth());
+            BigDecimal totalRevenue = calculateTotalRevenue(appointments);
+            BigDecimal platformFee = totalRevenue.multiply(PLATFORM_FEE_PERCENTAGE).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal netAmount = totalRevenue.multiply(DOCTOR_SALARY_PERCENTAGE).setScale(0, RoundingMode.HALF_UP);
+            
+            existingPayroll = DoctorPayroll.builder()
+                .doctorId(request.getDoctorId())
+                .periodMonth(request.getMonth())
+                .periodYear(request.getYear())
+                .grossAmount(totalRevenue)
+                .platformFee(platformFee)
+                .netAmount(netAmount)
+                .status(PayrollStatus.SETTLED)
+                .settledAt(java.time.OffsetDateTime.now())
+                .build();
+        } else {
+            existingPayroll = existingPayrollOpt.get();
+            if (existingPayroll.getStatus() == PayrollStatus.SETTLED) {
+                throw new IllegalStateException("Payroll already settled for this period");
+            }
+            existingPayroll.setStatus(PayrollStatus.SETTLED);
+            existingPayroll.setSettledAt(java.time.OffsetDateTime.now());
         }
 
-        existingPayroll.setStatus(PayrollStatus.SETTLED);
-        doctorPayrollRepository.save(existingPayroll);
+        existingPayroll = doctorPayrollRepository.save(existingPayroll);
         
         if (doctor.getEmail() != null) {
             emailService.sendPayrollSettlementEmail(

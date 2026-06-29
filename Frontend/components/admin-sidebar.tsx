@@ -10,24 +10,18 @@ interface AdminSidebarProps {
   activeTab:
     | "overview"
     | "users"
-    | "statistics"
     | "notifications"
-    | "refunds"
     | "cancellations"
     | "revenue"
-    | "doctors"
     | "chats"
     | "exam-packages"
   setActiveTab: (
     tab:
       | "overview"
       | "users"
-      | "statistics"
       | "notifications"
-      | "refunds"
       | "cancellations"
       | "revenue"
-      | "doctors"
       | "chats"
       | "exam-packages",
   ) => void
@@ -40,12 +34,9 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
     { id: "users" as const, icon: Users, label: t("userManagement") },
     { id: "exam-packages" as const, icon: Package, label: t("examPackages") },
     { id: "chats" as const, icon: MessageSquare, label: t("chats") },
-    { id: "statistics" as const, icon: BarChart3, label: t("statistics") },
     { id: "notifications" as const, icon: Bell, label: t("notifications") },
-    { id: "refunds" as const, icon: RefreshCw, label: t("refunds") },
     { id: "cancellations" as const, icon: XCircle, label: t("cancellations") },
     { id: "revenue" as const, icon: DollarSign, label: t("revenue") },
-    { id: "doctors" as const, icon: Stethoscope, label: t("doctors") },
   ]
 
   return (

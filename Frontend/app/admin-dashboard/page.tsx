@@ -21,12 +21,9 @@ import { useTranslation } from "react-i18next"
 type TabType =
   | "overview"
   | "users"
-  | "statistics"
   | "notifications"
-  | "refunds"
   | "cancellations"
   | "revenue"
-  | "doctors"
   | "chats"
   | "exam-packages"
 
@@ -70,18 +67,12 @@ function AdminDashboardContent() {
         return <UserManagementTable />
       case "exam-packages":
         return <ExamPackageRequestsTable />
-      case "statistics":
-        return <div className="p-4">{t("statisticsComingSoon")}</div>
       case "notifications":
         return <NotificationManagement />
-      case "refunds":
-        return <div className="p-4">{t("refundsComingSoon")}</div>
       case "cancellations":
         return <CanceledAppointmentsTable />
       case "revenue":
         return <DoctorPayrollTable />
-      case "doctors":
-        return <div className="p-4">{t("doctorsComingSoon")}</div>
       case "chats":
         return (
           <div className="h-[calc(100vh-120px)] min-h-[500px]">
